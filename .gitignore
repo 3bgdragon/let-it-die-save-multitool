@@ -1,0 +1,8 @@
+backups/
+*.tmp
+*.rollback
+test-*.sav
+*.sav
+*.sav.*
+*.bak
+masters.db

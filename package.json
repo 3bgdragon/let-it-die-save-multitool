@@ -1,0 +1,14 @@
+{
+  "name": "let-it-die-save-multitool",
+  "version": "1.0.0",
+  "description": "LET IT DIE 5.0.1.0 offline save and local master database backup, edit and restore tool",
+  "license": "MIT",
+  "private": false,
+  "engines": {
+    "node": ">=22.5"
+  },
+  "scripts": {
+    "check": "node --check lid-kc.js",
+    "status": "node --no-warnings lid-kc.js status"
+  }
+}
