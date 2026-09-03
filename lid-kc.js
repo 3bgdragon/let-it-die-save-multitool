@@ -700,11 +700,11 @@ function getRecipeUnlockState(save, recipeIds, label) {
   const levelsById = new Map(recipeIds.map((id) => [id, new Set()]));
   for (const entry of research) {
     if (!targetIds.has(entry?.ptid)) continue;
-    if (!Number.isSafeInteger(entry.lvl) || entry.lvl < 1 ||
-        typeof entry.research_type !== 'string' || typeof entry.receive_type !== 'string' ||
-        ![0, 1].includes(entry.is_announced) || ![0, 1, 3].includes(entry.is_checked) ||
-        typeof entry.before_ptid !== 'string' || !Number.isSafeInteger(entry.before_lvl)) {
-      fail(`${label} ${entry.ptid} 연구 항목의 형식이 예상과 다릅니다.`);
+    // Existing saves use additional state flag values depending on how and
+    // when a recipe was obtained. Ownership only depends on ptid + lvl, and
+    // every existing object is preserved byte-for-byte by the mutation.
+    if (!Number.isSafeInteger(entry.lvl) || entry.lvl < 1) {
+      fail(`${label} ${entry.ptid} 연구 레벨의 형식이 예상과 다릅니다.`);
     }
     const levels = levelsById.get(entry.ptid);
     if (levels.has(entry.lvl)) {
