@@ -724,8 +724,18 @@ function readWindowsRegistryValue(key, valueName) {
   }
 }
 
+function uniquePaths(paths) {
+  const unique = new Map();
+  for (const candidate of paths) {
+    const normalized = path.normalize(candidate);
+    const identity = process.platform === 'win32' ? normalized.toLowerCase() : normalized;
+    if (!unique.has(identity)) unique.set(identity, normalized);
+  }
+  return [...unique.values()];
+}
+
 function findSteamRoots() {
-  const roots = new Set();
+  const roots = [];
   const registrySteamExecutable = readWindowsRegistryValue(
     'HKCU\\Software\\Valve\\Steam',
     'SteamExe',
@@ -757,15 +767,15 @@ function findSteamRoots() {
 
   for (const steamRoot of candidates) {
     if (!fs.existsSync(steamRoot)) continue;
-    roots.add(steamRoot);
+    roots.push(steamRoot);
     const libraryFile = path.join(steamRoot, 'steamapps', 'libraryfolders.vdf');
     if (!fs.existsSync(libraryFile)) continue;
     const vdf = fs.readFileSync(libraryFile, 'utf8');
     for (const match of vdf.matchAll(/\"path\"\s+\"([^\"]+)\"/g)) {
-      roots.add(match[1].replace(/\\\\/g, '\\'));
+      roots.push(match[1].replace(/\\\\/g, '\\'));
     }
   }
-  return [...roots];
+  return uniquePaths(roots);
 }
 
 function listNumericSaveFiles(directory) {
@@ -796,7 +806,7 @@ function resolveManualSaveInput(input) {
     path.join(resolved, 'common', 'LET IT DIE', 'Savedata'),
     path.join(resolved, 'steamapps', 'common', 'LET IT DIE', 'Savedata'),
   ];
-  return [...new Set(directories.flatMap(listNumericSaveFiles))];
+  return uniquePaths(directories.flatMap(listNumericSaveFiles));
 }
 
 function discoverSaves() {
@@ -811,7 +821,7 @@ function discoverSaves() {
       if (/^\d+\.sav$/i.test(name)) saves.push(path.join(saveDirectory, name));
     }
   }
-  return [...new Set(saves)];
+  return uniquePaths(saves);
 }
 
 function isGameRunning() {
