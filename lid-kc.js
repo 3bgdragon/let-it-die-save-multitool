@@ -35,6 +35,14 @@ const QUEEN_OF_SPADES_ID = 'SKL_SYLVIA_NMH_02_P';
 const QUEEN_OF_SPADES_BASE_ATTACK_PERCENT = 30;
 const QUEEN_OF_SPADES_EXTREME_ATTACK_PERCENT = 10_000;
 const KAMAS_RE_FINAL_PART_ID = 'PT_ARM_WP031_0B5';
+const EQUIPMENT_MATERIAL_COLUMNS = [
+  'buy_mate1_num', 'buy_mate2_num', 'buy_mate3_num', 'buy_mate4_num', 'buy_mate5_num',
+  'craft_mate1_num', 'craft_mate2_num', 'craft_mate3_num', 'craft_mate4_num', 'craft_mate5_num',
+  'lvup_mate1_num', 'lvup_mate2_num', 'lvup_mate3_num', 'lvup_mate4_num', 'lvup_mate5_num',
+  'lvup_mate1_add_num', 'lvup_mate2_add_num', 'lvup_mate3_add_num',
+  'lvup_mate4_add_num', 'lvup_mate5_add_num',
+];
+const EQUIPMENT_MATERIAL_BACKUP_PREFIX = 'masters.db.equipment-materials.';
 const FIVE_STAR_DECAL_IDS = [
   'SKL_ATKUP_03_P',
   'SKL_RGSPUP_RDURDOWN_01_P',
@@ -821,13 +829,201 @@ function getCollisionMushroomStatus(savePath) {
   }
 }
 
-function createMasterDatabaseBackup(original) {
+function createMasterDatabaseBackup(original, prefix = 'masters.db') {
+  if (!/^[a-z0-9.-]+$/i.test(prefix)) fail('마스터 DB 백업 이름이 올바르지 않습니다.');
   const directory = backupDirectory();
   fs.mkdirSync(directory, { recursive: true });
-  const name = `masters.db.${timestamp()}.${sha256(original).slice(0, 12)}.bak`;
+  const name = `${prefix}.${timestamp()}.${sha256(original).slice(0, 12)}.bak`;
   const destination = path.join(directory, name);
   fs.writeFileSync(destination, original, { flag: 'wx' });
   return destination;
+}
+
+function assertEquipmentMaterialSchema(database) {
+  const columns = new Set(
+    database.prepare('PRAGMA table_info(master_part_research)').all().map((row) => row.name),
+  );
+  const required = ['ptid', ...EQUIPMENT_MATERIAL_COLUMNS];
+  const missing = required.filter((name) => !columns.has(name));
+  if (missing.length > 0) {
+    fail(`장비 연구 DB 구조가 예상과 다릅니다. 없는 열: ${missing.join(', ')}`);
+  }
+}
+
+function readEquipmentMaterialRows(databasePath) {
+  let database;
+  try {
+    database = new DatabaseSync(databasePath, { readOnly: true });
+    assertEquipmentMaterialSchema(database);
+    const columns = EQUIPMENT_MATERIAL_COLUMNS.map((name) => `"${name}"`).join(', ');
+    return database.prepare(
+      `SELECT ptid, ${columns} FROM master_part_research ORDER BY ptid`,
+    ).all();
+  } finally {
+    if (database) database.close();
+  }
+}
+
+function summarizeEquipmentMaterialRows(rows) {
+  let nonZeroRows = 0;
+  let nonZeroCells = 0;
+  for (const row of rows) {
+    let rowHasMaterial = false;
+    for (const column of EQUIPMENT_MATERIAL_COLUMNS) {
+      const value = row[column];
+      if (value !== null && Number(value) !== 0) {
+        rowHasMaterial = true;
+        nonZeroCells += 1;
+      }
+    }
+    if (rowHasMaterial) nonZeroRows += 1;
+  }
+  return { rowCount: rows.length, nonZeroRows, nonZeroCells };
+}
+
+function equipmentMaterialRowsDigest(rows) {
+  return sha256(Buffer.from(JSON.stringify(rows), 'utf8'));
+}
+
+function getEquipmentMaterialStatus(savePath) {
+  const databasePath = getMasterDatabasePath(savePath);
+  const rows = readEquipmentMaterialRows(databasePath);
+  return { databasePath, rows, ...summarizeEquipmentMaterialRows(rows) };
+}
+
+function listEquipmentMaterialBackups() {
+  const directory = backupDirectory();
+  if (!fs.existsSync(directory)) return [];
+  return fs.readdirSync(directory, { withFileTypes: true })
+    .filter((entry) => entry.isFile() &&
+      entry.name.startsWith(EQUIPMENT_MATERIAL_BACKUP_PREFIX) && entry.name.endsWith('.bak'))
+    .map((entry) => path.join(directory, entry.name))
+    .sort((left, right) => path.basename(right).localeCompare(path.basename(left)));
+}
+
+function setEquipmentMaterialsFree(savePath) {
+  if (isGameRunning()) {
+    fail('LET IT DIE가 실행 중입니다. 게임을 완전히 종료한 뒤 다시 실행하세요.');
+  }
+
+  const status = getEquipmentMaterialStatus(savePath);
+  if (status.rowCount === 0) fail('장비 연구 정의가 비어 있어 안전하게 중단했습니다.');
+  if (status.nonZeroCells === 0) {
+    return { ...status, changed: false, backupPath: undefined };
+  }
+
+  const original = fs.readFileSync(status.databasePath);
+  const originalHash = sha256(original);
+  const backupPath = createMasterDatabaseBackup(original, 'masters.db.equipment-materials');
+  let database;
+  try {
+    if (sha256(fs.readFileSync(status.databasePath)) !== originalHash) {
+      fail('마스터 DB를 읽은 뒤 파일이 변경됐습니다. 안전하게 중단했습니다.');
+    }
+    database = new DatabaseSync(status.databasePath);
+    assertEquipmentMaterialSchema(database);
+    database.exec('BEGIN IMMEDIATE');
+    const assignments = EQUIPMENT_MATERIAL_COLUMNS
+      .map((name) => `"${name}" = CASE WHEN "${name}" IS NULL THEN NULL ELSE 0 END`)
+      .join(', ');
+    const conditions = EQUIPMENT_MATERIAL_COLUMNS
+      .map((name) => `COALESCE(ABS("${name}"), 0) > 0`)
+      .join(' OR ');
+    const result = database.prepare(
+      `UPDATE master_part_research SET ${assignments} WHERE ${conditions}`,
+    ).run();
+    if (Number(result.changes) !== status.nonZeroRows) {
+      fail(`재료 비용 수정 행 수가 예상과 다릅니다: ${result.changes} / ${status.nonZeroRows}`);
+    }
+    const integrity = database.prepare('PRAGMA integrity_check').get();
+    if (!integrity || integrity.integrity_check !== 'ok') {
+      fail('마스터 DB 무결성 검사에 실패했습니다.');
+    }
+    database.exec('COMMIT');
+  } catch (error) {
+    if (database) {
+      try { database.exec('ROLLBACK'); } catch {}
+    }
+    throw error;
+  } finally {
+    if (database) database.close();
+  }
+
+  const verified = getEquipmentMaterialStatus(savePath);
+  if (verified.rowCount !== status.rowCount || verified.nonZeroCells !== 0) {
+    fs.copyFileSync(backupPath, status.databasePath);
+    fail('수정 결과 검증에 실패해 원본 DB를 복구했습니다.');
+  }
+  return { ...verified, changed: true, backupPath };
+}
+
+function restoreEquipmentMaterials(savePath, requestedBackupPath) {
+  if (isGameRunning()) {
+    fail('LET IT DIE가 실행 중입니다. 게임을 완전히 종료한 뒤 다시 실행하세요.');
+  }
+
+  const backups = listEquipmentMaterialBackups();
+  const sourcePath = requestedBackupPath ? path.resolve(requestedBackupPath) : backups[0];
+  if (!sourcePath || !fs.existsSync(sourcePath)) {
+    fail('복원할 장비 재료 비용 백업이 없습니다.');
+  }
+  const sourceRows = readEquipmentMaterialRows(sourcePath);
+  if (sourceRows.length === 0) fail('장비 재료 비용 백업이 비어 있습니다.');
+
+  const databasePath = getMasterDatabasePath(savePath);
+  const currentRows = readEquipmentMaterialRows(databasePath);
+  if (currentRows.length !== sourceRows.length ||
+      currentRows.some((row, index) => row.ptid !== sourceRows[index].ptid)) {
+    fail('현재 DB와 백업의 장비 연구 목록이 달라 안전하게 중단했습니다.');
+  }
+
+  const original = fs.readFileSync(databasePath);
+  const originalHash = sha256(original);
+  const safetyBackup = createMasterDatabaseBackup(original, 'masters.db.before-equipment-materials-restore');
+  let database;
+  try {
+    if (sha256(fs.readFileSync(databasePath)) !== originalHash) {
+      fail('마스터 DB를 읽은 뒤 파일이 변경됐습니다. 안전하게 중단했습니다.');
+    }
+    database = new DatabaseSync(databasePath);
+    assertEquipmentMaterialSchema(database);
+    database.exec('BEGIN IMMEDIATE');
+    const assignments = EQUIPMENT_MATERIAL_COLUMNS.map((name) => `"${name}" = ?`).join(', ');
+    const update = database.prepare(
+      `UPDATE master_part_research SET ${assignments} WHERE ptid = ?`,
+    );
+    for (const row of sourceRows) {
+      const values = EQUIPMENT_MATERIAL_COLUMNS.map((name) => row[name]);
+      const result = update.run(...values, row.ptid);
+      if (Number(result.changes) !== 1) {
+        fail(`장비 재료 비용 복원에 실패했습니다: ${row.ptid}`);
+      }
+    }
+    const integrity = database.prepare('PRAGMA integrity_check').get();
+    if (!integrity || integrity.integrity_check !== 'ok') {
+      fail('마스터 DB 무결성 검사에 실패했습니다.');
+    }
+    database.exec('COMMIT');
+  } catch (error) {
+    if (database) {
+      try { database.exec('ROLLBACK'); } catch {}
+    }
+    throw error;
+  } finally {
+    if (database) database.close();
+  }
+
+  const restoredRows = readEquipmentMaterialRows(databasePath);
+  if (equipmentMaterialRowsDigest(restoredRows) !== equipmentMaterialRowsDigest(sourceRows)) {
+    fs.copyFileSync(safetyBackup, databasePath);
+    fail('복원 결과 검증에 실패해 복원 직전 DB로 되돌렸습니다.');
+  }
+  return {
+    databasePath,
+    sourcePath,
+    safetyBackup,
+    ...summarizeEquipmentMaterialRows(restoredRows),
+  };
 }
 
 function setCollisionMushroomThirtyMinutes(savePath) {
@@ -1429,6 +1625,8 @@ async function interactive(rl, savePath) {
     console.log('10. 궁극 파이터의 귀환 데칼 효과를 5배로 변경');
     console.log('11. KAMAS-A1 어설트 라이플 RE를 최대 +24로 강화');
     console.log('12. 스페이드 여왕 공격력을 극단적으로 강화');
+    console.log('13. 모든 장비 개발·강화 재료 비용을 0으로 변경');
+    console.log('14. 장비 개발·강화 재료 비용을 전용 백업에서 복원');
     console.log('0. 종료');
     const choice = (await rl.question('선택: ')).trim();
 
@@ -1566,6 +1764,34 @@ async function interactive(rl, savePath) {
         console.log(`\n완료: 스페이드 여왕 공격력 +${QUEEN_OF_SPADES_BASE_ATTACK_PERCENT}% → +${formatNumber(QUEEN_OF_SPADES_EXTREME_ATTACK_PERCENT)}%`);
         console.log(`마스터 DB 백업: ${result.backupPath}`);
       }
+    } else if (choice === '13') {
+      const status = getEquipmentMaterialStatus(savePath);
+      console.log(`\n마스터 DB: ${status.databasePath}`);
+      console.log(`장비 연구 정의: ${formatNumber(status.rowCount)}종`);
+      console.log(`재료가 필요한 정의: ${formatNumber(status.nonZeroRows)}종 / 수량 항목 ${formatNumber(status.nonZeroCells)}개`);
+      if (!await confirm(rl, '모든 장비의 개발·강화 재료 수량을 0으로 변경할까요?')) continue;
+      const result = setEquipmentMaterialsFree(savePath);
+      if (!result.changed) {
+        console.log('\n이미 모든 장비 개발·강화 재료 수량이 0입니다.');
+      } else {
+        console.log(`\n완료: 장비 ${formatNumber(result.rowCount)}종의 개발·강화 재료 비용 제거`);
+        console.log('킬코인·스피리튬 비용과 연구 시간은 유지됩니다.');
+        console.log(`마스터 DB 백업: ${result.backupPath}`);
+      }
+    } else if (choice === '14') {
+      const backups = listEquipmentMaterialBackups();
+      if (backups.length === 0) {
+        console.log('\n복원할 장비 재료 비용 전용 백업이 없습니다.');
+        continue;
+      }
+      const sourcePath = backups[0];
+      const sourceSummary = summarizeEquipmentMaterialRows(readEquipmentMaterialRows(sourcePath));
+      console.log(`\n복원 대상: ${sourcePath}`);
+      console.log(`백업의 재료 필요 정의: ${formatNumber(sourceSummary.nonZeroRows)}종 / 수량 항목 ${formatNumber(sourceSummary.nonZeroCells)}개`);
+      if (!await confirm(rl, '이 백업의 장비 재료 수량만 복원할까요?')) continue;
+      const result = restoreEquipmentMaterials(savePath, sourcePath);
+      console.log(`\n복원 완료: 장비 재료 비용 ${formatNumber(result.nonZeroRows)}종`);
+      console.log(`복원 전 안전 백업: ${result.safetyBackup}`);
     } else {
       console.log('\n잘못된 선택입니다.');
     }
@@ -1713,6 +1939,34 @@ async function main() {
       }
       return;
     }
+    if (command === 'equipment-materials-free') {
+      const status = getEquipmentMaterialStatus(savePath);
+      console.log(`마스터 DB: ${status.databasePath}`);
+      console.log(`재료가 필요한 장비 정의: ${formatNumber(status.nonZeroRows)}종 / 수량 항목 ${formatNumber(status.nonZeroCells)}개`);
+      if (!parsed.yes && !await confirm(rl, '모든 장비의 개발·강화 재료 수량을 0으로 변경할까요?')) return;
+      const result = setEquipmentMaterialsFree(savePath);
+      if (!result.changed) {
+        console.log('이미 모든 장비 개발·강화 재료 수량이 0입니다.');
+      } else {
+        console.log(`완료: 장비 ${formatNumber(result.rowCount)}종의 개발·강화 재료 비용 제거`);
+        console.log('킬코인·스피리튬 비용과 연구 시간은 유지됩니다.');
+        console.log(`마스터 DB 백업: ${result.backupPath}`);
+      }
+      return;
+    }
+    if (command === 'equipment-materials-restore') {
+      const backups = listEquipmentMaterialBackups();
+      const backupPath = parsed.args[1] ? path.resolve(parsed.args[1]) : backups[0];
+      if (!backupPath) fail('복원할 장비 재료 비용 전용 백업이 없습니다.');
+      const summary = summarizeEquipmentMaterialRows(readEquipmentMaterialRows(backupPath));
+      console.log(`복원 대상: ${backupPath}`);
+      console.log(`백업의 재료 필요 정의: ${formatNumber(summary.nonZeroRows)}종 / 수량 항목 ${formatNumber(summary.nonZeroCells)}개`);
+      if (!parsed.yes && !await confirm(rl, '이 백업의 장비 재료 수량만 복원할까요?')) return;
+      const result = restoreEquipmentMaterials(savePath, backupPath);
+      console.log(`복원 완료: 장비 재료 비용 ${formatNumber(result.nonZeroRows)}종`);
+      console.log(`복원 전 안전 백업: ${result.safetyBackup}`);
+      return;
+    }
     if (command === 'restore') {
       const backups = listBackups(savePath);
       if (backups.length === 0) fail('복원할 백업이 없습니다.');
@@ -1730,7 +1984,7 @@ async function main() {
       return;
     }
 
-    fail('사용법: node lid-kc.js [status | backup | reset-shop | grant-five-star-all | collision-30m | ultimate-fighter-5x | kamas-re-max | queen-spades-extreme | set [kc|sp|blood] 숫자 | max [kc|sp|blood] | restore] [--save 경로] [--yes]');
+    fail('사용법: node lid-kc.js [status | backup | reset-shop | grant-five-star-all | collision-30m | ultimate-fighter-5x | kamas-re-max | queen-spades-extreme | equipment-materials-free | equipment-materials-restore [백업] | set [kc|sp|blood] 숫자 | max [kc|sp|blood] | restore] [--save 경로] [--yes]');
   } finally {
     if (rl) rl.close();
   }
