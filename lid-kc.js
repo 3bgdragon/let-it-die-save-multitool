@@ -45,7 +45,9 @@ const EQUIPMENT_MATERIAL_COLUMNS = [
   'lvup_mate4_add_num', 'lvup_mate5_add_num',
 ];
 const EQUIPMENT_MATERIAL_BACKUP_PREFIX = 'masters.db.equipment-materials.';
-const FIVE_STAR_DECAL_IDS = [
+// Older builds wrote this exact set to the end of the gacha history. Keep the
+// list only so those erroneous history entries can still be removed safely.
+const LEGACY_FIVE_STAR_DECAL_IDS = [
   'SKL_ATKUP_03_P',
   'SKL_RGSPUP_RDURDOWN_01_P',
   'SKL_WARRIORS_01_P',
@@ -88,6 +90,7 @@ const FIVE_STAR_DECAL_IDS = [
   'SKL_QOH_P',
   'SKL_TOHEAVEN_P',
 ];
+const STEAM_DECAL_DEFINITION_COUNT = 329;
 const GOLDEN_BEAST_IDS = [
   'BST_GFROG',
   'BST_GSCORPION',
@@ -475,22 +478,22 @@ function findJsonPath(text, propertyNames) {
 function getGachaHistory(save) {
   const history = save.data?.soul?.skl?.gacha?.normal?.sklids;
   if (!Array.isArray(history) || history.some((id) => typeof id !== 'string')) {
-    fail('세이브에서 프리미엄 데칼 뽑기 이력을 찾지 못했습니다.');
+    fail('세이브에서 데칼 뽑기 이력을 찾지 못했습니다.');
   }
   return history;
 }
 
-function getPremiumDecalStock(save) {
+function getDecalStock(save) {
   const stock = save.data?.soul?.skl?.psskl;
-  if (!Array.isArray(stock)) fail('세이브에서 프리미엄 데칼 소유 목록을 찾지 못했습니다.');
+  if (!Array.isArray(stock)) fail('세이브에서 데칼 소유 목록을 찾지 못했습니다.');
   const ids = new Set();
   for (const entry of stock) {
     if (!entry || typeof entry !== 'object' || typeof entry.sklid !== 'string' ||
         !Number.isSafeInteger(entry.cnt) || entry.cnt < 0 ||
         !Number.isSafeInteger(entry.updated) || ![0, 1].includes(entry.is_checked)) {
-      fail('프리미엄 데칼 소유 목록의 항목 형식이 올바르지 않습니다.');
+      fail('데칼 소유 목록의 항목 형식이 올바르지 않습니다.');
     }
-    if (ids.has(entry.sklid)) fail(`프리미엄 데칼 소유 목록에 ${entry.sklid}가 중복되어 있습니다.`);
+    if (ids.has(entry.sklid)) fail(`데칼 소유 목록에 ${entry.sklid}가 중복되어 있습니다.`);
     ids.add(entry.sklid);
   }
   return stock;
@@ -502,21 +505,27 @@ function arrayEndsWith(array, suffix) {
   return suffix.every((value, index) => array[offset + index] === value);
 }
 
-function replaceFiveStarDecals(save) {
-  if (FIVE_STAR_DECAL_IDS.length !== 41 || new Set(FIVE_STAR_DECAL_IDS).size !== 41) {
-    fail('내장된 ★5 데칼 목록 검증에 실패했습니다.');
+function replaceAllDecals(save, decalIds) {
+  if (!Array.isArray(decalIds) || decalIds.length !== STEAM_DECAL_DEFINITION_COUNT ||
+      new Set(decalIds).size !== STEAM_DECAL_DEFINITION_COUNT ||
+      decalIds.some((id) => typeof id !== 'string' || !id)) {
+    fail('Steam용 전체 데칼 목록 검증에 실패했습니다.');
+  }
+  if (LEGACY_FIVE_STAR_DECAL_IDS.length !== 41 ||
+      new Set(LEGACY_FIVE_STAR_DECAL_IDS).size !== 41) {
+    fail('이전 ★5 데칼 지급 이력 정리 목록 검증에 실패했습니다.');
   }
   const history = getGachaHistory(save);
-  const stock = getPremiumDecalStock(save);
+  const stock = getDecalStock(save);
   let changedText = save.jsonText;
 
   // Earlier tool builds incorrectly appended grants to the draw history.
   // Remove only exact trailing 41-item sets written by those builds.
   const cleanedHistory = [...history];
   let removedHistoryCount = 0;
-  while (arrayEndsWith(cleanedHistory, FIVE_STAR_DECAL_IDS)) {
-    cleanedHistory.splice(-FIVE_STAR_DECAL_IDS.length);
-    removedHistoryCount += FIVE_STAR_DECAL_IDS.length;
+  while (arrayEndsWith(cleanedHistory, LEGACY_FIVE_STAR_DECAL_IDS)) {
+    cleanedHistory.splice(-LEGACY_FIVE_STAR_DECAL_IDS.length);
+    removedHistoryCount += LEGACY_FIVE_STAR_DECAL_IDS.length;
   }
   if (removedHistoryCount > 0) {
     const historyField = findJsonPath(changedText, ['soul', 'skl', 'gacha', 'normal', 'sklids']);
@@ -530,10 +539,10 @@ function replaceFiveStarDecals(save) {
   try {
     rawStock = JSON.parse(rawValue);
   } catch {
-    fail('세이브의 프리미엄 데칼 소유 목록을 읽지 못했습니다.');
+    fail('세이브의 데칼 소유 목록을 읽지 못했습니다.');
   }
   if (JSON.stringify(rawStock) !== JSON.stringify(stock)) {
-    fail('프리미엄 데칼 소유 목록 교차 검증에 실패했습니다.');
+    fail('데칼 소유 목록 교차 검증에 실패했습니다.');
   }
 
   const now = Math.floor(Date.now() / 1000);
@@ -541,7 +550,7 @@ function replaceFiveStarDecals(save) {
   const stockIndex = new Map(changedStock.map((entry, index) => [entry.sklid, index]));
   let newTypes = 0;
   let incrementedTypes = 0;
-  for (const id of FIVE_STAR_DECAL_IDS) {
+  for (const id of decalIds) {
     const index = stockIndex.get(id);
     if (index === undefined) {
       changedStock.push({ sklid: id, cnt: 1, updated: now, is_checked: 0 });
@@ -570,13 +579,13 @@ function replaceFiveStarDecals(save) {
   const verifiedStock = changedData?.soul?.skl?.psskl;
   if (!Array.isArray(verifiedHistory) || verifiedHistory.length !== cleanedHistory.length ||
       !Array.isArray(verifiedStock) || verifiedStock.length !== changedStock.length) {
-    fail('수정된 ★5 데칼 데이터 검증에 실패했습니다.');
+    fail('수정된 전체 데칼 데이터 검증에 실패했습니다.');
   }
   const previousCounts = new Map(stock.map((entry) => [entry.sklid, entry.cnt]));
   const verifiedCounts = new Map(verifiedStock.map((entry) => [entry.sklid, entry.cnt]));
-  for (const id of FIVE_STAR_DECAL_IDS) {
+  for (const id of decalIds) {
     if (verifiedCounts.get(id) !== (previousCounts.get(id) ?? 0) + 1) {
-      fail(`수정된 ★5 데칼 ${id} 수량 검증에 실패했습니다.`);
+      fail(`수정된 데칼 ${id} 수량 검증에 실패했습니다.`);
     }
   }
   return {
@@ -1102,6 +1111,36 @@ function getMasterDatabasePath(savePath) {
   const databasePath = findMasterDatabasePath(savePath);
   if (databasePath) return databasePath;
   fail('마스터 DB를 찾지 못했습니다. LET IT DIE 설치 폴더 또는 masters.db 경로를 입력하거나 --game/--master 옵션으로 지정하세요.');
+}
+
+function getAllDecalDefinitions(savePath) {
+  const databasePath = getMasterDatabasePath(savePath);
+  let database;
+  try {
+    database = new DatabaseSync(databasePath, { readOnly: true });
+    const rows = database.prepare(
+      `SELECT id, no, no_steam, premium, rarity, is_display, is_display_list, platform
+       FROM master_skill
+       WHERE platform = 0
+       ORDER BY no_steam`,
+    ).all();
+    if (rows.length !== STEAM_DECAL_DEFINITION_COUNT ||
+        new Set(rows.map((row) => row.id)).size !== STEAM_DECAL_DEFINITION_COUNT) {
+      fail(`마스터 DB의 Steam용 전체 데칼 ${STEAM_DECAL_DEFINITION_COUNT}종 정의가 예상과 달라 안전하게 중단했습니다.`);
+    }
+    for (let index = 0; index < rows.length; index += 1) {
+      const row = rows[index];
+      if (typeof row.id !== 'string' || !row.id || row.no_steam !== index + 1 ||
+          ![0, 1].includes(row.premium) || !Number.isSafeInteger(row.rarity) ||
+          row.rarity < 1 || row.rarity > 5 || row.is_display !== 1 ||
+          row.is_display_list !== 1 || row.platform !== 0) {
+        fail(`마스터 DB의 Steam 데칼 ${index + 1}번 정의가 예상과 달라 안전하게 중단했습니다.`);
+      }
+    }
+    return { databasePath, rows, ids: rows.map((row) => row.id) };
+  } finally {
+    if (database) database.close();
+  }
 }
 
 function getGoldenBeastDefinitions(savePath) {
@@ -1710,7 +1749,7 @@ function writeBloodniumShopReset(savePath, save) {
   };
 }
 
-function writeFiveStarDecals(savePath, save) {
+function writeAllDecals(savePath, save) {
   if (isGameRunning()) {
     fail('LET IT DIE가 실행 중입니다. 게임을 완전히 종료한 뒤 다시 실행하세요.');
   }
@@ -1718,7 +1757,8 @@ function writeFiveStarDecals(savePath, save) {
     fail('세이브를 읽은 뒤 파일이 변경됐습니다. 게임을 종료하고 다시 시도하세요.');
   }
 
-  const mutation = replaceFiveStarDecals(save);
+  const definition = getAllDecalDefinitions(savePath);
+  const mutation = replaceAllDecals(save, definition.ids);
   const packed = packSave(mutation.changedText, save.blockCount, save.trailer);
   const tempPath = `${savePath}.decal-edit.tmp`;
   const rollbackPath = `${savePath}.decal-edit.rollback`;
@@ -1730,13 +1770,13 @@ function writeFiveStarDecals(savePath, save) {
   fs.writeFileSync(tempPath, packed, { flag: 'wx' });
   try {
     const check = readSave(tempPath);
-    const checkStock = getPremiumDecalStock(check);
+    const checkStock = getDecalStock(check);
     if (checkStock.length !== mutation.changedStock.length) {
-      fail('임시 세이브의 ★5 데칼 검증에 실패했습니다.');
+      fail('임시 세이브의 전체 데칼 검증에 실패했습니다.');
     }
     const checkCounts = new Map(checkStock.map((entry) => [entry.sklid, entry.cnt]));
     const expectedCounts = new Map(mutation.changedStock.map((entry) => [entry.sklid, entry.cnt]));
-    for (const id of FIVE_STAR_DECAL_IDS) {
+    for (const id of definition.ids) {
       if (checkCounts.get(id) !== expectedCounts.get(id)) {
         fail(`임시 세이브의 ${id} 수량 검증에 실패했습니다.`);
       }
@@ -1763,7 +1803,8 @@ function writeFiveStarDecals(savePath, save) {
 
   return {
     backupPath,
-    addedCount: FIVE_STAR_DECAL_IDS.length,
+    databasePath: definition.databasePath,
+    addedCount: definition.ids.length,
     previousStockCount: mutation.previousStockCount,
     currentStockCount: mutation.changedStock.length,
     newTypes: mutation.newTypes,
@@ -1982,6 +2023,8 @@ function parseArguments(argv) {
 }
 
 const MASTER_DATABASE_COMMANDS = new Set([
+  'grant-all-decals',
+  'grant-five-star-all',
   'grant-golden-beasts',
   'collision-30m',
   'ultimate-fighter-5x',
@@ -2049,10 +2092,8 @@ function printStatus(savePath, save) {
   }
   const shop = getBloodniumShopState(save);
   console.log(`블러드늄 상점: 구매 가능 ${formatNumber(shop.available.length)}개 / 구매 완료 ${formatNumber(shop.bought.length)}개`);
-  const premiumStock = getPremiumDecalStock(save);
-  const ownedPremiumIds = new Set(premiumStock.map((entry) => entry.sklid));
-  const ownedFiveStarTypes = FIVE_STAR_DECAL_IDS.filter((id) => ownedPremiumIds.has(id)).length;
-  console.log(`★5 프리미엄 데칼: ${formatNumber(ownedFiveStarTypes)} / ${formatNumber(FIVE_STAR_DECAL_IDS.length)}종 보유`);
+  const decalStock = getDecalStock(save);
+  console.log(`데칼 소유 목록: ${formatNumber(decalStock.length)} / ${formatNumber(STEAM_DECAL_DEFINITION_COUNT)}종`);
   const goldenBeasts = getGoldenBeastSummary(save);
   console.log(`황금동물(보관함): ${formatNumber(goldenBeasts.count)}마리 / ${formatNumber(goldenBeasts.typeCount)}/${formatNumber(GOLDEN_BEAST_IDS.length)}종 보유`);
   console.log(`원본 SHA-256: ${sha256(save.packed)}`);
@@ -2078,7 +2119,7 @@ async function interactive(rl, savePath) {
     console.log('3. 블러드늄을 알려진 한도로 채우기');
     console.log('4. 자원 값을 직접 입력');
     console.log('5. 블러드늄 상점 구매 재고 복구');
-    console.log('6. ★5 프리미엄 데칼 전체 41종 지급');
+    console.log(`6. Steam용 전체 데칼 ${formatNumber(STEAM_DECAL_DEFINITION_COUNT)}종 지급`);
     console.log('7. 현재 세이브 백업하기');
     console.log('8. 최신 백업 복원');
     console.log('9. 충돌버섯·구운 충돌버섯 효과를 30분으로 변경');
@@ -2136,11 +2177,11 @@ async function interactive(rl, savePath) {
       console.log(`현재 구매 가능: ${formatNumber(result.availableCount)}개`);
       console.log(`백업: ${result.backupPath}`);
     } else if (choice === '6') {
-      if (!await confirm(rl, '★5 프리미엄 데칼 41종을 각각 한 장씩 추가할까요?')) continue;
-      const result = writeFiveStarDecals(savePath, save);
-      console.log(`\n완료: ★5 프리미엄 데칼 ${formatNumber(result.addedCount)}장 지급`);
+      if (!await confirm(rl, `Steam용 전체 데칼 ${formatNumber(STEAM_DECAL_DEFINITION_COUNT)}종을 각각 한 장씩 추가할까요?`)) continue;
+      const result = writeAllDecals(savePath, save);
+      console.log(`\n완료: 전체 데칼 ${formatNumber(result.addedCount)}장 지급`);
       console.log(`새 종류: ${formatNumber(result.newTypes)} / 기존 종류 수량 증가: ${formatNumber(result.incrementedTypes)}`);
-      console.log(`프리미엄 데칼 목록: ${formatNumber(result.previousStockCount)} → ${formatNumber(result.currentStockCount)}종`);
+      console.log(`데칼 소유 목록: ${formatNumber(result.previousStockCount)} → ${formatNumber(result.currentStockCount)}종`);
       if (result.removedHistoryCount > 0) console.log(`잘못 추가됐던 뽑기 이력 ${formatNumber(result.removedHistoryCount)}개 정리`);
       console.log(`백업: ${result.backupPath}`);
     } else if (choice === '7') {
@@ -2338,13 +2379,13 @@ async function main() {
       console.log(`백업: ${result.backupPath}`);
       return;
     }
-    if (command === 'grant-five-star-all') {
+    if (command === 'grant-all-decals' || command === 'grant-five-star-all') {
       printStatus(savePath, save);
-      if (!parsed.yes && !await confirm(rl, '★5 프리미엄 데칼 41종을 각각 한 장씩 추가할까요?')) return;
-      const result = writeFiveStarDecals(savePath, save);
-      console.log(`완료: ★5 프리미엄 데칼 ${formatNumber(result.addedCount)}장 지급`);
+      if (!parsed.yes && !await confirm(rl, `Steam용 전체 데칼 ${formatNumber(STEAM_DECAL_DEFINITION_COUNT)}종을 각각 한 장씩 추가할까요?`)) return;
+      const result = writeAllDecals(savePath, save);
+      console.log(`완료: 전체 데칼 ${formatNumber(result.addedCount)}장 지급`);
       console.log(`새 종류: ${formatNumber(result.newTypes)} / 기존 종류 수량 증가: ${formatNumber(result.incrementedTypes)}`);
-      console.log(`프리미엄 데칼 목록: ${formatNumber(result.previousStockCount)} → ${formatNumber(result.currentStockCount)}종`);
+      console.log(`데칼 소유 목록: ${formatNumber(result.previousStockCount)} → ${formatNumber(result.currentStockCount)}종`);
       if (result.removedHistoryCount > 0) console.log(`잘못 추가됐던 뽑기 이력 ${formatNumber(result.removedHistoryCount)}개 정리`);
       console.log(`백업: ${result.backupPath}`);
       return;
@@ -2468,7 +2509,7 @@ async function main() {
       return;
     }
 
-    fail('사용법: node lid-kc.js [status | backup | reset-shop | grant-five-star-all | grant-golden-beasts | collision-30m | ultimate-fighter-5x | kamas-re-max | queen-spades-extreme | equipment-materials-free | equipment-materials-restore [백업] | set [kc|sp|blood] 숫자 | max [kc|sp|blood] | restore] [--save 경로] [--game 설치폴더 | --master DB경로] [--yes]');
+    fail('사용법: node lid-kc.js [status | backup | reset-shop | grant-all-decals | grant-golden-beasts | collision-30m | ultimate-fighter-5x | kamas-re-max | queen-spades-extreme | equipment-materials-free | equipment-materials-restore [백업] | set [kc|sp|blood] 숫자 | max [kc|sp|blood] | restore] [--save 경로] [--game 설치폴더 | --master DB경로] [--yes]');
   } finally {
     if (rl) rl.close();
   }
