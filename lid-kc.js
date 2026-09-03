@@ -704,14 +704,56 @@ function packSave(jsonText, blockCount, trailer) {
   return Buffer.concat(output);
 }
 
+function readWindowsRegistryValue(key, valueName) {
+  if (process.platform !== 'win32') return null;
+  try {
+    const output = childProcess.execFileSync(
+      'reg.exe',
+      ['query', key, '/v', valueName],
+      {
+        encoding: 'utf8',
+        windowsHide: true,
+        stdio: ['ignore', 'pipe', 'ignore'],
+      },
+    );
+    const line = output.split(/\r?\n/).find((entry) =>
+      new RegExp(`^\\s*${valueName}\\s+REG_\\w+\\s+`, 'i').test(entry));
+    return line?.replace(new RegExp(`^\\s*${valueName}\\s+REG_\\w+\\s+`, 'i'), '').trim() || null;
+  } catch {
+    return null;
+  }
+}
+
 function findSteamRoots() {
   const roots = new Set();
+  const registrySteamExecutable = readWindowsRegistryValue(
+    'HKCU\\Software\\Valve\\Steam',
+    'SteamExe',
+  );
   const candidates = [
+    readWindowsRegistryValue('HKCU\\Software\\Valve\\Steam', 'SteamPath'),
+    registrySteamExecutable ? path.dirname(registrySteamExecutable) : null,
+    readWindowsRegistryValue('HKLM\\SOFTWARE\\WOW6432Node\\Valve\\Steam', 'InstallPath'),
+    readWindowsRegistryValue('HKLM\\SOFTWARE\\Valve\\Steam', 'InstallPath'),
     process.env['ProgramFiles(x86)'] && path.join(process.env['ProgramFiles(x86)'], 'Steam'),
     process.env.ProgramFiles && path.join(process.env.ProgramFiles, 'Steam'),
     'C:\\Program Files (x86)\\Steam',
     'C:\\Program Files\\Steam',
   ].filter(Boolean);
+
+  if (process.platform === 'win32') {
+    for (let code = 'C'.charCodeAt(0); code <= 'Z'.charCodeAt(0); code += 1) {
+      const drive = `${String.fromCharCode(code)}:\\`;
+      if (!fs.existsSync(drive)) continue;
+      candidates.push(
+        path.join(drive, 'Steam'),
+        path.join(drive, 'SteamLibrary'),
+        path.join(drive, 'Games', 'Steam'),
+        path.join(drive, 'Program Files (x86)', 'Steam'),
+        path.join(drive, 'Program Files', 'Steam'),
+      );
+    }
+  }
 
   for (const steamRoot of candidates) {
     if (!fs.existsSync(steamRoot)) continue;
@@ -724,6 +766,37 @@ function findSteamRoots() {
     }
   }
   return [...roots];
+}
+
+function listNumericSaveFiles(directory) {
+  if (!fs.existsSync(directory) || !fs.statSync(directory).isDirectory()) return [];
+  return fs.readdirSync(directory)
+    .filter((name) => /^\d+\.sav$/i.test(name))
+    .map((name) => path.join(directory, name));
+}
+
+function resolveManualSaveInput(input) {
+  let enteredPath = String(input ?? '').trim();
+  if ((enteredPath.startsWith('"') && enteredPath.endsWith('"')) ||
+      (enteredPath.startsWith("'") && enteredPath.endsWith("'"))) {
+    enteredPath = enteredPath.slice(1, -1).trim();
+  }
+  if (!enteredPath) return [];
+
+  const resolved = path.resolve(enteredPath);
+  if (!fs.existsSync(resolved)) return [];
+  if (fs.statSync(resolved).isFile()) {
+    return /^\d+\.sav$/i.test(path.basename(resolved)) ? [resolved] : [];
+  }
+
+  const directories = [
+    resolved,
+    path.join(resolved, 'Savedata'),
+    path.join(resolved, 'LET IT DIE', 'Savedata'),
+    path.join(resolved, 'common', 'LET IT DIE', 'Savedata'),
+    path.join(resolved, 'steamapps', 'common', 'LET IT DIE', 'Savedata'),
+  ];
+  return [...new Set(directories.flatMap(listNumericSaveFiles))];
 }
 
 function discoverSaves() {
@@ -1565,9 +1638,19 @@ async function chooseSave(rl, explicitPath) {
     if (!fs.existsSync(explicitPath)) fail(`세이브 파일이 없습니다: ${explicitPath}`);
     return explicitPath;
   }
-  const saves = discoverSaves();
+  let saves = discoverSaves();
   if (saves.length === 0) {
-    fail('Steam LET IT DIE 세이브를 자동으로 찾지 못했습니다. --save 경로를 지정하세요.');
+    if (!rl) {
+      fail('Steam LET IT DIE 세이브를 자동으로 찾지 못했습니다. --save 경로를 지정하세요.');
+    }
+    console.log('\nSteam LET IT DIE 세이브를 자동으로 찾지 못했습니다.');
+    console.log('숫자 이름의 .sav 파일 또는 Savedata/LET IT DIE/SteamLibrary 폴더를 창에 끌어놓아도 됩니다.');
+    const manualInput = await rl.question('세이브 파일 또는 폴더 경로 (Enter=종료): ');
+    if (!manualInput.trim()) fail('사용자가 경로 입력을 취소했습니다.');
+    saves = resolveManualSaveInput(manualInput);
+    if (saves.length === 0) {
+      fail('입력한 위치에서 숫자 이름의 .sav 세이브 파일을 찾지 못했습니다.');
+    }
   }
   if (saves.length === 1 || !rl) return saves[0];
   console.log('\n세이브 선택:');
@@ -1990,8 +2073,16 @@ async function main() {
   }
 }
 
-main().catch((error) => {
-  console.error(`\n오류: ${error.message}`);
-  if (!error.userFacing && process.env.LID_KC_DEBUG === '1') console.error(error.stack);
-  process.exitCode = 1;
-});
+if (require.main === module) {
+  main().catch((error) => {
+    console.error(`\n오류: ${error.message}`);
+    if (!error.userFacing && process.env.LID_KC_DEBUG === '1') console.error(error.stack);
+    process.exitCode = 1;
+  });
+}
+
+module.exports = {
+  discoverSaves,
+  findSteamRoots,
+  resolveManualSaveInput,
+};
