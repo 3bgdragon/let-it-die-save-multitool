@@ -809,12 +809,17 @@ function resolveManualSaveInput(input) {
   return uniquePaths(directories.flatMap(listNumericSaveFiles));
 }
 
+function findGameInstallDirectories() {
+  return uniquePaths(findSteamRoots()
+    .map((root) => path.join(root, 'steamapps', 'common', 'LET IT DIE'))
+    .filter((installDirectory) => fs.existsSync(
+      path.join(installDirectory, 'Binaries', 'Win64', 'BrgGame-Steam.exe'),
+    )));
+}
+
 function discoverSaves() {
   const saves = [];
-  for (const root of findSteamRoots()) {
-    const installDirectory = path.join(root, 'steamapps', 'common', 'LET IT DIE');
-    const executable = path.join(installDirectory, 'Binaries', 'Win64', 'BrgGame-Steam.exe');
-    if (!fs.existsSync(executable)) continue;
+  for (const installDirectory of findGameInstallDirectories()) {
     const saveDirectory = path.join(installDirectory, 'Savedata');
     if (!fs.existsSync(saveDirectory)) continue;
     for (const name of fs.readdirSync(saveDirectory)) {
@@ -861,12 +866,15 @@ function createBackup(savePath, packed) {
 }
 
 function getMasterDatabasePath(savePath) {
-  const installDirectory = path.dirname(path.dirname(savePath));
-  const databasePath = path.join(installDirectory, 'BrgGame', 'Content', 'masters.db');
-  if (!fs.existsSync(databasePath)) {
-    fail(`마스터 DB를 찾지 못했습니다: ${databasePath}`);
-  }
-  return databasePath;
+  const adjacentInstallDirectory = path.dirname(path.dirname(savePath));
+  const candidates = uniquePaths([
+    path.join(adjacentInstallDirectory, 'BrgGame', 'Content', 'masters.db'),
+    ...findGameInstallDirectories().map((installDirectory) =>
+      path.join(installDirectory, 'BrgGame', 'Content', 'masters.db')),
+  ]);
+  const databasePath = candidates.find((candidate) => fs.existsSync(candidate));
+  if (databasePath) return databasePath;
+  fail(`마스터 DB를 찾지 못했습니다. 확인한 위치:\n${candidates.join('\n')}`);
 }
 
 function getKamasResearchDefinition(savePath) {
@@ -2093,6 +2101,8 @@ if (require.main === module) {
 
 module.exports = {
   discoverSaves,
+  findGameInstallDirectories,
   findSteamRoots,
+  getMasterDatabasePath,
   resolveManualSaveInput,
 };
