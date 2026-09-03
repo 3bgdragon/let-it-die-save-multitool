@@ -1,6 +1,6 @@
 # LET IT DIE 세이브 멀티툴
 
-Steam판 LET IT DIE 오프라인 세이브와 로컬 마스터 DB를 안전하게 백업·수정·복원하는 Windows용 멀티툴입니다. 자원 조정, 블러드늄 상점 재고 복구, ★5 프리미엄 데칼 지급, 버섯·데칼 효과 변경, KAMAS RE 연구 완료 및 장비 개발·강화 재료 제거 기능을 제공합니다.
+Steam판 LET IT DIE 오프라인 세이브와 로컬 마스터 DB를 안전하게 백업·수정·복원하는 Windows용 멀티툴입니다. 자원 조정, 블러드늄 상점 재고 복구, ★5 프리미엄 데칼·황금동물 지급, 버섯·데칼 효과 변경, KAMAS RE 연구 완료 및 장비 개발·강화 재료 제거 기능을 제공합니다.
 
 > Windows 전용 · LET IT DIE 오프라인판 5.0.1.0 전용 · Node.js 22.5 이상 필요
 
@@ -13,6 +13,8 @@ Steam판 LET IT DIE 오프라인 세이브와 로컬 마스터 DB를 안전하�
 - JSON 전체를 다시 직렬화하지 않고 선택한 자원의 숫자 토큰 하나만 교체합니다.
 - 블러드늄 상점 재고 복구 시 구매 가능/구매 완료 목록 두 필드만 변경합니다.
 - ★5 데칼 지급 시 실제 프리미엄 데칼 소유 목록에 오프라인 풀의 41종을 각각 한 장씩 추가합니다.
+- 황금동물 지급 시 마스터 DB에 정의된 11종을 각각 한 마리씩 코인 보관함에 추가하고, 동물별 보상 버섯 연결까지 함께 생성합니다.
+- 황금동물 11종을 넣을 빈 보관함 칸이 부족하면 세이브를 수정하지 않고 중단합니다.
 - 충돌버섯과 구운 충돌버섯의 지속시간을 모두 30분으로 변경할 수 있습니다.
 - 버섯 효과 변경 전 `masters.db`를 자동 백업하고 SQLite 무결성을 검사합니다.
 - 궁극 파이터의 귀환 데칼의 모든 기본 능력치 증가를 +20%에서 +100%로 변경할 수 있습니다.
@@ -48,6 +50,7 @@ node .\lid-kc.js status
 node .\lid-kc.js backup
 node .\lid-kc.js reset-shop
 node .\lid-kc.js grant-five-star-all
+node .\lid-kc.js grant-golden-beasts
 node .\lid-kc.js collision-30m
 node .\lid-kc.js ultimate-fighter-5x
 node .\lid-kc.js kamas-re-max

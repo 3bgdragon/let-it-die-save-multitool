@@ -88,6 +88,20 @@ const FIVE_STAR_DECAL_IDS = [
   'SKL_QOH_P',
   'SKL_TOHEAVEN_P',
 ];
+const GOLDEN_BEAST_IDS = [
+  'BST_GFROG',
+  'BST_GSCORPION',
+  'BST_GRAT',
+  'BST_GBASS',
+  'BST_GSNAIL',
+  'BST_GCRAB',
+  'BST_GPILLBUG',
+  'BST_GLIZARD',
+  'BST_GHONEYCOMB',
+  'BST_GTURTLE',
+  'BST_GCASSOWARY',
+];
+const COIN_LOCKER_BEAST_TYPE = 2;
 
 // Levels 1-50 from the original table. Offline version 5.0.1.0 adds levels
 // 51-99; those values are handled by getFacilityCapacity below.
@@ -575,6 +589,177 @@ function replaceFiveStarDecals(save) {
   };
 }
 
+function getBeastStock(save) {
+  const stock = save.data?.beast?.bsts;
+  if (stock && !Array.isArray(stock) && typeof stock === 'object' && Object.keys(stock).length === 0) {
+    return [];
+  }
+  if (!Array.isArray(stock)) fail('세이브에서 동물 소유 목록을 찾지 못했습니다.');
+  for (const entry of stock) {
+    if (!entry || typeof entry !== 'object' || typeof entry.eid !== 'string' || !entry.eid ||
+        typeof entry.owner !== 'string' || typeof entry.bstid !== 'string' ||
+        typeof entry.rwdemsrid !== 'string') {
+      fail('동물 소유 목록의 항목 형식이 올바르지 않습니다.');
+    }
+  }
+  return stock;
+}
+
+function getMushroomStock(save) {
+  const stock = save.data?.mushroom?.msrs;
+  if (!Array.isArray(stock)) fail('세이브에서 버섯 소유 목록을 찾지 못했습니다.');
+  for (const entry of stock) {
+    if (!entry || typeof entry !== 'object' || typeof entry.eid !== 'string' || !entry.eid ||
+        typeof entry.owner !== 'string' || typeof entry.msrid !== 'string') {
+      fail('버섯 소유 목록의 항목 형식이 올바르지 않습니다.');
+    }
+  }
+  return stock;
+}
+
+function getCoinLockerSlots(save) {
+  const slots = save.data?.soul?.cl;
+  if (!Array.isArray(slots)) fail('세이브에서 코인 보관함 슬롯 목록을 찾지 못했습니다.');
+  const slotNumbers = new Set();
+  for (const entry of slots) {
+    if (!entry || typeof entry !== 'object' || !Number.isSafeInteger(entry.slot) || entry.slot < 0 ||
+        !Number.isSafeInteger(entry.type) || typeof entry.eid !== 'string') {
+      fail('코인 보관함 슬롯 항목의 형식이 올바르지 않습니다.');
+    }
+    if (slotNumbers.has(entry.slot)) fail(`코인 보관함 슬롯 ${entry.slot}이 중복되어 있습니다.`);
+    slotNumbers.add(entry.slot);
+  }
+  return slots;
+}
+
+function getGoldenBeastSummary(save) {
+  const goldenIds = new Set(GOLDEN_BEAST_IDS);
+  const stored = getBeastStock(save).filter(
+    (entry) => entry.owner === 'COIN_LOCKER' && goldenIds.has(entry.bstid),
+  );
+  return {
+    count: stored.length,
+    typeCount: new Set(stored.map((entry) => entry.bstid)).size,
+  };
+}
+
+function replaceGoldenBeasts(save, definitions) {
+  if (GOLDEN_BEAST_IDS.length !== 11 || new Set(GOLDEN_BEAST_IDS).size !== 11) {
+    fail('내장된 황금동물 목록 검증에 실패했습니다.');
+  }
+  if (!Array.isArray(definitions) || definitions.length !== GOLDEN_BEAST_IDS.length) {
+    fail('황금동물 마스터 정의가 예상과 다릅니다.');
+  }
+
+  const definitionById = new Map(definitions.map((entry) => [entry.id, entry]));
+  for (const id of GOLDEN_BEAST_IDS) {
+    const definition = definitionById.get(id);
+    if (!definition || typeof definition.rwdmsrid !== 'string' || !definition.rwdmsrid) {
+      fail(`황금동물 ${id}의 보상 버섯 정의가 올바르지 않습니다.`);
+    }
+  }
+
+  const beasts = getBeastStock(save);
+  const mushrooms = getMushroomStock(save);
+  const slots = getCoinLockerSlots(save);
+  const emptySlots = slots.filter((entry) => entry.type === -1 && entry.eid === '');
+  if (emptySlots.length < GOLDEN_BEAST_IDS.length) {
+    fail(`코인 보관함의 빈칸이 ${emptySlots.length}개뿐입니다. 황금동물 지급에는 11칸이 필요합니다.`);
+  }
+
+  const usedEntityIds = new Set([
+    ...beasts.map((entry) => entry.eid),
+    ...mushrooms.map((entry) => entry.eid),
+  ]);
+  function newEntityId() {
+    let id;
+    do id = crypto.randomUUID(); while (usedEntityIds.has(id));
+    usedEntityIds.add(id);
+    return id;
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+  const grants = GOLDEN_BEAST_IDS.map((beastId, index) => {
+    const beastEntityId = newEntityId();
+    const rewardEntityId = newEntityId();
+    const rewardMushroomId = definitionById.get(beastId).rwdmsrid;
+    return {
+      slot: emptySlots[index].slot,
+      beastId,
+      beastEntityId,
+      rewardEntityId,
+      rewardMushroomId,
+    };
+  });
+
+  const changedBeasts = [...beasts, ...grants.map((grant) => ({
+    eid: grant.beastEntityId,
+    gettime: now,
+    owner: 'COIN_LOCKER',
+    bstid: grant.beastId,
+    rwdemsrid: grant.rewardEntityId,
+    state: 0,
+    lvl: 1,
+    posonce: 0,
+  }))];
+  const changedMushrooms = [...mushrooms, ...grants.map((grant) => ({
+    eid: grant.rewardEntityId,
+    gettime: now,
+    owner: 'BEAST',
+    msrid: grant.rewardMushroomId,
+    eefcid: '',
+    tefcid: '',
+    posonce: 0,
+    state: 0,
+  }))];
+  const slotAssignments = new Map(grants.map((grant) => [grant.slot, grant.beastEntityId]));
+  const changedSlots = slots.map((entry) => slotAssignments.has(entry.slot)
+    ? { ...entry, type: COIN_LOCKER_BEAST_TYPE, eid: slotAssignments.get(entry.slot) }
+    : { ...entry });
+
+  let changedText = save.jsonText;
+  for (const [jsonPath, value] of [
+    [['beast', 'bsts'], changedBeasts],
+    [['mushroom', 'msrs'], changedMushrooms],
+    [['soul', 'cl'], changedSlots],
+  ]) {
+    const field = findJsonPath(changedText, jsonPath);
+    changedText = changedText.slice(0, field.valueStart) +
+      JSON.stringify(value) + changedText.slice(field.valueEnd);
+  }
+
+  let changedData;
+  try {
+    changedData = JSON.parse(changedText);
+  } catch (error) {
+    fail(`수정된 세이브 JSON 검증에 실패했습니다: ${error.message}`);
+  }
+  const changedSave = { data: changedData };
+  const verifiedBeasts = new Map(getBeastStock(changedSave).map((entry) => [entry.eid, entry]));
+  const verifiedMushrooms = new Map(getMushroomStock(changedSave).map((entry) => [entry.eid, entry]));
+  const verifiedSlots = new Map(getCoinLockerSlots(changedSave).map((entry) => [entry.slot, entry]));
+  for (const grant of grants) {
+    const beast = verifiedBeasts.get(grant.beastEntityId);
+    const mushroom = verifiedMushrooms.get(grant.rewardEntityId);
+    const slot = verifiedSlots.get(grant.slot);
+    if (!beast || beast.owner !== 'COIN_LOCKER' || beast.bstid !== grant.beastId ||
+        beast.rwdemsrid !== grant.rewardEntityId || !mushroom || mushroom.owner !== 'BEAST' ||
+        mushroom.msrid !== grant.rewardMushroomId || !slot ||
+        slot.type !== COIN_LOCKER_BEAST_TYPE || slot.eid !== grant.beastEntityId) {
+      fail(`수정된 황금동물 ${grant.beastId} 데이터 검증에 실패했습니다.`);
+    }
+  }
+
+  return {
+    changedText,
+    grants,
+    previousBeastCount: beasts.length,
+    currentBeastCount: changedBeasts.length,
+    previousEmptySlots: emptySlots.length,
+    currentEmptySlots: emptySlots.length - grants.length,
+  };
+}
+
 function getKamasResearchState(save, maximumInternalLevel, limitBreakStart) {
   const research = save.data?.soul?.partresearch?.user;
   if (!Array.isArray(research)) {
@@ -917,6 +1102,36 @@ function getMasterDatabasePath(savePath) {
   const databasePath = findMasterDatabasePath(savePath);
   if (databasePath) return databasePath;
   fail('마스터 DB를 찾지 못했습니다. LET IT DIE 설치 폴더 또는 masters.db 경로를 입력하거나 --game/--master 옵션으로 지정하세요.');
+}
+
+function getGoldenBeastDefinitions(savePath) {
+  const databasePath = getMasterDatabasePath(savePath);
+  let database;
+  try {
+    database = new DatabaseSync(databasePath, { readOnly: true });
+    const placeholders = GOLDEN_BEAST_IDS.map(() => '?').join(',');
+    const rows = database.prepare(
+      `SELECT beast.id, beast.idx, beast.rwdmsrid, reward.id AS reward_definition_id
+       FROM master_beast AS beast
+       LEFT JOIN master_mushroom AS reward ON reward.id = beast.rwdmsrid
+       WHERE beast.id IN (${placeholders})
+       ORDER BY beast.idx`,
+    ).all(...GOLDEN_BEAST_IDS);
+    if (rows.length !== GOLDEN_BEAST_IDS.length) {
+      fail('마스터 DB의 황금동물 11종 정의가 예상과 달라 안전하게 중단했습니다.');
+    }
+    for (let index = 0; index < GOLDEN_BEAST_IDS.length; index += 1) {
+      const row = rows[index];
+      if (row.id !== GOLDEN_BEAST_IDS[index] || row.idx !== index + 12 ||
+          typeof row.rwdmsrid !== 'string' || !row.rwdmsrid ||
+          row.reward_definition_id !== row.rwdmsrid) {
+        fail(`마스터 DB의 황금동물 ${GOLDEN_BEAST_IDS[index]} 정의가 예상과 달라 안전하게 중단했습니다.`);
+      }
+    }
+    return { databasePath, rows };
+  } finally {
+    if (database) database.close();
+  }
 }
 
 function getKamasResearchDefinition(savePath) {
@@ -1558,6 +1773,73 @@ function writeFiveStarDecals(savePath, save) {
   };
 }
 
+function writeGoldenBeasts(savePath, save) {
+  if (isGameRunning()) {
+    fail('LET IT DIE가 실행 중입니다. 게임을 완전히 종료한 뒤 다시 실행하세요.');
+  }
+  if (!fs.readFileSync(savePath).equals(save.packed)) {
+    fail('세이브를 읽은 뒤 파일이 변경됐습니다. 게임을 종료하고 다시 시도하세요.');
+  }
+
+  const definition = getGoldenBeastDefinitions(savePath);
+  const mutation = replaceGoldenBeasts(save, definition.rows);
+  const packed = packSave(mutation.changedText, save.blockCount, save.trailer);
+  const tempPath = `${savePath}.golden-beast-edit.tmp`;
+  const rollbackPath = `${savePath}.golden-beast-edit.rollback`;
+  if (fs.existsSync(tempPath) || fs.existsSync(rollbackPath)) {
+    fail('이전 황금동물 수정 작업의 임시 파일이 남아 있습니다. 수동 확인이 필요합니다.');
+  }
+
+  const backupPath = createBackup(savePath, save.packed);
+  fs.writeFileSync(tempPath, packed, { flag: 'wx' });
+  try {
+    const check = readSave(tempPath);
+    const checkBeasts = new Map(getBeastStock(check).map((entry) => [entry.eid, entry]));
+    const checkMushrooms = new Map(getMushroomStock(check).map((entry) => [entry.eid, entry]));
+    const checkSlots = new Map(getCoinLockerSlots(check).map((entry) => [entry.slot, entry]));
+    for (const grant of mutation.grants) {
+      const beast = checkBeasts.get(grant.beastEntityId);
+      const mushroom = checkMushrooms.get(grant.rewardEntityId);
+      const slot = checkSlots.get(grant.slot);
+      if (!beast || beast.owner !== 'COIN_LOCKER' || beast.bstid !== grant.beastId ||
+          beast.rwdemsrid !== grant.rewardEntityId || !mushroom || mushroom.owner !== 'BEAST' ||
+          mushroom.msrid !== grant.rewardMushroomId || !slot ||
+          slot.type !== COIN_LOCKER_BEAST_TYPE || slot.eid !== grant.beastEntityId) {
+        fail(`임시 세이브의 황금동물 ${grant.beastId} 검증에 실패했습니다.`);
+      }
+    }
+    if (check.jsonText !== mutation.changedText) {
+      fail('임시 세이브에서 예상하지 않은 데이터 변경이 발견됐습니다.');
+    }
+    if (!fs.readFileSync(savePath).equals(save.packed)) {
+      fail('수정 준비 중 원본 세이브가 변경됐습니다. 안전하게 중단했습니다.');
+    }
+
+    fs.renameSync(savePath, rollbackPath);
+    try {
+      fs.renameSync(tempPath, savePath);
+    } catch (error) {
+      fs.renameSync(rollbackPath, savePath);
+      throw error;
+    }
+    fs.unlinkSync(rollbackPath);
+  } catch (error) {
+    if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
+    throw error;
+  }
+
+  return {
+    backupPath,
+    databasePath: definition.databasePath,
+    addedCount: mutation.grants.length,
+    previousBeastCount: mutation.previousBeastCount,
+    currentBeastCount: mutation.currentBeastCount,
+    previousEmptySlots: mutation.previousEmptySlots,
+    currentEmptySlots: mutation.currentEmptySlots,
+    packedHash: sha256(packed),
+  };
+}
+
 function writeKamasResearchMaximum(savePath, save) {
   if (isGameRunning()) {
     fail('LET IT DIE가 실행 중입니다. 게임을 완전히 종료한 뒤 다시 실행하세요.');
@@ -1700,6 +1982,7 @@ function parseArguments(argv) {
 }
 
 const MASTER_DATABASE_COMMANDS = new Set([
+  'grant-golden-beasts',
   'collision-30m',
   'ultimate-fighter-5x',
   'kamas-re-max',
@@ -1770,6 +2053,8 @@ function printStatus(savePath, save) {
   const ownedPremiumIds = new Set(premiumStock.map((entry) => entry.sklid));
   const ownedFiveStarTypes = FIVE_STAR_DECAL_IDS.filter((id) => ownedPremiumIds.has(id)).length;
   console.log(`★5 프리미엄 데칼: ${formatNumber(ownedFiveStarTypes)} / ${formatNumber(FIVE_STAR_DECAL_IDS.length)}종 보유`);
+  const goldenBeasts = getGoldenBeastSummary(save);
+  console.log(`황금동물(보관함): ${formatNumber(goldenBeasts.count)}마리 / ${formatNumber(goldenBeasts.typeCount)}/${formatNumber(GOLDEN_BEAST_IDS.length)}종 보유`);
   console.log(`원본 SHA-256: ${sha256(save.packed)}`);
 }
 
@@ -1802,6 +2087,7 @@ async function interactive(rl, savePath) {
     console.log('12. 스페이드 여왕 공격력을 극단적으로 강화');
     console.log('13. 모든 장비 개발·강화 재료 비용을 0으로 변경');
     console.log('14. 장비 개발·강화 재료 비용을 전용 백업에서 복원');
+    console.log('15. 황금동물 전체 11종을 보관함에 지급');
     console.log('0. 종료');
     const choice = (await rl.question('선택: ')).trim();
 
@@ -1967,6 +2253,13 @@ async function interactive(rl, savePath) {
       const result = restoreEquipmentMaterials(savePath, sourcePath);
       console.log(`\n복원 완료: 장비 재료 비용 ${formatNumber(result.nonZeroRows)}종`);
       console.log(`복원 전 안전 백업: ${result.safetyBackup}`);
+    } else if (choice === '15') {
+      if (!await confirm(rl, '황금동물 11종을 각각 한 마리씩 코인 보관함에 추가할까요?')) continue;
+      const result = writeGoldenBeasts(savePath, save);
+      console.log(`\n완료: 황금동물 ${formatNumber(result.addedCount)}마리 지급`);
+      console.log(`동물 목록: ${formatNumber(result.previousBeastCount)} → ${formatNumber(result.currentBeastCount)}마리`);
+      console.log(`보관함 빈칸: ${formatNumber(result.previousEmptySlots)} → ${formatNumber(result.currentEmptySlots)}개`);
+      console.log(`세이브 백업: ${result.backupPath}`);
     } else {
       console.log('\n잘못된 선택입니다.');
     }
@@ -2054,6 +2347,16 @@ async function main() {
       console.log(`프리미엄 데칼 목록: ${formatNumber(result.previousStockCount)} → ${formatNumber(result.currentStockCount)}종`);
       if (result.removedHistoryCount > 0) console.log(`잘못 추가됐던 뽑기 이력 ${formatNumber(result.removedHistoryCount)}개 정리`);
       console.log(`백업: ${result.backupPath}`);
+      return;
+    }
+    if (command === 'grant-golden-beasts') {
+      printStatus(savePath, save);
+      if (!parsed.yes && !await confirm(rl, '황금동물 11종을 각각 한 마리씩 코인 보관함에 추가할까요?')) return;
+      const result = writeGoldenBeasts(savePath, save);
+      console.log(`완료: 황금동물 ${formatNumber(result.addedCount)}마리 지급`);
+      console.log(`동물 목록: ${formatNumber(result.previousBeastCount)} → ${formatNumber(result.currentBeastCount)}마리`);
+      console.log(`보관함 빈칸: ${formatNumber(result.previousEmptySlots)} → ${formatNumber(result.currentEmptySlots)}개`);
+      console.log(`세이브 백업: ${result.backupPath}`);
       return;
     }
     if (command === 'collision-30m') {
@@ -2165,7 +2468,7 @@ async function main() {
       return;
     }
 
-    fail('사용법: node lid-kc.js [status | backup | reset-shop | grant-five-star-all | collision-30m | ultimate-fighter-5x | kamas-re-max | queen-spades-extreme | equipment-materials-free | equipment-materials-restore [백업] | set [kc|sp|blood] 숫자 | max [kc|sp|blood] | restore] [--save 경로] [--game 설치폴더 | --master DB경로] [--yes]');
+    fail('사용법: node lid-kc.js [status | backup | reset-shop | grant-five-star-all | grant-golden-beasts | collision-30m | ultimate-fighter-5x | kamas-re-max | queen-spades-extreme | equipment-materials-free | equipment-materials-restore [백업] | set [kc|sp|blood] 숫자 | max [kc|sp|blood] | restore] [--save 경로] [--game 설치폴더 | --master DB경로] [--yes]');
   } finally {
     if (rl) rl.close();
   }
