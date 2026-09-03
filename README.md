@@ -1,6 +1,6 @@
 # LET IT DIE 세이브 멀티툴
 
-Steam판 LET IT DIE 오프라인 세이브와 로컬 마스터 DB를 안전하게 백업·수정·복원하는 Windows용 멀티툴입니다. 자원 조정, 블러드늄 상점 재고 복구, 전체 데칼·황금동물 지급, 기간 한정 레시피 해금, 버섯·데칼 효과 변경, KAMAS RE 연구 완료 및 장비 개발·강화 재료 제거 기능을 제공합니다.
+Steam판 LET IT DIE 오프라인 세이브와 로컬 마스터 DB를 안전하게 백업·수정·복원하는 Windows용 멀티툴입니다. 자원 조정, 블러드늄 상점 재고 복구, 전체 데칼·황금동물 지급, 기간 한정 또는 모든 장비 레시피 해금, 버섯·데칼 효과 변경, KAMAS RE 연구 완료 및 장비 개발·강화 재료 제거 기능을 제공합니다.
 
 > Windows 전용 · LET IT DIE 오프라인판 5.0.1.0 전용 · Node.js 22.5 이상 필요
 
@@ -17,6 +17,8 @@ Steam판 LET IT DIE 오프라인 세이브와 로컬 마스터 DB를 안전하�
 - 황금동물 11종을 넣을 빈 보관함 칸이 부족하면 세이브를 수정하지 않고 중단합니다.
 - 과거 이벤트·콜라보·시즌 보상으로 배포된 Steam용 기간 한정 레시피 25종을 설계도 습득 상태로 해금합니다. 이미 가진 레시피는 중복 추가하지 않습니다.
 - 기간 한정 레시피는 설치된 `masters.db`에서 Steam 호환 여부와 R&D 정의를 다시 검증합니다. 콘솔 전용 데이터와 R&D 정의가 없는 장비는 제외합니다.
+- 별도 옵션으로 `masters.db`의 Steam용 R&D 계보 시작점 356종을 모두 설계도 습득 상태로 해금할 수 있습니다. 후속 강화 단계는 레시피로 잘못 추가하지 않습니다.
+- 모든 레시피 해금도 기존 보유 항목은 유지하고 없는 항목만 추가하며, 콘솔 전용·비활성 정의는 제외합니다.
 - 충돌버섯과 구운 충돌버섯의 지속시간을 모두 30분으로 변경할 수 있습니다.
 - 버섯 효과 변경 전 `masters.db`를 자동 백업하고 SQLite 무결성을 검사합니다.
 - 궁극 파이터의 귀환 데칼의 모든 기본 능력치 증가를 +20%에서 +100%로 변경할 수 있습니다.
@@ -54,6 +56,7 @@ node .\lid-kc.js reset-shop
 node .\lid-kc.js grant-all-decals
 node .\lid-kc.js grant-golden-beasts
 node .\lid-kc.js grant-limited-recipes
+node .\lid-kc.js grant-all-recipes
 node .\lid-kc.js collision-30m
 node .\lid-kc.js ultimate-fighter-5x
 node .\lid-kc.js kamas-re-max

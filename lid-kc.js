@@ -137,6 +137,7 @@ const LIMITED_RECIPE_IDS = [
   'PT_ARM_WP002_0N1', // No Knife
 ];
 const LIMITED_RECIPE_DEFINITION_COUNT = 25;
+const ALL_RECIPE_DEFINITION_COUNT = 356;
 
 // Levels 1-50 from the original table. Offline version 5.0.1.0 adds levels
 // 51-99; those values are handled by getFacilityCapacity below.
@@ -684,56 +685,64 @@ function getGoldenBeastSummary(save) {
   };
 }
 
-function getLimitedRecipeState(save) {
-  if (LIMITED_RECIPE_IDS.length !== LIMITED_RECIPE_DEFINITION_COUNT ||
-      new Set(LIMITED_RECIPE_IDS).size !== LIMITED_RECIPE_DEFINITION_COUNT) {
-    fail('내장된 기간 한정 레시피 목록 검증에 실패했습니다.');
+function getRecipeUnlockState(save, recipeIds, label) {
+  if (!Array.isArray(recipeIds) || recipeIds.length === 0 ||
+      new Set(recipeIds).size !== recipeIds.length ||
+      recipeIds.some((id) => typeof id !== 'string' || !id)) {
+    fail(`${label} 목록 검증에 실패했습니다.`);
   }
   const research = save.data?.soul?.partresearch?.user;
   if (!Array.isArray(research)) {
     fail('세이브에서 장비 연구 목록을 찾지 못했습니다.');
   }
 
-  const targetIds = new Set(LIMITED_RECIPE_IDS);
-  const levelsById = new Map(LIMITED_RECIPE_IDS.map((id) => [id, new Set()]));
+  const targetIds = new Set(recipeIds);
+  const levelsById = new Map(recipeIds.map((id) => [id, new Set()]));
   for (const entry of research) {
     if (!targetIds.has(entry?.ptid)) continue;
     if (!Number.isSafeInteger(entry.lvl) || entry.lvl < 1 ||
         typeof entry.research_type !== 'string' || typeof entry.receive_type !== 'string' ||
-        ![0, 1].includes(entry.is_announced) || ![0, 1].includes(entry.is_checked) ||
+        ![0, 1].includes(entry.is_announced) || ![0, 1, 3].includes(entry.is_checked) ||
         typeof entry.before_ptid !== 'string' || !Number.isSafeInteger(entry.before_lvl)) {
-      fail(`기간 한정 레시피 ${entry.ptid} 연구 항목의 형식이 예상과 다릅니다.`);
+      fail(`${label} ${entry.ptid} 연구 항목의 형식이 예상과 다릅니다.`);
     }
     const levels = levelsById.get(entry.ptid);
     if (levels.has(entry.lvl)) {
-      fail(`기간 한정 레시피 ${entry.ptid}의 연구 레벨 ${entry.lvl}이 중복돼 있습니다.`);
+      fail(`${label} ${entry.ptid}의 연구 레벨 ${entry.lvl}이 중복돼 있습니다.`);
     }
     levels.add(entry.lvl);
   }
 
   const ownedIds = [];
   const missingIds = [];
-  for (const id of LIMITED_RECIPE_IDS) {
+  for (const id of recipeIds) {
     const levels = levelsById.get(id);
     if (levels.size > 0 && !levels.has(1)) {
-      fail(`기간 한정 레시피 ${id}의 최초 연구 레벨이 누락돼 있어 안전하게 중단했습니다.`);
+      fail(`${label} ${id}의 최초 연구 레벨이 누락돼 있어 안전하게 중단했습니다.`);
     }
     (levels.has(1) ? ownedIds : missingIds).push(id);
   }
   return { research, ownedIds, missingIds };
 }
 
-function replaceLimitedRecipes(save, definitions) {
-  if (!Array.isArray(definitions) ||
-      definitions.length !== LIMITED_RECIPE_DEFINITION_COUNT) {
-    fail('기간 한정 레시피 마스터 정의가 예상과 다릅니다.');
+function getLimitedRecipeState(save) {
+  if (LIMITED_RECIPE_IDS.length !== LIMITED_RECIPE_DEFINITION_COUNT) {
+    fail('내장된 기간 한정 레시피 수가 예상과 다릅니다.');
+  }
+  return getRecipeUnlockState(save, LIMITED_RECIPE_IDS, '기간 한정 레시피');
+}
+
+function replaceRecipeUnlocks(save, definitions, label) {
+  if (!Array.isArray(definitions) || definitions.length === 0) {
+    fail(`${label} 마스터 정의가 예상과 다릅니다.`);
   }
   const definitionIds = definitions.map((entry) => entry.id);
-  if (JSON.stringify(definitionIds) !== JSON.stringify(LIMITED_RECIPE_IDS)) {
-    fail('기간 한정 레시피 마스터 정의 순서가 예상과 다릅니다.');
+  if (new Set(definitionIds).size !== definitionIds.length ||
+      definitionIds.some((id) => typeof id !== 'string' || !id)) {
+    fail(`${label} 마스터 정의 ID가 예상과 다릅니다.`);
   }
 
-  const state = getLimitedRecipeState(save);
+  const state = getRecipeUnlockState(save, definitionIds, label);
   if (state.missingIds.length === 0) {
     return { changedText: save.jsonText, state, addedIds: [], changedResearch: state.research };
   }
@@ -766,14 +775,14 @@ function replaceLimitedRecipes(save, definitions) {
   try {
     changedData = JSON.parse(changedText);
   } catch (error) {
-    fail(`수정된 기간 한정 레시피 데이터를 읽을 수 없습니다: ${error.message}`);
+    fail(`수정된 ${label} 데이터를 읽을 수 없습니다: ${error.message}`);
   }
-  const verifiedState = getLimitedRecipeState({ data: changedData });
+  const verifiedState = getRecipeUnlockState({ data: changedData }, definitionIds, label);
   if (verifiedState.missingIds.length !== 0 ||
       verifiedState.research.length !== state.research.length + state.missingIds.length ||
       JSON.stringify(verifiedState.research.slice(0, state.research.length)) !==
         JSON.stringify(state.research)) {
-    fail('수정된 기간 한정 레시피 데이터 검증에 실패했습니다.');
+    fail(`수정된 ${label} 데이터 검증에 실패했습니다.`);
   }
   for (let index = 0; index < state.missingIds.length; index += 1) {
     const entry = verifiedState.research[state.research.length + index];
@@ -781,7 +790,7 @@ function replaceLimitedRecipes(save, definitions) {
         entry.research_type !== 'MAP' || entry.receive_type !== 'UNKNOWN' ||
         entry.is_announced !== 0 || entry.is_checked !== 1 ||
         entry.before_ptid !== '' || entry.before_lvl !== 0) {
-      fail(`수정된 기간 한정 레시피 ${state.missingIds[index]} 검증에 실패했습니다.`);
+      fail(`수정된 ${label} ${state.missingIds[index]} 검증에 실패했습니다.`);
     }
   }
 
@@ -792,6 +801,22 @@ function replaceLimitedRecipes(save, definitions) {
     changedResearch,
     verifiedState,
   };
+}
+
+function replaceLimitedRecipes(save, definitions) {
+  if (!Array.isArray(definitions) ||
+      definitions.length !== LIMITED_RECIPE_DEFINITION_COUNT ||
+      JSON.stringify(definitions.map((entry) => entry.id)) !== JSON.stringify(LIMITED_RECIPE_IDS)) {
+    fail('기간 한정 레시피 마스터 정의 순서가 예상과 다릅니다.');
+  }
+  return replaceRecipeUnlocks(save, definitions, '기간 한정 레시피');
+}
+
+function replaceAllRecipes(save, definitions) {
+  if (!Array.isArray(definitions) || definitions.length !== ALL_RECIPE_DEFINITION_COUNT) {
+    fail('Steam용 전체 레시피 마스터 정의가 예상과 다릅니다.');
+  }
+  return replaceRecipeUnlocks(save, definitions, 'Steam용 전체 레시피');
 }
 
 function replaceGoldenBeasts(save, definitions) {
@@ -1347,6 +1372,45 @@ function getLimitedRecipeDefinitions(savePath) {
       }
     }
     return { databasePath, rows: orderedRows, ids: [...LIMITED_RECIPE_IDS] };
+  } finally {
+    if (database) database.close();
+  }
+}
+
+function getAllRecipeDefinitions(savePath) {
+  const databasePath = getMasterDatabasePath(savePath);
+  let database;
+  try {
+    database = new DatabaseSync(databasePath, { readOnly: true });
+    const rows = database.prepare(
+      `SELECT part.id, part.name, part.type, part.platform, part.sort_no,
+              research.is_initial, research.is_open, text.txt AS display_name
+       FROM master_part AS part
+       INNER JOIN master_part_research AS research ON research.ptid = part.id
+       LEFT JOIN master_part AS parent
+         ON parent.platform = part.platform AND parent.nextptid = part.id
+       LEFT JOIN master_text AS text
+         ON text.sct = substr(part.name, 1, instr(part.name, '.') - 1)
+        AND text.id = substr(part.name, instr(part.name, '.') + 1)
+        AND text.lang = 'int' AND text.snd = ''
+       WHERE part.platform = 0 AND research.is_open = 1 AND parent.id IS NULL
+       ORDER BY part.sort_no, part.id`,
+    ).all();
+    if (rows.length !== ALL_RECIPE_DEFINITION_COUNT ||
+        new Set(rows.map((row) => row.id)).size !== ALL_RECIPE_DEFINITION_COUNT) {
+      fail(`마스터 DB의 Steam용 전체 레시피 ${ALL_RECIPE_DEFINITION_COUNT}종 정의가 예상과 달라 안전하게 중단했습니다.`);
+    }
+    for (const row of rows) {
+      if (typeof row.id !== 'string' || !row.id ||
+          typeof row.name !== 'string' || !row.name.includes('.') ||
+          !['PTTP_ARM', 'PTTP_HEAD', 'PTTP_BODY', 'PTTP_LEGS'].includes(row.type) ||
+          row.platform !== 0 || ![0, 1].includes(row.is_initial) || row.is_open !== 1 ||
+          !Number.isSafeInteger(row.sort_no) ||
+          typeof row.display_name !== 'string' || !row.display_name) {
+        fail(`마스터 DB의 전체 레시피 ${row?.id ?? '(없음)'} 정의가 예상과 달라 안전하게 중단했습니다.`);
+      }
+    }
+    return { databasePath, rows, ids: rows.map((row) => row.id) };
   } finally {
     if (database) database.close();
   }
@@ -2132,6 +2196,75 @@ function writeLimitedRecipes(savePath, save) {
   };
 }
 
+function writeAllRecipes(savePath, save) {
+  if (isGameRunning()) {
+    fail('LET IT DIE가 실행 중입니다. 게임을 완전히 종료한 뒤 다시 실행하세요.');
+  }
+  if (!fs.readFileSync(savePath).equals(save.packed)) {
+    fail('세이브를 읽은 뒤 파일이 변경됐습니다. 게임을 종료하고 다시 시도하세요.');
+  }
+
+  const definition = getAllRecipeDefinitions(savePath);
+  const mutation = replaceAllRecipes(save, definition.rows);
+  if (mutation.addedIds.length === 0) {
+    return {
+      changed: false,
+      databasePath: definition.databasePath,
+      addedCount: 0,
+      previousOwnedCount: mutation.state.ownedIds.length,
+      currentOwnedCount: mutation.state.ownedIds.length,
+      backupPath: undefined,
+    };
+  }
+
+  const packed = packSave(mutation.changedText, save.blockCount, save.trailer);
+  const tempPath = `${savePath}.all-recipe-edit.tmp`;
+  const rollbackPath = `${savePath}.all-recipe-edit.rollback`;
+  if (fs.existsSync(tempPath) || fs.existsSync(rollbackPath)) {
+    fail('이전 전체 레시피 수정 작업의 임시 파일이 남아 있습니다. 수동 확인이 필요합니다.');
+  }
+
+  const backupPath = createBackup(savePath, save.packed);
+  fs.writeFileSync(tempPath, packed, { flag: 'wx' });
+  try {
+    const check = readSave(tempPath);
+    const checkState = getRecipeUnlockState(check, definition.ids, 'Steam용 전체 레시피');
+    if (checkState.missingIds.length !== 0 ||
+        checkState.research.length !== mutation.changedResearch.length ||
+        JSON.stringify(checkState.research) !== JSON.stringify(mutation.changedResearch)) {
+      fail('임시 세이브의 전체 레시피 검증에 실패했습니다.');
+    }
+    if (check.jsonText !== mutation.changedText) {
+      fail('임시 세이브에서 예상하지 않은 데이터 변경이 발견됐습니다.');
+    }
+    if (!fs.readFileSync(savePath).equals(save.packed)) {
+      fail('수정 준비 중 원본 세이브가 변경됐습니다. 안전하게 중단했습니다.');
+    }
+
+    fs.renameSync(savePath, rollbackPath);
+    try {
+      fs.renameSync(tempPath, savePath);
+    } catch (error) {
+      fs.renameSync(rollbackPath, savePath);
+      throw error;
+    }
+    fs.unlinkSync(rollbackPath);
+  } catch (error) {
+    if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
+    throw error;
+  }
+
+  return {
+    changed: true,
+    backupPath,
+    databasePath: definition.databasePath,
+    addedCount: mutation.addedIds.length,
+    previousOwnedCount: mutation.state.ownedIds.length,
+    currentOwnedCount: ALL_RECIPE_DEFINITION_COUNT,
+    packedHash: sha256(packed),
+  };
+}
+
 function writeKamasResearchMaximum(savePath, save) {
   if (isGameRunning()) {
     fail('LET IT DIE가 실행 중입니다. 게임을 완전히 종료한 뒤 다시 실행하세요.');
@@ -2278,6 +2411,7 @@ const MASTER_DATABASE_COMMANDS = new Set([
   'grant-five-star-all',
   'grant-golden-beasts',
   'grant-limited-recipes',
+  'grant-all-recipes',
   'collision-30m',
   'ultimate-fighter-5x',
   'kamas-re-max',
@@ -2384,6 +2518,7 @@ async function interactive(rl, savePath) {
     console.log('14. 장비 개발·강화 재료 비용을 전용 백업에서 복원');
     console.log('15. 황금동물 전체 11종을 보관함에 지급');
     console.log(`16. Steam용 기간 한정 레시피 전체 ${formatNumber(LIMITED_RECIPE_DEFINITION_COUNT)}종 해금`);
+    console.log(`17. Steam용 모든 레시피 전체 ${formatNumber(ALL_RECIPE_DEFINITION_COUNT)}종 해금`);
     console.log('0. 종료');
     const choice = (await rl.question('선택: ')).trim();
 
@@ -2568,6 +2703,19 @@ async function interactive(rl, savePath) {
       console.log(`\n완료: 기간 한정 레시피 ${formatNumber(result.addedCount)}종 추가`);
       console.log(`해금 목록: ${formatNumber(result.previousOwnedCount)} → ${formatNumber(result.currentOwnedCount)}종`);
       console.log(`세이브 백업: ${result.backupPath}`);
+    } else if (choice === '17') {
+      const definition = getAllRecipeDefinitions(savePath);
+      const state = getRecipeUnlockState(save, definition.ids, 'Steam용 전체 레시피');
+      console.log(`\n현재 해금: ${formatNumber(state.ownedIds.length)}/${formatNumber(ALL_RECIPE_DEFINITION_COUNT)}종`);
+      if (state.missingIds.length === 0) {
+        console.log('Steam용 모든 레시피가 이미 해금돼 있습니다.');
+        continue;
+      }
+      if (!await confirm(rl, `없는 레시피 ${formatNumber(state.missingIds.length)}종을 설계도 습득 상태로 추가할까요?`)) continue;
+      const result = writeAllRecipes(savePath, save);
+      console.log(`\n완료: 전체 레시피 ${formatNumber(result.addedCount)}종 추가`);
+      console.log(`해금 목록: ${formatNumber(result.previousOwnedCount)} → ${formatNumber(result.currentOwnedCount)}종`);
+      console.log(`세이브 백업: ${result.backupPath}`);
     } else {
       console.log('\n잘못된 선택입니다.');
     }
@@ -2681,6 +2829,22 @@ async function main() {
       console.log(`세이브 백업: ${result.backupPath}`);
       return;
     }
+    if (command === 'grant-all-recipes') {
+      printStatus(savePath, save);
+      const definition = getAllRecipeDefinitions(savePath);
+      const state = getRecipeUnlockState(save, definition.ids, 'Steam용 전체 레시피');
+      console.log(`모든 레시피: ${formatNumber(state.ownedIds.length)}/${formatNumber(ALL_RECIPE_DEFINITION_COUNT)}종 해금`);
+      if (state.missingIds.length === 0) {
+        console.log('Steam용 모든 레시피가 이미 해금돼 있습니다.');
+        return;
+      }
+      if (!parsed.yes && !await confirm(rl, `없는 전체 레시피 ${formatNumber(state.missingIds.length)}종을 설계도 습득 상태로 추가할까요?`)) return;
+      const result = writeAllRecipes(savePath, save);
+      console.log(`완료: 전체 레시피 ${formatNumber(result.addedCount)}종 추가`);
+      console.log(`해금 목록: ${formatNumber(result.previousOwnedCount)} → ${formatNumber(result.currentOwnedCount)}종`);
+      console.log(`세이브 백업: ${result.backupPath}`);
+      return;
+    }
     if (command === 'collision-30m') {
       const status = getCollisionMushroomStatus(savePath);
       console.log(`마스터 DB: ${status.databasePath}`);
@@ -2790,7 +2954,7 @@ async function main() {
       return;
     }
 
-    fail('사용법: node lid-kc.js [status | backup | reset-shop | grant-all-decals | grant-golden-beasts | grant-limited-recipes | collision-30m | ultimate-fighter-5x | kamas-re-max | queen-spades-extreme | equipment-materials-free | equipment-materials-restore [백업] | set [kc|sp|blood] 숫자 | max [kc|sp|blood] | restore] [--save 경로] [--game 설치폴더 | --master DB경로] [--yes]');
+    fail('사용법: node lid-kc.js [status | backup | reset-shop | grant-all-decals | grant-golden-beasts | grant-limited-recipes | grant-all-recipes | collision-30m | ultimate-fighter-5x | kamas-re-max | queen-spades-extreme | equipment-materials-free | equipment-materials-restore [백업] | set [kc|sp|blood] 숫자 | max [kc|sp|blood] | restore] [--save 경로] [--game 설치폴더 | --master DB경로] [--yes]');
   } finally {
     if (rl) rl.close();
   }
