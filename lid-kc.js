@@ -16,6 +16,8 @@ if (NODE_MAJOR < 22 || (NODE_MAJOR === 22 && NODE_MINOR < 5)) {
 
 const { DatabaseSync } = require('node:sqlite');
 
+let masterDatabaseOverridePath = null;
+
 const FORMAT_MAGIC = Buffer.from([0x42, 0x52, 0x47, 0x00]); // BRG\0
 const FORMAT_VERSION = 2;
 const FORMAT_CODEC = Buffer.from('ZLIB', 'ascii');
@@ -785,12 +787,17 @@ function listNumericSaveFiles(directory) {
     .map((name) => path.join(directory, name));
 }
 
-function resolveManualSaveInput(input) {
+function stripPathInputQuotes(input) {
   let enteredPath = String(input ?? '').trim();
   if ((enteredPath.startsWith('"') && enteredPath.endsWith('"')) ||
       (enteredPath.startsWith("'") && enteredPath.endsWith("'"))) {
     enteredPath = enteredPath.slice(1, -1).trim();
   }
+  return enteredPath;
+}
+
+function resolveManualSaveInput(input) {
+  const enteredPath = stripPathInputQuotes(input);
   if (!enteredPath) return [];
 
   const resolved = path.resolve(enteredPath);
@@ -815,6 +822,36 @@ function findGameInstallDirectories() {
     .filter((installDirectory) => fs.existsSync(
       path.join(installDirectory, 'Binaries', 'Win64', 'BrgGame-Steam.exe'),
     )));
+}
+
+function resolveMasterDatabaseInput(input) {
+  const enteredPath = stripPathInputQuotes(input);
+  if (!enteredPath) return [];
+  const resolved = path.resolve(enteredPath);
+
+  if (fs.existsSync(resolved) && fs.statSync(resolved).isFile()) {
+    return path.basename(resolved).toLowerCase() === 'masters.db' ? [resolved] : [];
+  }
+
+  const candidates = [
+    path.join(resolved, 'masters.db'),
+    path.join(resolved, 'Content', 'masters.db'),
+    path.join(resolved, 'BrgGame', 'Content', 'masters.db'),
+    path.join(resolved, 'LET IT DIE', 'BrgGame', 'Content', 'masters.db'),
+    path.join(resolved, 'common', 'LET IT DIE', 'BrgGame', 'Content', 'masters.db'),
+    path.join(resolved, 'steamapps', 'common', 'LET IT DIE', 'BrgGame', 'Content', 'masters.db'),
+  ];
+  return uniquePaths(candidates.filter((candidate) =>
+    fs.existsSync(candidate) && fs.statSync(candidate).isFile()));
+}
+
+function setMasterDatabaseOverride(input) {
+  const matches = resolveMasterDatabaseInput(input);
+  if (matches.length === 0) {
+    fail('입력한 위치에서 masters.db를 찾지 못했습니다. LET IT DIE 설치 폴더 또는 masters.db 파일을 지정하세요.');
+  }
+  masterDatabaseOverridePath = matches[0];
+  return masterDatabaseOverridePath;
 }
 
 function discoverSaves() {
@@ -865,16 +902,21 @@ function createBackup(savePath, packed) {
   return destination;
 }
 
-function getMasterDatabasePath(savePath) {
+function findMasterDatabasePath(savePath) {
+  if (masterDatabaseOverridePath) return masterDatabaseOverridePath;
   const adjacentInstallDirectory = path.dirname(path.dirname(savePath));
   const candidates = uniquePaths([
     path.join(adjacentInstallDirectory, 'BrgGame', 'Content', 'masters.db'),
     ...findGameInstallDirectories().map((installDirectory) =>
       path.join(installDirectory, 'BrgGame', 'Content', 'masters.db')),
   ]);
-  const databasePath = candidates.find((candidate) => fs.existsSync(candidate));
+  return candidates.find((candidate) => fs.existsSync(candidate)) || null;
+}
+
+function getMasterDatabasePath(savePath) {
+  const databasePath = findMasterDatabasePath(savePath);
   if (databasePath) return databasePath;
-  fail(`마스터 DB를 찾지 못했습니다. 확인한 위치:\n${candidates.join('\n')}`);
+  fail('마스터 DB를 찾지 못했습니다. LET IT DIE 설치 폴더 또는 masters.db 경로를 입력하거나 --game/--master 옵션으로 지정하세요.');
 }
 
 function getKamasResearchDefinition(savePath) {
@@ -1635,11 +1677,17 @@ function restoreBackup(savePath, backupPath) {
 function parseArguments(argv) {
   const args = [...argv];
   let savePath = null;
+  let masterPath = null;
   let yes = false;
   for (let index = 0; index < args.length;) {
     if (args[index] === '--save') {
       if (!args[index + 1]) fail('--save 뒤에 세이브 경로가 필요합니다.');
       savePath = path.resolve(args[index + 1]);
+      args.splice(index, 2);
+    } else if (args[index] === '--game' || args[index] === '--master') {
+      const option = args[index];
+      if (!args[index + 1]) fail(`${option} 뒤에 게임 설치 폴더 또는 masters.db 경로가 필요합니다.`);
+      masterPath = args[index + 1];
       args.splice(index, 2);
     } else if (args[index] === '--yes') {
       yes = true;
@@ -1648,7 +1696,33 @@ function parseArguments(argv) {
       index += 1;
     }
   }
-  return { args, savePath, yes };
+  return { args, masterPath, savePath, yes };
+}
+
+const MASTER_DATABASE_COMMANDS = new Set([
+  'collision-30m',
+  'ultimate-fighter-5x',
+  'kamas-re-max',
+  'queen-spades-extreme',
+  'equipment-materials-free',
+  'equipment-materials-restore',
+]);
+
+async function configureMasterDatabase(rl, savePath, explicitPath, required) {
+  if (explicitPath) {
+    setMasterDatabaseOverride(explicitPath);
+    return;
+  }
+  if (!required || findMasterDatabasePath(savePath)) return;
+  if (!rl) {
+    fail('마스터 DB를 자동으로 찾지 못했습니다. --game 또는 --master 옵션으로 위치를 지정하세요.');
+  }
+  console.log('\nLET IT DIE 마스터 DB를 자동으로 찾지 못했습니다.');
+  console.log('게임 설치 폴더, BrgGame 폴더, Content 폴더 또는 masters.db 파일을 창에 끌어놓아도 됩니다.');
+  const manualInput = await rl.question('게임 설치 폴더 또는 masters.db 경로 (Enter=종료): ');
+  if (!manualInput.trim()) fail('사용자가 마스터 DB 경로 입력을 취소했습니다.');
+  const databasePath = setMasterDatabaseOverride(manualInput);
+  console.log(`마스터 DB: ${databasePath}`);
 }
 
 async function chooseSave(rl, explicitPath) {
@@ -1909,6 +1983,12 @@ async function main() {
 
   try {
     const savePath = await chooseSave(rl, parsed.savePath);
+    await configureMasterDatabase(
+      rl,
+      savePath,
+      parsed.masterPath,
+      command === 'interactive' || MASTER_DATABASE_COMMANDS.has(command),
+    );
     const save = readSave(savePath);
 
     if (command === 'interactive') {
@@ -2085,7 +2165,7 @@ async function main() {
       return;
     }
 
-    fail('사용법: node lid-kc.js [status | backup | reset-shop | grant-five-star-all | collision-30m | ultimate-fighter-5x | kamas-re-max | queen-spades-extreme | equipment-materials-free | equipment-materials-restore [백업] | set [kc|sp|blood] 숫자 | max [kc|sp|blood] | restore] [--save 경로] [--yes]');
+    fail('사용법: node lid-kc.js [status | backup | reset-shop | grant-five-star-all | collision-30m | ultimate-fighter-5x | kamas-re-max | queen-spades-extreme | equipment-materials-free | equipment-materials-restore [백업] | set [kc|sp|blood] 숫자 | max [kc|sp|blood] | restore] [--save 경로] [--game 설치폴더 | --master DB경로] [--yes]');
   } finally {
     if (rl) rl.close();
   }
@@ -2100,9 +2180,13 @@ if (require.main === module) {
 }
 
 module.exports = {
+  configureMasterDatabase,
   discoverSaves,
   findGameInstallDirectories,
+  findMasterDatabasePath,
   findSteamRoots,
   getMasterDatabasePath,
+  resolveMasterDatabaseInput,
   resolveManualSaveInput,
+  setMasterDatabaseOverride,
 };
