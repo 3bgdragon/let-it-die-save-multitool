@@ -40,8 +40,9 @@ const ULTIMATE_FIGHTER_RETURN_TARGET_PERCENT =
 const QUEEN_OF_SPADES_ID = 'SKL_SYLVIA_NMH_02_P';
 const QUEEN_OF_SPADES_BASE_ATTACK_PERCENT = 30;
 const QUEEN_OF_SPADES_EXTREME_ATTACK_PERCENT = 1_000; // 32비트 정수 연산 오버플로 방지 안전 극대치 (+1,000% = 11배 대미지)
-const WOLF_RAGE_DECAL_IDS = ['SKL_RGSPDUP_02_P', 'SKL_RGSPUP_RDURDOWN_01_P'];
+const WOLF_RAGE_DECAL_IDS = ['SKL_RGSPDUP_02', 'SKL_RGSPDUP_02_P', 'SKL_RGSPUP_RDURDOWN_01_P'];
 const WOLF_RAGE_DEFAULT_VALUES = {
+  SKL_RGSPDUP_02: 80,
   SKL_RGSPDUP_02_P: 80,
   SKL_RGSPUP_RDURDOWN_01_P: 120,
 };
@@ -2876,6 +2877,7 @@ function getWolfRageStatus(savePath) {
   let database;
   try {
     database = new DatabaseSync(databasePath, { readOnly: true });
+    const normalSuperWolf = database.prepare('SELECT * FROM master_skill WHERE id = ?').get('SKL_RGSPDUP_02');
     const superWolf = database.prepare('SELECT * FROM master_skill WHERE id = ?').get('SKL_RGSPDUP_02_P');
     const madWolf = database.prepare('SELECT * FROM master_skill WHERE id = ?').get('SKL_RGSPUP_RDURDOWN_01_P');
     if (!superWolf || !madWolf) {
@@ -2883,9 +2885,10 @@ function getWolfRageStatus(savePath) {
     }
     return {
       databasePath,
+      normalSuperWolf,
       superWolf,
       madWolf,
-      isBoosted: superWolf.val0 >= WOLF_RAGE_TARGET_PERCENT && madWolf.val0 >= WOLF_RAGE_TARGET_PERCENT,
+      isBoosted: superWolf.val0 >= WOLF_RAGE_TARGET_PERCENT && madWolf.val0 >= WOLF_RAGE_TARGET_PERCENT && (!normalSuperWolf || normalSuperWolf.val0 >= WOLF_RAGE_TARGET_PERCENT),
     };
   } finally {
     if (database) database.close();
@@ -2903,7 +2906,8 @@ function setWolfRagePercent(savePath, targetPercent = WOLF_RAGE_TARGET_PERCENT) 
   }
 
   const status = getWolfRageStatus(savePath);
-  if (status.superWolf.val0 === percent && status.madWolf.val0 === percent) {
+  if (status.superWolf.val0 === percent && status.madWolf.val0 === percent &&
+      (!status.normalSuperWolf || status.normalSuperWolf.val0 === percent)) {
     return { ...status, changed: false, backupPath: undefined, targetPercent: percent };
   }
 
@@ -2917,6 +2921,9 @@ function setWolfRagePercent(savePath, targetPercent = WOLF_RAGE_TARGET_PERCENT) 
     }
     database = new DatabaseSync(status.databasePath);
     database.exec('BEGIN IMMEDIATE');
+    if (status.normalSuperWolf) {
+      database.prepare('UPDATE master_skill SET val0 = ? WHERE id = ?').run(percent, 'SKL_RGSPDUP_02');
+    }
     const result1 = database.prepare('UPDATE master_skill SET val0 = ? WHERE id = ?').run(percent, 'SKL_RGSPDUP_02_P');
     const result2 = database.prepare('UPDATE master_skill SET val0 = ? WHERE id = ?').run(percent, 'SKL_RGSPUP_RDURDOWN_01_P');
     if (Number(result1.changes) !== 1 || Number(result2.changes) !== 1) {
@@ -2937,7 +2944,8 @@ function setWolfRagePercent(savePath, targetPercent = WOLF_RAGE_TARGET_PERCENT) 
   }
 
   const verified = getWolfRageStatus(savePath);
-  if (verified.superWolf.val0 !== percent || verified.madWolf.val0 !== percent) {
+  if (verified.superWolf.val0 !== percent || verified.madWolf.val0 !== percent ||
+      (verified.normalSuperWolf && verified.normalSuperWolf.val0 !== percent)) {
     fs.copyFileSync(backupPath, status.databasePath);
     fail('수정 결과 검증에 실패해 원본 DB를 복구했습니다.');
   }
@@ -2952,7 +2960,8 @@ function restoreWolfRageDefault(savePath) {
 
   const status = getWolfRageStatus(savePath);
   if (status.superWolf.val0 === WOLF_RAGE_DEFAULT_VALUES.SKL_RGSPDUP_02_P &&
-      status.madWolf.val0 === WOLF_RAGE_DEFAULT_VALUES.SKL_RGSPUP_RDURDOWN_01_P) {
+      status.madWolf.val0 === WOLF_RAGE_DEFAULT_VALUES.SKL_RGSPUP_RDURDOWN_01_P &&
+      (!status.normalSuperWolf || status.normalSuperWolf.val0 === WOLF_RAGE_DEFAULT_VALUES.SKL_RGSPDUP_02)) {
     return { ...status, changed: false, backupPath: undefined };
   }
 
@@ -2966,6 +2975,9 @@ function restoreWolfRageDefault(savePath) {
     }
     database = new DatabaseSync(status.databasePath);
     database.exec('BEGIN IMMEDIATE');
+    if (status.normalSuperWolf) {
+      database.prepare('UPDATE master_skill SET val0 = ? WHERE id = ?').run(WOLF_RAGE_DEFAULT_VALUES.SKL_RGSPDUP_02, 'SKL_RGSPDUP_02');
+    }
     database.prepare('UPDATE master_skill SET val0 = ? WHERE id = ?').run(WOLF_RAGE_DEFAULT_VALUES.SKL_RGSPDUP_02_P, 'SKL_RGSPDUP_02_P');
     database.prepare('UPDATE master_skill SET val0 = ? WHERE id = ?').run(WOLF_RAGE_DEFAULT_VALUES.SKL_RGSPUP_RDURDOWN_01_P, 'SKL_RGSPUP_RDURDOWN_01_P');
     const integrity = database.prepare('PRAGMA integrity_check').get();
