@@ -1,6 +1,6 @@
 # LET IT DIE 세이브 멀티툴
 
-Steam판 LET IT DIE 오프라인 세이브와 로컬 마스터 DB를 안전하게 백업·수정·복원하는 Windows용 멀티툴입니다. 자원 조정, 블러드늄 상점 재고 복구, 전체 데칼·황금동물 지급, 기간 한정 또는 모든 장비 레시피 해금, 버섯·데칼 효과 변경, KAMAS RE 연구 완료 및 장비 개발·강화 재료 제거 기능을 제공합니다.
+Steam판 LET IT DIE 오프라인 세이브와 로컬 마스터 DB를 안전하게 백업·수정·복원하는 Windows용 멀티툴입니다. 자원 조정, 시설 업그레이드 최대화, 무기 숙련도 최대화, 모든 장비 R&D 연구 최대화(1,262종 한계돌파 완료), 블러드늄 상점 재고 복구, 전체 데칼·황금동물 지급, 기간 한정 또는 모든 장비 레시피 해금, 버섯·데칼 효과 변경, KAMAS RE 연구 완료, 장비 개발·강화 재료 제거 및 캐릭터(파이터) 능력치 레벨 조회·세부 설정을 제공합니다.
 
 > Windows 전용 · LET IT DIE 오프라인판 5.0.1.0 전용 · Node.js 22.5 이상 필요
 
@@ -11,6 +11,10 @@ Steam판 LET IT DIE 오프라인 세이브와 로컬 마스터 DB를 안전하�
 - 값을 변경하지 않고 현재 세이브만 즉시 백업할 수 있습니다.
 - BRG/ZLIB 구조, 블록 크기, JSON, 수정 결과를 모두 검증합니다.
 - JSON 전체를 다시 직렬화하지 않고 선택한 자원의 숫자 토큰 하나만 교체합니다.
+- 시설 레벨(금고·스피리튬 탱크)을 마스터 DB 최대치인 99로 올리고 한도(2,560,000)를 즉시 활성화합니다.
+- 무기 숙련도 전체(57종 카테고리)를 최대 Lv.20으로 올리고 요구치에 맞게 ABP를 갱신합니다.
+- 모든 장비 연구·개발(R&D 1,262종) 최대치 업그레이드: Steam판 356개 계보의 1,262종 전체 장비에 대해 각 티어별 최대 강화 및 최종 한계돌파(최대 +24강)까지 총 10,600개 연구 단계를 즉시 완료 상태로 적용합니다.
+- 캐릭터(파이터) 능력치 레벨 현황 조회 및 세부 설정: 모든 파이터의 6대 주 능력치(HP, STR, DEX, VIT, STM, LUK), 스킬 슬롯, 데스백 가방 용량, 분노 게이지, 언캡 보너스 현황을 조회하고 인게임 순정 최대치(Lv.45) 일괄 적용, DB 엔진 최대치(Lv.50) 일괄 적용, 직접 지정(1~50), 개별 능력치 세부 설정을 지원하며, 변경 시 총 레벨(`lvl`)을 공식에 맞춰 자동 재계산하여 세이브 무결성을 유지합니다.
 - 블러드늄 상점 재고 복구 시 구매 가능/구매 완료 목록 두 필드만 변경합니다.
 - 전체 데칼 지급 시 마스터 DB에서 검증한 Steam용 데칼 329종을 소유 목록에 각각 한 장씩 추가합니다. 콘솔 전용 중복 데이터 39종은 제외합니다.
 - 황금동물 지급 시 마스터 DB에 정의된 11종을 각각 한 마리씩 코인 보관함에 추가하고, 동물별 보상 버섯 연결까지 함께 생성합니다.
@@ -19,21 +23,28 @@ Steam판 LET IT DIE 오프라인 세이브와 로컬 마스터 DB를 안전하�
 - 기간 한정 레시피는 설치된 `masters.db`에서 Steam 호환 여부와 R&D 정의를 다시 검증합니다. 콘솔 전용 데이터와 R&D 정의가 없는 장비는 제외합니다.
 - 별도 옵션으로 `masters.db`의 Steam용 R&D 계보 시작점 356종을 모두 설계도 습득 상태로 해금할 수 있습니다. 후속 강화 단계는 레시피로 잘못 추가하지 않습니다.
 - 모든 레시피 해금도 기존 보유 항목은 유지하고 없는 항목만 추가하며, 콘솔 전용·비활성 정의는 제외합니다.
-- 충돌버섯과 구운 충돌버섯의 지속시간을 모두 30분으로 변경할 수 있습니다.
+- 충돌버섯과 구운 충돌버섯의 지속시간을 30분(1,800초)으로 변경하거나 기본값(일반 30초 / 구운 것 40초)으로 토글 복구할 수 있습니다.
 - 버섯 효과 변경 전 `masters.db`를 자동 백업하고 SQLite 무결성을 검사합니다.
-- 궁극 파이터의 귀환 데칼의 모든 기본 능력치 증가를 +20%에서 +100%로 변경할 수 있습니다.
+- 궁극 파이터의 귀환 데칼의 모든 기본 능력치 증가를 +100%(5배)로 변경하거나 기본값(+20%)으로 토글 복구할 수 있습니다.
 - KAMAS-A1 어설트 라이플 RE 연구를 DB상 최대 강화인 +24로 완료할 수 있습니다.
-- 스페이드 여왕 데칼의 공격력만 +30%에서 +10,000%로 변경할 수 있습니다.
+- 스페이드 여왕 데칼의 공격력을 +10,000%로 변경하거나 기본값(+30%)으로 토글 복구할 수 있습니다.
 - 모든 장비의 개발·제작·강화 기본 재료와 단계별 추가 수량을 0으로 만들 수 있습니다. 재료 ID, 킬코인·스피리튬 비용과 연구 시간은 유지합니다.
 - 장비 재료 변경 전 전용 `masters.db` 백업을 만들며, 복원 시 다른 DB 변경은 유지하고 재료 수량 열만 되돌립니다.
 - 쓰기 실패 시 기존 세이브를 원래 위치로 되돌립니다.
 - 최신 백업을 복원하는 메뉴를 제공합니다.
+- 모든 옵션 실행(대화형 메뉴 및 CLI 명령어) 중 오류 발생 시 `logs/` 폴더에 타임스탬프, 실행 환경, 원인, 상세 스택 트레이스를 포함한 오류 로그 파일(`error-*.log`)을 자동으로 저장합니다.
 
 ## 사용법
 
 1. LET IT DIE를 완전히 종료합니다.
 2. [`run.bat`](./run.bat)을 더블클릭합니다.
-3. 자원 조정 또는 `블러드늄 상점 구매 재고 복구`를 선택합니다.
+3. 원하는 작업 번호를 선택합니다:
+   - **[1. 캐릭터(파이터) 육성 & DB 상한 해제]**: 1 (스탯/슬롯/가방 현황 및 변경), 2 (상한 해제 DB 패치), 3 (순정 DB 복구)
+   - **[2. 보유 자원 및 시설 관리]**: 4 (KC 충전), 5 (SP 충전), 6 (Blood 충전), 7 (자원 직접 입력), 8 (시설 Lv.99)
+   - **[3. 장비 R&D, 무기 숙련도 및 레시피 해금]**: 9 (모든 장비 R&D 최대), 10 (KAMAS RE +24), 11 (무기 숙련도 57종 Lv.20), 12 (기간 한정 레시피 25종), 13 (모든 레시피 356종)
+   - **[4. 데칼, 아이템 및 상점 관리]**: 14 (전체 데칼 329종 지급), 15 (황금동물 11종 수량 지정 지급), 16 (블러드늄 상점 재고 복구)
+   - **[5. 마스터 DB 게임 편의 / 특수 강화 모드]**: 17 (충돌버섯 30분 토글), 18 (궁극 파이터 배율 직접 입력), 19 (스페이드 여왕 배율 직접 입력), 20 (장비 재료비 0), 21 (장비 재료비 복원)
+   - **[6. 세이브 백업 및 복원]**: 22 (현재 세이브 백업), 23 (최신 백업 복원), 0 (종료)
 
 도구는 Windows 레지스트리, Steam의 `libraryfolders.vdf`, C~Z 드라이브의 일반적인 Steam 설치 위치를 확인하여 다음 위치의 숫자 이름 `.sav` 파일을 자동 탐색합니다. Steam 본체와 게임 라이브러리가 서로 다른 드라이브에 있어도 찾을 수 있습니다.
 
@@ -55,12 +66,32 @@ node .\lid-kc.js backup
 node .\lid-kc.js reset-shop
 node .\lid-kc.js grant-all-decals
 node .\lid-kc.js grant-golden-beasts
+node .\lid-kc.js grant-golden-beasts 5
 node .\lid-kc.js grant-limited-recipes
 node .\lid-kc.js grant-all-recipes
+node .\lid-kc.js max-facility
+node .\lid-kc.js max-mastery
+node .\lid-kc.js max-equipment
+node .\lid-kc.js fighters
+node .\lid-kc.js set-fighter-stat 1 max-legit
+node .\lid-kc.js set-fighter-stat 1 max-db
+node .\lid-kc.js set-fighter-stat 1 max-bonus
+node .\lid-kc.js set-fighter-stat 1 bonus 10
+node .\lid-kc.js set-fighter-stat 1 max-slots
+node .\lid-kc.js set-fighter-stat 1 expand-slots
+node .\lid-kc.js set-fighter-stat 1 all 45
+node .\lid-kc.js set-fighter-stat Jamie hp 50
 node .\lid-kc.js collision-30m
-node .\lid-kc.js ultimate-fighter-5x
+node .\lid-kc.js collision-restore
+node .\lid-kc.js ultimate-fighter 10x
+node .\lid-kc.js ultimate-fighter 100%
+node .\lid-kc.js ultimate-fighter 5x
+node .\lid-kc.js ultimate-fighter restore
 node .\lid-kc.js kamas-re-max
-node .\lid-kc.js queen-spades-extreme
+node .\lid-kc.js queen-spades 10x
+node .\lid-kc.js queen-spades 500%
+node .\lid-kc.js queen-spades extreme
+node .\lid-kc.js queen-spades restore
 node .\lid-kc.js equipment-materials-free
 node .\lid-kc.js equipment-materials-restore
 node .\lid-kc.js max kc
@@ -84,6 +115,27 @@ node .\lid-kc.js status --save "D:\SteamLibrary\steamapps\common\LET IT DIE\Save
 node .\lid-kc.js collision-30m --save "C:\My Saves\123456789.sav" --game "E:\My Games\LET IT DIE"
 node .\lid-kc.js equipment-materials-free --save "C:\My Saves\123456789.sav" --master "E:\My Games\LET IT DIE\BrgGame\Content\masters.db"
 ```
+
+## 업데이트 이력 및 공지
+
+### v5.2.0 (최신 릴리스)
+- **대화형 메뉴 6대 카테고리 체계화 (총 23개 옵션)**:
+  - 기능 확장으로 인해 흩어져 있던 대화형 옵션들을 [파이터 육성 & 상한 해제], [자원 및 시설 관리], [장비 R&D 및 레시피], [데칼 및 상점], [마스터 DB 특수 모드], [세이브 백업/복원]의 6대 카테고리로 논리적 재정렬했습니다.
+- **작업 완료 확인 대기 (`pause`) 적용**:
+  - 모든 옵션 실행 완료 시 작업 결과 및 백업 경로를 출력한 후, 사용자가 Enter 키를 누를 때까지 화면이 유지되도록 하여 작업 성공 여부와 수치 변동을 명확히 인지할 수 있도록 개선했습니다. (취소 시에는 즉시 메뉴 복귀)
+- **파이터 스탯/경험치 상한 해제 및 실적용 지원**:
+  - 6성 파이터 6대 주 능력치(HP/STR/DEX/VIT/STM/LUK) Lv.50 및 가방 50칸 확장 실적용 지원.
+  - 마스터 DB(masters.db) 주 능력치 테이블(Lv.50) 및 경험치 테이블(Lv.500) 상한 해제 패치 및 순정 DB 복원 기능 추가.
+  - 데칼 슬롯은 인게임 UI(3×3 위젯) 한계에 맞춰 최대 +4 (총 9칸)로 최적화 고정.
+  - 상한 해제 시 경고 알림 및 변경 전/후 15개 전체 스탯 상세 요약 리포트 표 출력.
+- **궁극 파이터의 귀환 (Ultimate Fighter Return) 데칼 효과 사용자 입력 지원**:
+  - 대화형 메뉴 및 CLI에서 퍼센트(%) 및 배율(배) 직접 입력, 5배(+100%) 원클릭 적용, 기본값(+20%) 복구 지원.
+- **스페이드 여왕 (Queen of Spades) 데칼 공격력 배율 사용자 입력 지원**:
+  - 대화형 메뉴 및 CLI에서 공격력 배율(배) 및 퍼센트(%) 직접 입력, 극단 공격력(+10,000%), 기본값(+30%) 복구 지원.
+- **황금동물 전체 11종 보관함 수량 지정 지급**:
+  - 코인 보관함 빈칸 내에서 원하는 마리수를 직접 입력하여 11종을 일괄 지급받을 수 있도록 개선.
+- **전체 기능 테스트 및 오류 검증**:
+  - 24개 대화형 모드 시뮬레이션 및 41개 CLI 전체 명령어 전수 테스트 통과.
 
 ## 주의
 
