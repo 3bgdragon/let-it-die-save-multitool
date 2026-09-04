@@ -39,7 +39,13 @@ const ULTIMATE_FIGHTER_RETURN_TARGET_PERCENT =
   ULTIMATE_FIGHTER_RETURN_BASE_PERCENT * 5;
 const QUEEN_OF_SPADES_ID = 'SKL_SYLVIA_NMH_02_P';
 const QUEEN_OF_SPADES_BASE_ATTACK_PERCENT = 30;
-const QUEEN_OF_SPADES_EXTREME_ATTACK_PERCENT = 10_000;
+const QUEEN_OF_SPADES_EXTREME_ATTACK_PERCENT = 1_000; // 32비트 정수 연산 오버플로 방지 안전 극대치 (+1,000% = 11배 대미지)
+const WOLF_RAGE_DECAL_IDS = ['SKL_RGSPDUP_02_P', 'SKL_RGSPUP_RDURDOWN_01_P'];
+const WOLF_RAGE_DEFAULT_VALUES = {
+  SKL_RGSPDUP_02_P: 80,
+  SKL_RGSPUP_RDURDOWN_01_P: 120,
+};
+const WOLF_RAGE_TARGET_PERCENT = 1_000; // 레이지 축적 속도 +1,000% (오버플로/단타 즉사 시에도 1타당 게이지 즉시 충전)
 const KAMAS_RE_FINAL_PART_ID = 'PT_ARM_WP031_0B5';
 const EQUIPMENT_MATERIAL_COLUMNS = [
   'buy_mate1_num', 'buy_mate2_num', 'buy_mate3_num', 'buy_mate4_num', 'buy_mate5_num',
@@ -2805,8 +2811,8 @@ function setQueenOfSpadesPercent(savePath, targetPercent) {
   }
 
   const percent = Number(targetPercent);
-  if (!Number.isInteger(percent) || percent < 1 || percent > 1_000_000) {
-    fail('스페이드 여왕 공격력 수치는 1 ~ 1,000,000 사이의 정수여야 합니다.');
+  if (!Number.isInteger(percent) || percent < 1 || percent > 5_000) {
+    fail('스페이드 여왕 공격력 수치는 1 ~ 5,000 사이의 정수여야 합니다. (32비트 연산 오버플로 방지 안전 한도)');
   }
 
   const status = getQueenOfSpadesStatus(savePath);
@@ -2862,6 +2868,121 @@ function setQueenOfSpadesExtremeDamage(savePath) {
 
 function restoreQueenOfSpades(savePath) {
   return setQueenOfSpadesPercent(savePath, QUEEN_OF_SPADES_BASE_ATTACK_PERCENT);
+}
+
+function getWolfRageStatus(savePath) {
+  const databasePath = getMasterDatabasePath(savePath);
+  let database;
+  try {
+    database = new DatabaseSync(databasePath, { readOnly: true });
+    const superWolf = database.prepare('SELECT * FROM master_skill WHERE id = ?').get('SKL_RGSPDUP_02_P');
+    const madWolf = database.prepare('SELECT * FROM master_skill WHERE id = ?').get('SKL_RGSPUP_RDURDOWN_01_P');
+    if (!superWolf || !madWolf) {
+      fail('마스터 DB에서 울프 계열 데칼(슈퍼 울프/매드 울프) 정의를 찾지 못했습니다.');
+    }
+    return {
+      databasePath,
+      superWolf,
+      madWolf,
+      isBoosted: superWolf.val0 >= WOLF_RAGE_TARGET_PERCENT && madWolf.val0 >= WOLF_RAGE_TARGET_PERCENT,
+    };
+  } finally {
+    if (database) database.close();
+  }
+}
+
+function setWolfRagePercent(savePath, targetPercent = WOLF_RAGE_TARGET_PERCENT) {
+  if (isGameRunning()) {
+    fail('LET IT DIE가 실행 중입니다. 게임을 완전히 종료한 뒤 다시 실행하세요.');
+  }
+
+  const percent = Number(targetPercent);
+  if (!Number.isInteger(percent) || percent < 1 || percent > 50_000) {
+    fail('레이지 축적 속도 수치는 1 ~ 50,000 사이의 정수여야 합니다.');
+  }
+
+  const status = getWolfRageStatus(savePath);
+  if (status.superWolf.val0 === percent && status.madWolf.val0 === percent) {
+    return { ...status, changed: false, backupPath: undefined, targetPercent: percent };
+  }
+
+  const original = fs.readFileSync(status.databasePath);
+  const originalHash = sha256(original);
+  const backupPath = createMasterDatabaseBackup(original);
+  let database;
+  try {
+    if (sha256(fs.readFileSync(status.databasePath)) !== originalHash) {
+      fail('마스터 DB를 읽은 뒤 파일이 변경됐습니다. 안전하게 중단했습니다.');
+    }
+    database = new DatabaseSync(status.databasePath);
+    database.exec('BEGIN IMMEDIATE');
+    const result1 = database.prepare('UPDATE master_skill SET val0 = ? WHERE id = ?').run(percent, 'SKL_RGSPDUP_02_P');
+    const result2 = database.prepare('UPDATE master_skill SET val0 = ? WHERE id = ?').run(percent, 'SKL_RGSPUP_RDURDOWN_01_P');
+    if (Number(result1.changes) !== 1 || Number(result2.changes) !== 1) {
+      fail('울프 계열 데칼 레이지 축적 속도 수정 건수가 올바르지 않습니다.');
+    }
+    const integrity = database.prepare('PRAGMA integrity_check').get();
+    if (!integrity || integrity.integrity_check !== 'ok') {
+      fail('마스터 DB 무결성 검사에 실패했습니다.');
+    }
+    database.exec('COMMIT');
+  } catch (error) {
+    if (database) {
+      try { database.exec('ROLLBACK'); } catch {}
+    }
+    throw error;
+  } finally {
+    if (database) database.close();
+  }
+
+  const verified = getWolfRageStatus(savePath);
+  if (verified.superWolf.val0 !== percent || verified.madWolf.val0 !== percent) {
+    fs.copyFileSync(backupPath, status.databasePath);
+    fail('수정 결과 검증에 실패해 원본 DB를 복구했습니다.');
+  }
+
+  return { ...verified, changed: true, backupPath, targetPercent: percent };
+}
+
+function restoreWolfRageDefault(savePath) {
+  if (isGameRunning()) {
+    fail('LET IT DIE가 실행 중입니다. 게임을 완전히 종료한 뒤 다시 실행하세요.');
+  }
+
+  const status = getWolfRageStatus(savePath);
+  if (status.superWolf.val0 === WOLF_RAGE_DEFAULT_VALUES.SKL_RGSPDUP_02_P &&
+      status.madWolf.val0 === WOLF_RAGE_DEFAULT_VALUES.SKL_RGSPUP_RDURDOWN_01_P) {
+    return { ...status, changed: false, backupPath: undefined };
+  }
+
+  const original = fs.readFileSync(status.databasePath);
+  const originalHash = sha256(original);
+  const backupPath = createMasterDatabaseBackup(original);
+  let database;
+  try {
+    if (sha256(fs.readFileSync(status.databasePath)) !== originalHash) {
+      fail('마스터 DB를 읽은 뒤 파일이 변경됐습니다. 안전하게 중단했습니다.');
+    }
+    database = new DatabaseSync(status.databasePath);
+    database.exec('BEGIN IMMEDIATE');
+    database.prepare('UPDATE master_skill SET val0 = ? WHERE id = ?').run(WOLF_RAGE_DEFAULT_VALUES.SKL_RGSPDUP_02_P, 'SKL_RGSPDUP_02_P');
+    database.prepare('UPDATE master_skill SET val0 = ? WHERE id = ?').run(WOLF_RAGE_DEFAULT_VALUES.SKL_RGSPUP_RDURDOWN_01_P, 'SKL_RGSPUP_RDURDOWN_01_P');
+    const integrity = database.prepare('PRAGMA integrity_check').get();
+    if (!integrity || integrity.integrity_check !== 'ok') {
+      fail('마스터 DB 무결성 검사에 실패했습니다.');
+    }
+    database.exec('COMMIT');
+  } catch (error) {
+    if (database) {
+      try { database.exec('ROLLBACK'); } catch {}
+    }
+    throw error;
+  } finally {
+    if (database) database.close();
+  }
+
+  const verified = getWolfRageStatus(savePath);
+  return { ...verified, changed: true, backupPath };
 }
 
 const FIGHTER_LIMIT_BACKUP_PREFIX = 'masters.db.fighter-limits.';
@@ -3597,6 +3718,8 @@ const MASTER_DATABASE_COMMANDS = new Set([
   'queen-spades',
   'queen-spades-extreme',
   'queen-spades-restore',
+  'wolf-rage',
+  'wolf-rage-restore',
   'equipment-materials-free',
   'equipment-materials-restore',
   'expand-fighter-limits',
@@ -3715,11 +3838,12 @@ async function interactive(rl, savePath) {
     console.log('17. 충돌버섯·구운 충돌버섯 30분 지속시간 적용 / 기본값 복구 (토글)');
     console.log('18. 궁극 파이터의 귀환 데칼 효과 수치 변경(배율/퍼센트 직접 입력) / 기본값 복구');
     console.log('19. 스페이드 여왕 공격력 수치 변경(배율/퍼센트 직접 입력) / 기본값 복구');
-    console.log('20. 모든 장비 개발·강화 재료 비용을 0으로 변경');
-    console.log('21. 장비 개발·강화 재료 비용을 전용 백업에서 복원');
+    console.log('20. 슈퍼 울프·매드 울프 레이지 축적 속도 +1,000% 적용 (게이지 즉시 충전) / 기본값 복구');
+    console.log('21. 모든 장비 개발·강화 재료 비용을 0으로 변경');
+    console.log('22. 장비 개발·강화 재료 비용을 전용 백업에서 복원');
     console.log('\n=========================== [6. 세이브 백업 및 복원] ===========================');
-    console.log('22. 현재 세이브 백업하기');
-    console.log('23. 최신 백업 복원');
+    console.log('23. 현재 세이브 백업하기');
+    console.log('24. 최신 백업 복원');
     console.log('\n 0. 프로그램 종료');
 
     const choice = (await rl.question('\n선택: ')).trim();
@@ -4293,20 +4417,22 @@ async function interactive(rl, savePath) {
         console.log(`스페이드 여왕 (Queen of Spades) 데칼:`);
         console.log(`- 현재 효과: 공격력 +${formatNumber(currentPercent)}% (기본 30% 대비 ${currentRatio}배)`);
         console.log(`- 기타 효과: 치명타 확률 +${formatNumber(status.row.val1)}% / 피해 무효화 ${formatNumber(status.row.val2)}% (기본 유지)`);
+        console.log('※ 주의: 공격력이 지나치게 높으면(수십만 이상 단일 대미지) 엔진의 32비트 연산 오버플로로');
+        console.log('   인해 레이지 게이지가 충전되지 않을 수 있으므로 +5,000% 이하로 안전하게 설정하는 것을 권장합니다.');
         console.log('\n수정 방식을 선택하세요:');
-        console.log('1. 퍼센트(%) 직접 입력 (예: 100 입력 시 +100%, 500 입력 시 +500%)');
-        console.log('2. 배율(배)로 입력 (기본 30% 기준, 예: 5 입력 시 5배인 +150%, 10 입력 시 10배인 +300%)');
-        console.log(`3. 극단 공격력(+${formatNumber(QUEEN_OF_SPADES_EXTREME_ATTACK_PERCENT)}%) 바로 적용`);
+        console.log('1. 퍼센트(%) 직접 입력 (1 ~ 5,000% 안전 한도)');
+        console.log('2. 배율(배)로 입력 (기본 30% 기준, 최대 166배)');
+        console.log(`3. 극단 공격력(+${formatNumber(QUEEN_OF_SPADES_EXTREME_ATTACK_PERCENT)}%) 바로 적용 (오버플로 방지 안전 극대치)`);
         console.log(`4. 기본값(+${QUEEN_OF_SPADES_BASE_ATTACK_PERCENT}%)으로 복구`);
         console.log('0. 뒤로 가기');
 
         const subChoice = (await rl.question('\n선택 (기본값 0): ')).trim();
         if (subChoice === '1') {
-          const input = (await rl.question(`\n설정할 공격력 증가 퍼센트(%)를 입력하세요 (현재: +${currentPercent}%): `)).trim();
+          const input = (await rl.question(`\n설정할 공격력 증가 퍼센트(%)를 입력하세요 (현재: +${currentPercent}%, 권장최대: 5000): `)).trim();
           if (!input) continue;
           const targetPercent = Number(input.replace(/[%]/g, ''));
-          if (!Number.isInteger(targetPercent) || targetPercent < 1 || targetPercent > 1_000_000) {
-            console.log('오류: 1 ~ 1,000,000 사이의 정수를 입력해야 합니다.');
+          if (!Number.isInteger(targetPercent) || targetPercent < 1 || targetPercent > 5_000) {
+            console.log('오류: 1 ~ 5,000 사이의 정수를 입력해야 합니다. (32비트 연산 오버플로 방지 안전 한도)');
             continue;
           }
           if (targetPercent === currentPercent) {
@@ -4320,11 +4446,11 @@ async function interactive(rl, savePath) {
           console.log(`- 공격력 증가: +${formatNumber(currentPercent)}% → +${formatNumber(result.row.val0)}% (${targetRatio}배)`);
           console.log(`- 마스터 DB 백업: ${result.backupPath}`);
         } else if (subChoice === '2') {
-          const input = (await rl.question(`\n설정할 배율을 입력하세요 (기본 30% 기준, 현재: ${currentRatio}배): `)).trim();
+          const input = (await rl.question(`\n설정할 배율을 입력하세요 (기본 30% 기준, 현재: ${currentRatio}배, 최대 166배): `)).trim();
           if (!input) continue;
           const multiplier = Number(input.replace(/[x배X]/g, ''));
-          if (isNaN(multiplier) || multiplier <= 0 || multiplier > 35000) {
-            console.log('오류: 0보다 크고 35,000 이하의 숫자를 입력해야 합니다.');
+          if (isNaN(multiplier) || multiplier <= 0 || multiplier > 166) {
+            console.log('오류: 0보다 크고 166 이하의 숫자를 입력해야 합니다.');
             continue;
           }
           const targetPercent = Math.round(QUEEN_OF_SPADES_BASE_ATTACK_PERCENT * multiplier);
@@ -4342,7 +4468,7 @@ async function interactive(rl, savePath) {
             console.log(`이미 극단 공격력(+${formatNumber(QUEEN_OF_SPADES_EXTREME_ATTACK_PERCENT)}%)이 적용되어 있습니다.`);
             continue;
           }
-          if (!await confirm(rl, `공격력을 극단 수치인 +${formatNumber(QUEEN_OF_SPADES_EXTREME_ATTACK_PERCENT)}%로 변경할까요?`)) continue;
+          if (!await confirm(rl, `공격력을 오버플로 방지 안전 극대치인 +${formatNumber(QUEEN_OF_SPADES_EXTREME_ATTACK_PERCENT)}%로 변경할까요?`)) continue;
           const result = setQueenOfSpadesExtremeDamage(savePath);
           console.log('\n[성공] 스페이드 여왕 공격력 변경이 성공적으로 완료되었습니다!');
           console.log(`- 공격력 증가: +${formatNumber(currentPercent)}% → +${formatNumber(QUEEN_OF_SPADES_EXTREME_ATTACK_PERCENT)}%`);
@@ -4361,6 +4487,67 @@ async function interactive(rl, savePath) {
           continue;
         }
       } else if (choice === '20') {
+        const status = getWolfRageStatus(savePath);
+        const superPercent = status.superWolf.val0;
+        const madPercent = status.madWolf.val0;
+        console.log(`\n마스터 DB: ${status.databasePath}`);
+        console.log('울프 계열 데칼 (분노/레이지 게이지 축적 속도):');
+        console.log(`- 슈퍼 울프 (SKL_RGSPDUP_02_P): +${formatNumber(superPercent)}% (기본값: +80%)`);
+        console.log(`- 매드 울프 (SKL_RGSPUP_RDURDOWN_01_P): +${formatNumber(madPercent)}% (기본값: +120%)`);
+        console.log('※ 단일 타격 대미지가 수십만을 초과할 때 발생하는 32비트 연산 오버플로 시에도');
+        console.log('   울프 데칼의 레이지 축적 속도를 +1,000%로 설정하면 스치기만 해도 게이지가 1~2칸씩 즉시 충전됩니다.');
+        console.log('\n수정 방식을 선택하세요:');
+        console.log(`1. 레이지 축적 속도 +${formatNumber(WOLF_RAGE_TARGET_PERCENT)}% 바로 적용 (적 피격 시 게이지 즉시 충전)`);
+        console.log('2. 축적 속도 퍼센트(%) 직접 입력 (1 ~ 50,000%)');
+        console.log('3. 기본값 복구 (슈퍼 울프 +80% / 매드 울프 +120%)');
+        console.log('0. 뒤로 가기');
+
+        const subChoice = (await rl.question('\n선택 (기본값 0): ')).trim();
+        if (subChoice === '1') {
+          if (status.isBoosted) {
+            console.log(`\n이미 두 데칼 모두 +${formatNumber(WOLF_RAGE_TARGET_PERCENT)}% 이상으로 적용되어 있습니다.`);
+          } else {
+            if (!await confirm(rl, `슈퍼 울프와 매드 울프의 레이지 축적 속도를 +${formatNumber(WOLF_RAGE_TARGET_PERCENT)}%로 변경할까요?`)) continue;
+            const result = setWolfRagePercent(savePath, WOLF_RAGE_TARGET_PERCENT);
+            console.log('\n[성공] 울프 계열 레이지 축적 속도 +1,000% 변경이 성공적으로 완료되었습니다!');
+            console.log(`- 슈퍼 울프: +${formatNumber(superPercent)}% → +${formatNumber(result.superWolf.val0)}%`);
+            console.log(`- 매드 울프: +${formatNumber(madPercent)}% → +${formatNumber(result.madWolf.val0)}%`);
+            console.log(`- 마스터 DB 백업: ${result.backupPath}`);
+          }
+        } else if (subChoice === '2') {
+          const input = (await rl.question('\n설정할 레이지 축적 속도 퍼센트(%)를 입력하세요 (기본 권장: 1000): ')).trim();
+          if (!input) continue;
+          const targetPercent = Number(input.replace(/[%]/g, ''));
+          if (!Number.isInteger(targetPercent) || targetPercent < 1 || targetPercent > 50_000) {
+            console.log('오류: 1 ~ 50,000 사이의 정수를 입력해야 합니다.');
+            continue;
+          }
+          if (superPercent === targetPercent && madPercent === targetPercent) {
+            console.log(`\n이미 두 데칼 모두 +${formatNumber(targetPercent)}%가 적용되어 있습니다.`);
+            continue;
+          }
+          if (!await confirm(rl, `슈퍼 울프와 매드 울프의 레이지 축적 속도를 +${formatNumber(targetPercent)}%로 변경할까요?`)) continue;
+          const result = setWolfRagePercent(savePath, targetPercent);
+          console.log('\n[성공] 울프 계열 레이지 축적 속도 변경이 성공적으로 완료되었습니다!');
+          console.log(`- 슈퍼 울프: +${formatNumber(superPercent)}% → +${formatNumber(result.superWolf.val0)}%`);
+          console.log(`- 매드 울프: +${formatNumber(madPercent)}% → +${formatNumber(result.madWolf.val0)}%`);
+          console.log(`- 마스터 DB 백업: ${result.backupPath}`);
+        } else if (subChoice === '3') {
+          if (superPercent === WOLF_RAGE_DEFAULT_VALUES.SKL_RGSPDUP_02_P &&
+              madPercent === WOLF_RAGE_DEFAULT_VALUES.SKL_RGSPUP_RDURDOWN_01_P) {
+            console.log('\n이미 두 데칼 모두 기본값(80% / 120%) 상태입니다.');
+            continue;
+          }
+          if (!await confirm(rl, '울프 계열 데칼의 레이지 축적 속도를 기본값(80% / 120%)으로 복구할까요?')) continue;
+          const result = restoreWolfRageDefault(savePath);
+          console.log('\n[성공] 울프 계열 레이지 축적 속도 기본값 복구가 성공적으로 완료되었습니다!');
+          console.log(`- 슈퍼 울프: +${formatNumber(superPercent)}% → +${formatNumber(result.superWolf.val0)}% (기본값: +80%)`);
+          console.log(`- 매드 울프: +${formatNumber(madPercent)}% → +${formatNumber(result.madWolf.val0)}% (기본값: +120%)`);
+          console.log(`- 마스터 DB 백업: ${result.backupPath}`);
+        } else {
+          continue;
+        }
+      } else if (choice === '21') {
         const status = getEquipmentMaterialStatus(savePath);
         console.log(`\n마스터 DB: ${status.databasePath}`);
         console.log(`장비 연구 정의: ${formatNumber(status.rowCount)}종`);
@@ -4375,7 +4562,7 @@ async function interactive(rl, savePath) {
           console.log('- 킬코인·스피리튬 비용과 연구 시간은 유지됩니다.');
           console.log(`- 마스터 DB 백업: ${result.backupPath}`);
         }
-      } else if (choice === '21') {
+      } else if (choice === '22') {
         const backups = listEquipmentMaterialBackups();
         if (backups.length === 0) {
           console.log('\n복원할 장비 재료 비용 전용 백업이 없습니다.');
@@ -4390,7 +4577,7 @@ async function interactive(rl, savePath) {
         console.log('\n[성공] 장비 재료 비용 복원이 성공적으로 완료되었습니다.');
         console.log(`- 복원 완료: 장비 재료 비용 ${formatNumber(result.nonZeroRows)}종`);
         console.log(`- 복원 전 안전 백업: ${result.safetyBackup}`);
-      } else if (choice === '22') {
+      } else if (choice === '23') {
         if (isGameRunning()) {
           console.log('\nLET IT DIE를 완전히 종료한 뒤 백업하세요.');
           continue;
@@ -4398,7 +4585,7 @@ async function interactive(rl, savePath) {
         const backupPath = createBackup(savePath, save.packed);
         console.log('\n[성공] 현재 세이브 백업이 성공적으로 완료되었습니다.');
         console.log(`- 백업 파일: ${backupPath}`);
-      } else if (choice === '23') {
+      } else if (choice === '24') {
         const backups = listBackups(savePath);
         if (backups.length === 0) {
           console.log('\n복원할 백업이 없습니다.');
@@ -4722,15 +4909,15 @@ async function main() {
           modeDesc = `극단화(+${formatNumber(QUEEN_OF_SPADES_EXTREME_ATTACK_PERCENT)}%) 적용`;
         } else if (/[x배X]$/i.test(arg)) {
           const mult = Number(arg.replace(/[x배X]/gi, ''));
-          if (isNaN(mult) || mult <= 0 || mult > 35000) {
-            fail('오류: 배율은 0보다 크고 35,000 이하의 숫자여야 합니다 (예: 5x, 10배).');
+          if (isNaN(mult) || mult <= 0 || mult > 166) {
+            fail('오류: 배율은 0보다 크고 166 이하의 숫자여야 합니다 (예: 5x, 10배).');
           }
           targetPercent = Math.round(QUEEN_OF_SPADES_BASE_ATTACK_PERCENT * mult);
           modeDesc = `${mult}배(+${formatNumber(targetPercent)}%) 설정`;
         } else {
           const raw = Number(arg.replace(/[%]/g, ''));
-          if (!Number.isInteger(raw) || raw < 1 || raw > 1_000_000) {
-            fail('오류: 퍼센트는 1 ~ 1,000,000 사이의 정수여야 합니다 (예: 100, 500%, 10000).');
+          if (!Number.isInteger(raw) || raw < 1 || raw > 5_000) {
+            fail('오류: 퍼센트는 1 ~ 5,000 사이의 정수여야 합니다 (32비트 연산 오버플로 방지 안전 한도).');
           }
           targetPercent = raw;
           const ratio = (targetPercent / QUEEN_OF_SPADES_BASE_ATTACK_PERCENT).toFixed(1).replace(/\.0$/, '');
@@ -4750,6 +4937,70 @@ async function main() {
       console.log('\n[성공] 스페이드 여왕 공격력 변경이 성공적으로 완료되었습니다!');
       console.log(`- 설정 모드: [${modeDesc}]`);
       console.log(`- 공격력 증가: +${formatNumber(currentPercent)}% → +${formatNumber(result.row.val0)}% (${ratio}배)`);
+      console.log(`- 마스터 DB 백업: ${result.backupPath}`);
+      return;
+    }
+    if (command === 'wolf-rage' || command === 'wolf-rage-restore') {
+      const status = getWolfRageStatus(savePath);
+      const superPercent = status.superWolf.val0;
+      const madPercent = status.madWolf.val0;
+      console.log(`마스터 DB: ${status.databasePath}`);
+      console.log(`현재 효과: 슈퍼 울프 +${formatNumber(superPercent)}% (기본값: +80%) / 매드 울프 +${formatNumber(madPercent)}% (기본값: +120%)`);
+
+      if (command === 'wolf-rage-restore') {
+        if (superPercent === WOLF_RAGE_DEFAULT_VALUES.SKL_RGSPDUP_02_P &&
+            madPercent === WOLF_RAGE_DEFAULT_VALUES.SKL_RGSPUP_RDURDOWN_01_P) {
+          console.log('이미 울프 계열 데칼의 레이지 축적 속도가 기본값(80% / 120%)입니다.');
+          return;
+        }
+        if (!parsed.yes && !await confirm(rl, '울프 계열 데칼의 레이지 축적 속도를 기본값(80% / 120%)으로 복구할까요?')) return;
+        const result = restoreWolfRageDefault(savePath);
+        console.log('\n[성공] 울프 계열 레이지 축적 속도 기본값 복구가 성공적으로 완료되었습니다!');
+        console.log(`- 슈퍼 울프: +${formatNumber(superPercent)}% → +${formatNumber(result.superWolf.val0)}% (기본값: +80%)`);
+        console.log(`- 매드 울프: +${formatNumber(madPercent)}% → +${formatNumber(result.madWolf.val0)}% (기본값: +120%)`);
+        console.log(`- 마스터 DB 백업: ${result.backupPath}`);
+        return;
+      }
+
+      const arg = parsed.args[1];
+      let targetPercent = WOLF_RAGE_TARGET_PERCENT;
+      let modeDesc = `+${formatNumber(WOLF_RAGE_TARGET_PERCENT)}% 적용 (스치기만 해도 게이지 즉시 충전)`;
+
+      if (arg) {
+        if (arg.toLowerCase() === 'restore' || arg.toLowerCase() === 'default') {
+          if (superPercent === WOLF_RAGE_DEFAULT_VALUES.SKL_RGSPDUP_02_P &&
+              madPercent === WOLF_RAGE_DEFAULT_VALUES.SKL_RGSPUP_RDURDOWN_01_P) {
+            console.log('이미 울프 계열 데칼의 레이지 축적 속도가 기본값(80% / 120%)입니다.');
+            return;
+          }
+          if (!parsed.yes && !await confirm(rl, '울프 계열 데칼의 레이지 축적 속도를 기본값(80% / 120%)으로 복구할까요?')) return;
+          const result = restoreWolfRageDefault(savePath);
+          console.log('\n[성공] 울프 계열 레이지 축적 속도 기본값 복구가 성공적으로 완료되었습니다!');
+          console.log(`- 슈퍼 울프: +${formatNumber(superPercent)}% → +${formatNumber(result.superWolf.val0)}% (기본값: +80%)`);
+          console.log(`- 매드 울프: +${formatNumber(madPercent)}% → +${formatNumber(result.madWolf.val0)}% (기본값: +120%)`);
+          console.log(`- 마스터 DB 백업: ${result.backupPath}`);
+          return;
+        }
+        const raw = Number(arg.replace(/[%]/g, ''));
+        if (!Number.isInteger(raw) || raw < 1 || raw > 50_000) {
+          fail('오류: 퍼센트는 1 ~ 50,000 사이의 정수여야 합니다 (예: 1000, 1000%).');
+        }
+        targetPercent = raw;
+        modeDesc = `+${formatNumber(targetPercent)}% 적용`;
+      }
+
+      if (superPercent === targetPercent && madPercent === targetPercent) {
+        console.log(`이미 두 울프 데칼 모두 +${formatNumber(targetPercent)}%가 적용되어 있습니다.`);
+        return;
+      }
+
+      if (!parsed.yes && !await confirm(rl, `슈퍼 울프와 매드 울프의 레이지 축적 속도를 +${formatNumber(targetPercent)}%로 변경할까요?`)) return;
+
+      const result = setWolfRagePercent(savePath, targetPercent);
+      console.log('\n[성공] 울프 계열 레이지 축적 속도 변경이 성공적으로 완료되었습니다!');
+      console.log(`- 설정 모드: [${modeDesc}]`);
+      console.log(`- 슈퍼 울프: +${formatNumber(superPercent)}% → +${formatNumber(result.superWolf.val0)}%`);
+      console.log(`- 매드 울프: +${formatNumber(madPercent)}% → +${formatNumber(result.madWolf.val0)}%`);
       console.log(`- 마스터 DB 백업: ${result.backupPath}`);
       return;
     }
@@ -4990,7 +5241,7 @@ async function main() {
       return;
     }
 
-    fail('사용법: node lid-kc.js [status | backup | reset-shop | grant-all-decals | grant-golden-beasts [마리수] | grant-limited-recipes | grant-all-recipes | max-facility | max-mastery | max-equipment | fighters | set-fighter-stat <번호/이름> <max-legit | max-db | max-bonus | bonus 수치 | max-slots | expand-slots | all 수치 | stat 수치> | expand-fighter-limits | restore-fighter-limits | collision-30m | collision-restore | ultimate-fighter <수치|배율|restore> | ultimate-fighter-5x | ultimate-fighter-restore | kamas-re-max | queen-spades <수치|배율|extreme|restore> | queen-spades-extreme | queen-spades-restore | equipment-materials-free | equipment-materials-restore [백업] | set [kc|sp|blood] 숫자 | max [kc|sp|blood] | restore] [--save 경로] [--game 설치폴더 | --master DB경로] [--yes]');
+    fail('사용법: node lid-kc.js [status | backup | reset-shop | grant-all-decals | grant-golden-beasts [마리수] | grant-limited-recipes | grant-all-recipes | max-facility | max-mastery | max-equipment | fighters | set-fighter-stat <번호/이름> <max-legit | max-db | max-bonus | bonus 수치 | max-slots | expand-slots | all 수치 | stat 수치> | expand-fighter-limits | restore-fighter-limits | collision-30m | collision-restore | ultimate-fighter <수치|배율|restore> | ultimate-fighter-5x | ultimate-fighter-restore | kamas-re-max | queen-spades <수치|배율|extreme|restore> | queen-spades-extreme | queen-spades-restore | wolf-rage [수치|restore] | wolf-rage-restore | equipment-materials-free | equipment-materials-restore [백업] | set [kc|sp|blood] 숫자 | max [kc|sp|blood] | restore] [--save 경로] [--game 설치폴더 | --master DB경로] [--yes]');
   } finally {
     if (rl) rl.close();
   }
@@ -5031,12 +5282,18 @@ module.exports = {
   restoreCollisionMushroomDefault,
   restoreQueenOfSpades,
   restoreUltimateFighterReturn,
+  restoreWolfRageDefault,
   setCollisionMushroomThirtyMinutes,
   setMasterDatabaseOverride,
   setQueenOfSpadesExtremeDamage,
   setQueenOfSpadesPercent,
   setUltimateFighterReturnFiveTimes,
   setUltimateFighterReturnPercent,
+  setWolfRagePercent,
+  getWolfRageStatus,
+  WOLF_RAGE_DECAL_IDS,
+  WOLF_RAGE_DEFAULT_VALUES,
+  WOLF_RAGE_TARGET_PERCENT,
   calculateFighterTotalLevel,
   FIGHTER_TYPES,
   getFighterList,
