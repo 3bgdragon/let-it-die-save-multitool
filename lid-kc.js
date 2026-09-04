@@ -3882,10 +3882,12 @@ async function interactive(rl, savePath) {
         printFighterChangeSummary(result, modeDesc);
       } else if (choice === '2') {
         const status = getFighterLimitStatus(savePath);
-        console.log(`\n마스터 DB: ${status.databasePath}`);
+        console.log(`\n==================== [파이터 스탯 & 경험치 상한 해제 DB 패치] ====================`);
+        console.log(`마스터 DB: ${status.databasePath}`);
         console.log(`현재 DB 주 능력치 한도: Lv.${status.statMaxLevel} / 총 레벨 경험치 한도: Lv.${status.expMaxLevel}`);
         if (status.statMaxLevel >= 50 && status.expMaxLevel >= 500 && status.skillSlotsCount >= 15) {
-          console.log('파이터 스탯(Lv.50), 경험치(Lv.500), 슬롯(15개) 상한 해제가 이미 DB에 적용돼 있습니다.');
+          console.log('\n[안내] 파이터 스탯(Lv.50), 경험치(Lv.500), 슬롯(15개) 상한 해제가 이미 DB에 적용돼 있습니다.');
+          await pause(rl);
           continue;
         }
         console.log('\n' + '='.repeat(72));
@@ -3897,7 +3899,11 @@ async function interactive(rl, savePath) {
         console.log('- Steam 무결성 검사 시 순정으로 초기화될 수 있습니다.');
         console.log('- 패치 전 원본 DB는 backups 폴더에 자동 백업됩니다.');
         console.log('='.repeat(72));
-        if (!await confirm(rl, '파이터 스탯 및 경험치 상한 해제 DB 패치를 진행할까요?')) continue;
+        if (!await confirm(rl, '파이터 스탯 및 경험치 상한 해제 DB 패치를 진행할까요?')) {
+          console.log('\n[안내] 작업이 취소되었습니다.');
+          await pause(rl);
+          continue;
+        }
         const result = expandFighterLimits(savePath, 50, 500);
         console.log('\n[성공] 파이터 상한 해제 DB 패치가 성공적으로 완료되었습니다.');
         console.log(`- 6성 파이터 주 능력치 상한: Lv.${status.statMaxLevel} → Lv.${result.statMaxLevel} (추가 ${result.addedStatusRows}행)`);
@@ -3905,13 +3911,19 @@ async function interactive(rl, savePath) {
         console.log(`- 마스터 DB 백업: ${result.backupPath}`);
       } else if (choice === '3') {
         const backups = listFighterLimitBackups();
+        console.log(`\n====================== [파이터 상한 해제 순정 DB 복원] ======================`);
         if (backups.length === 0) {
-          console.log('\n복원할 파이터 상한 해제 DB 백업이 없습니다.');
+          console.log('\n[안내] 복원할 파이터 상한 해제 DB 백업이 없습니다.');
+          await pause(rl);
           continue;
         }
         const sourcePath = backups[0];
-        console.log(`\n복원 대상 백업: ${sourcePath}`);
-        if (!await confirm(rl, '이 백업을 사용하여 순정 DB로 복원할까요?')) continue;
+        console.log(`복원 대상 백업: ${sourcePath}`);
+        if (!await confirm(rl, '이 백업을 사용하여 순정 DB로 복원할까요?')) {
+          console.log('\n[안내] 작업이 취소되었습니다.');
+          await pause(rl);
+          continue;
+        }
         const result = restoreFighterLimits(savePath, sourcePath);
         console.log('\n[성공] 파이터 상한 순정 DB 복원이 성공적으로 완료되었습니다.');
         console.log(`- 주 능력치 상한: Lv.${result.statMaxLevel} / 경험치 상한: Lv.${result.expMaxLevel}`);
@@ -3920,56 +3932,89 @@ async function interactive(rl, savePath) {
         const resourceKey = ['killcoins', 'splithium', 'bloodnium'][Number(choice) - 4];
         const resource = RESOURCES[resourceKey];
         const capacity = getKnownCapacity(save, resourceKey);
+        console.log(`\n============================ [${resource.label} 충전] ============================`);
         if (!capacity) {
-          console.log(`\n현재 ${resource.label} 시설 레벨의 한도 정보가 없어 자동 설정할 수 없습니다.`);
+          console.log(`현재 ${resource.label} 시설 레벨의 한도 정보가 없어 자동 설정할 수 없습니다.`);
+          await pause(rl);
           continue;
         }
-        if (!await confirm(rl, `${resource.label}을 ${formatNumber(capacity)}(으)로 변경할까요?`)) continue;
+        console.log(`현재 보유: ${formatNumber(getResourceAmount(save, resourceKey))} / 알려진 한도: ${formatNumber(capacity)}`);
+        if (!await confirm(rl, `${resource.label}을 한도인 ${formatNumber(capacity)}(으)로 채울까요?`)) {
+          console.log('\n[안내] 작업이 취소되었습니다.');
+          await pause(rl);
+          continue;
+        }
         const result = writeChangedSave(savePath, save, resourceKey, capacity);
         console.log(`\n[성공] ${resource.label} 충전이 성공적으로 완료되었습니다.`);
         console.log(`- 설정 값: ${formatNumber(capacity)}`);
         console.log(`- 세이브 백업: ${result.backupPath}`);
       } else if (choice === '7') {
-        console.log('\n1. 킬코인');
+        console.log('\n========================= [자원 수치 직접 입력] =========================');
+        console.log('1. 킬코인');
         console.log('2. 스피리튬');
         console.log('3. 블러드늄');
+        console.log('0. 취소');
         const resourceChoice = (await rl.question('자원 선택: ')).trim();
+        if (resourceChoice === '0' || !resourceChoice) {
+          console.log('\n[안내] 작업이 취소되었습니다.');
+          await pause(rl);
+          continue;
+        }
         if (!['1', '2', '3'].includes(resourceChoice)) {
-          console.log('\n잘못된 선택입니다.');
+          console.log('\n[오류] 잘못된 선택입니다.');
+          await pause(rl);
           continue;
         }
         const resourceKey = ['killcoins', 'splithium', 'bloodnium'][Number(resourceChoice) - 1];
         const resource = RESOURCES[resourceKey];
         const capacity = getKnownCapacity(save, resourceKey);
+        const currentAmount = getResourceAmount(save, resourceKey);
+        console.log(`현재 ${resource.label}: ${formatNumber(currentAmount)} (알려진 한도: ${capacity ? formatNumber(capacity) : '없음'})`);
         const amount = parseAmount(await rl.question(`새 ${resource.label} 값: `));
         if (capacity && amount > capacity) {
           console.log(`주의: 알려진 한도 ${formatNumber(capacity)}을 초과합니다.`);
         }
-        if (!await confirm(rl, `${resource.label}을 ${formatNumber(amount)}(으)로 변경할까요?`)) continue;
+        if (!await confirm(rl, `${resource.label}을 ${formatNumber(amount)}(으)로 변경할까요?`)) {
+          console.log('\n[안내] 작업이 취소되었습니다.');
+          await pause(rl);
+          continue;
+        }
         const result = writeChangedSave(savePath, save, resourceKey, amount);
         console.log(`\n[성공] ${resource.label} 변경이 성공적으로 완료되었습니다.`);
         console.log(`- 설정 값: ${formatNumber(amount)}`);
         console.log(`- 세이브 백업: ${result.backupPath}`);
       } else if (choice === '8') {
         const facilityState = getFacilityState(save);
-        console.log(`\n금고 레벨: Lv.${facilityState.safeLevel} / 스피리튬 탱크 레벨: Lv.${facilityState.tankLevel} (최대 99)`);
+        console.log(`\n============================= [시설 레벨 최대 업그레이드] =============================`);
+        console.log(`금고 레벨: Lv.${facilityState.safeLevel} / 스피리튬 탱크 레벨: Lv.${facilityState.tankLevel} (최대 99)`);
         if (facilityState.isMaxed) {
-          console.log('시설 레벨이 이미 모두 최대치(99)입니다.');
+          console.log('\n[안내] 시설 레벨이 이미 모두 최대치(99)입니다.');
+          await pause(rl);
           continue;
         }
-        if (!await confirm(rl, '금고와 스피리튬 탱크 레벨을 모두 99로 업그레이드할까요?')) continue;
+        if (!await confirm(rl, '금고와 스피리튬 탱크 레벨을 모두 99로 업그레이드할까요?')) {
+          console.log('\n[안내] 작업이 취소되었습니다.');
+          await pause(rl);
+          continue;
+        }
         const result = writeFacilityUpgradesMaximum(savePath, save);
         console.log('\n[성공] 시설 레벨 최대 업그레이드가 성공적으로 완료되었습니다.');
         console.log(`- 금고: Lv.${result.previousSafeLevel} → Lv.${result.currentSafeLevel}, 스피리튬 탱크: Lv.${result.previousTankLevel} → Lv.${result.currentTankLevel} (한도 2,560,000)`);
         console.log(`- 세이브 백업: ${result.backupPath}`);
       } else if (choice === '9') {
         const researchState = getEquipmentResearchState(save, savePath);
-        console.log(`\n장비 연구 완료: ${formatNumber(researchState.existingCount)}개 항목 등록됨 (전체 356개 계보 / 1,262종 장비)`);
+        console.log(`\n======================== [모든 장비 연구·개발(R&D) 최대치 완료] ========================`);
+        console.log(`장비 연구 완료: ${formatNumber(researchState.existingCount)}개 항목 등록됨 (전체 356개 계보 / 1,262종 장비)`);
         if (researchState.isMaxed) {
-          console.log('모든 장비 연구·개발(R&D)이 이미 최대치까지 완료돼 있습니다.');
+          console.log('\n[안내] 모든 장비 연구·개발(R&D)이 이미 최대치까지 완료돼 있습니다.');
+          await pause(rl);
           continue;
         }
-        if (!await confirm(rl, '모든 장비(1,262종)의 연구·개발(R&D) 및 최종 한계돌파 강화를 최대치로 완료할까요?')) continue;
+        if (!await confirm(rl, '모든 장비(1,262종)의 연구·개발(R&D) 및 최종 한계돌파 강화를 최대치로 완료할까요?')) {
+          console.log('\n[안내] 작업이 취소되었습니다.');
+          await pause(rl);
+          continue;
+        }
         const result = writeEquipmentResearchMaximum(savePath, save);
         console.log('\n[성공] 모든 장비 연구·개발(R&D) 최대 업그레이드가 성공적으로 완료되었습니다.');
         console.log(`- 대상 장비: 총 ${formatNumber(result.totalPartCount)}종 (356개 계보 전체)`);
@@ -3983,15 +4028,25 @@ async function interactive(rl, savePath) {
           definition.maximumInternalLevel,
           definition.limitBreakStart,
         );
-        console.log(`\nKAMAS-A1 어설트 라이플 RE: +${state.completedDisplayLevel} 완료`);
+        console.log(`\n===================== [KAMAS-A1 어설트 라이플 RE 최대 강화] =====================`);
+        console.log(`현재 완료: +${state.completedDisplayLevel} 완료`);
         if (state.currentDisplayLevel > state.completedDisplayLevel) {
           console.log(`현재 연구 중: +${state.currentDisplayLevel}`);
         }
         console.log(`DB 최대 강화: +${definition.maximumDisplayLevel}`);
-        if (!await confirm(rl, `연구를 최대 +${definition.maximumDisplayLevel} 완료 상태로 변경할까요?`)) continue;
+        if (state.completedDisplayLevel >= definition.maximumDisplayLevel) {
+          console.log(`\n[안내] 이미 KAMAS RE 연구가 최대 +${definition.maximumDisplayLevel}입니다.`);
+          await pause(rl);
+          continue;
+        }
+        if (!await confirm(rl, `연구를 최대 +${definition.maximumDisplayLevel} 완료 상태로 변경할까요?`)) {
+          console.log('\n[안내] 작업이 취소되었습니다.');
+          await pause(rl);
+          continue;
+        }
         const result = writeKamasResearchMaximum(savePath, save);
         if (!result.changed) {
-          console.log(`\n이미 KAMAS RE 연구가 최대 +${definition.maximumDisplayLevel}입니다.`);
+          console.log(`\n[안내] 이미 KAMAS RE 연구가 최대 +${definition.maximumDisplayLevel}입니다.`);
         } else {
           console.log('\n[성공] KAMAS-A1 어설트 라이플 RE 최대 연구가 성공적으로 완료되었습니다.');
           console.log(`- 연구 완료 등급: +${result.maximumDisplayLevel}`);
@@ -3999,45 +4054,75 @@ async function interactive(rl, savePath) {
         }
       } else if (choice === '11') {
         const masteryState = getWeaponMasteryState(save);
-        console.log(`\n무기 숙련도(Lv.20): ${formatNumber(masteryState.maxLevelCount)} / ${formatNumber(masteryState.totalCount)}종`);
+        console.log(`\n========================== [모든 무기 숙련도 최대 업그레이드] ==========================`);
+        console.log(`무기 숙련도(Lv.20): ${formatNumber(masteryState.maxLevelCount)} / ${formatNumber(masteryState.totalCount)}종`);
         if (masteryState.isMaxed) {
-          console.log('모든 무기 숙련도가 이미 최대(Lv.20)입니다.');
+          console.log('\n[안내] 모든 무기 숙련도가 이미 최대(Lv.20)입니다.');
+          await pause(rl);
           continue;
         }
-        if (!await confirm(rl, `모든 무기 숙련도(${formatNumber(masteryState.totalCount)}종)를 최대 Lv.20으로 업그레이드할까요?`)) continue;
+        if (!await confirm(rl, `모든 무기 숙련도(${formatNumber(masteryState.totalCount)}종)를 최대 Lv.20으로 업그레이드할까요?`)) {
+          console.log('\n[안내] 작업이 취소되었습니다.');
+          await pause(rl);
+          continue;
+        }
         const result = writeWeaponMasteriesMaximum(savePath, save);
         console.log('\n[성공] 모든 무기 숙련도 최대 업그레이드가 성공적으로 완료되었습니다.');
         console.log(`- 무기 숙련도 ${formatNumber(result.upgradedCount)}종 Lv.20 최대치 적용 (전체 57종 달성)`);
         console.log(`- 세이브 백업: ${result.backupPath}`);
       } else if (choice === '12') {
         const state = getLimitedRecipeState(save);
-        console.log(`\n현재 해금: ${formatNumber(state.ownedIds.length)}/${formatNumber(LIMITED_RECIPE_DEFINITION_COUNT)}종`);
+        console.log('\n====================== [Steam용 기간 한정 레시피 해금] ======================');
+        console.log(`현재 해금 현황: ${formatNumber(state.ownedIds.length)} / ${formatNumber(LIMITED_RECIPE_DEFINITION_COUNT)}종 (미보유: ${formatNumber(state.missingIds.length)}종)`);
+        console.log('----------------------------------------------------------------------------------');
         if (state.missingIds.length === 0) {
-          console.log('Steam용 기간 한정 레시피가 이미 모두 해금돼 있습니다.');
+          console.log('\n[안내] Steam용 기간 한정 레시피 25종이 이미 모두 해금되어 있습니다.');
+          await pause(rl);
           continue;
         }
-        if (!await confirm(rl, `없는 레시피 ${formatNumber(state.missingIds.length)}종을 설계도 습득 상태로 추가할까요?`)) continue;
+        console.log(`미보유 기간 한정 레시피 ${formatNumber(state.missingIds.length)}종을 설계도 습득 상태로 추가합니다.`);
+        if (!await confirm(rl, `미보유 레시피 ${formatNumber(state.missingIds.length)}종을 모두 해금할까요?`)) {
+          console.log('\n[안내] 작업이 취소되었습니다.');
+          await pause(rl);
+          continue;
+        }
         const result = writeLimitedRecipes(savePath, save);
         console.log('\n[성공] Steam용 기간 한정 레시피 해금이 성공적으로 완료되었습니다.');
         console.log(`- 추가된 레시피: ${formatNumber(result.addedCount)}종`);
-        console.log(`- 해금 목록: ${formatNumber(result.previousOwnedCount)} → ${formatNumber(result.currentOwnedCount)}종`);
+        console.log(`- 해금 목록: ${formatNumber(result.previousOwnedCount)} → ${formatNumber(result.currentOwnedCount)}종 (총 ${formatNumber(LIMITED_RECIPE_DEFINITION_COUNT)}종 완료)`);
         console.log(`- 세이브 백업: ${result.backupPath}`);
       } else if (choice === '13') {
         const definition = getAllRecipeDefinitions(savePath);
         const state = getRecipeUnlockState(save, definition.ids, 'Steam용 전체 레시피');
-        console.log(`\n현재 해금: ${formatNumber(state.ownedIds.length)}/${formatNumber(ALL_RECIPE_DEFINITION_COUNT)}종`);
+        console.log('\n======================== [Steam용 모든 레시피 전체 해금] ========================');
+        console.log(`현재 해금 현황: ${formatNumber(state.ownedIds.length)} / ${formatNumber(ALL_RECIPE_DEFINITION_COUNT)}종 (미보유: ${formatNumber(state.missingIds.length)}종)`);
+        console.log('----------------------------------------------------------------------------------');
         if (state.missingIds.length === 0) {
-          console.log('Steam용 모든 레시피가 이미 해금돼 있습니다.');
+          console.log('\n[안내] Steam용 모든 레시피 356종이 이미 모두 해금되어 있습니다.');
+          await pause(rl);
           continue;
         }
-        if (!await confirm(rl, `없는 레시피 ${formatNumber(state.missingIds.length)}종을 설계도 습득 상태로 추가할까요?`)) continue;
+        console.log(`미보유 전체 레시피 ${formatNumber(state.missingIds.length)}종을 설계도 습득 상태로 추가합니다.`);
+        if (!await confirm(rl, `미보유 레시피 ${formatNumber(state.missingIds.length)}종을 모두 해금할까요?`)) {
+          console.log('\n[안내] 작업이 취소되었습니다.');
+          await pause(rl);
+          continue;
+        }
         const result = writeAllRecipes(savePath, save);
         console.log('\n[성공] Steam용 모든 레시피 해금이 성공적으로 완료되었습니다.');
         console.log(`- 추가된 레시피: ${formatNumber(result.addedCount)}종`);
-        console.log(`- 해금 목록: ${formatNumber(result.previousOwnedCount)} → ${formatNumber(result.currentOwnedCount)}종`);
+        console.log(`- 해금 목록: ${formatNumber(result.previousOwnedCount)} → ${formatNumber(result.currentOwnedCount)}종 (총 ${formatNumber(ALL_RECIPE_DEFINITION_COUNT)}종 완료)`);
         console.log(`- 세이브 백업: ${result.backupPath}`);
       } else if (choice === '14') {
-        if (!await confirm(rl, `Steam용 전체 데칼 ${formatNumber(STEAM_DECAL_DEFINITION_COUNT)}종을 각각 한 장씩 추가할까요?`)) continue;
+        const definition = getSteamDecalDefinitions(savePath);
+        const currentStock = getDecalStockSummary(save, definition.ids);
+        console.log('\n============================ [Steam용 전체 데칼 지급] ============================');
+        console.log(`현재 보유 데칼: ${formatNumber(currentStock.typeCount)} / ${formatNumber(STEAM_DECAL_DEFINITION_COUNT)}종`);
+        if (!await confirm(rl, `Steam용 전체 데칼 ${formatNumber(STEAM_DECAL_DEFINITION_COUNT)}종을 각각 한 장씩 추가할까요?`)) {
+          console.log('\n[안내] 작업이 취소되었습니다.');
+          await pause(rl);
+          continue;
+        }
         const result = writeAllDecals(savePath, save);
         console.log('\n[성공] Steam용 전체 데칼 지급이 성공적으로 완료되었습니다.');
         console.log(`- 지급 수량: ${formatNumber(result.addedCount)}장 (신규 ${formatNumber(result.newTypes)}종 / 기존 수량 증가 ${formatNumber(result.incrementedTypes)}종)`);
@@ -4050,23 +4135,34 @@ async function interactive(rl, savePath) {
         const maxPerBeast = Math.floor(emptySlots.length / GOLDEN_BEAST_IDS.length);
         const goldenBeasts = getGoldenBeastSummary(save);
 
-        console.log(`\n코인 보관함: 총 ${formatNumber(slots.length)}칸 중 빈칸 ${formatNumber(emptySlots.length)}개`);
+        console.log('\n======================== [황금동물 전체 11종 보관함 지급] ========================');
+        console.log(`코인 보관함: 총 ${formatNumber(slots.length)}칸 중 빈칸 ${formatNumber(emptySlots.length)}개`);
         console.log(`현재 보관 중인 황금동물: ${formatNumber(goldenBeasts.count)}마리 (${formatNumber(goldenBeasts.typeCount)}/${GOLDEN_BEAST_IDS.length}종)`);
         if (maxPerBeast < 1) {
-          console.log('오류: 코인 보관함에 빈칸이 11칸 미만(최소 1세트)이어서 황금동물을 추가할 수 없습니다.');
+          console.log('\n[안내] 코인 보관함에 빈칸이 11칸 미만(최소 1세트)이어서 황금동물을 추가할 수 없습니다.');
+          await pause(rl);
           continue;
         }
         console.log(`※ 보관함 빈칸 기준 11종을 최대 ${formatNumber(maxPerBeast)}마리씩 (총 ${formatNumber(maxPerBeast * GOLDEN_BEAST_IDS.length)}마리) 지급 가능합니다.`);
 
         const input = (await rl.question(`\n황금동물 11종을 각각 몇 마리씩 지급할까요? (기본값: 1, 최대: ${maxPerBeast}, 0=취소): `)).trim();
-        if (input === '0') continue;
+        if (input === '0') {
+          console.log('\n[안내] 작업이 취소되었습니다.');
+          await pause(rl);
+          continue;
+        }
         const count = input === '' ? 1 : Number(input);
         if (!Number.isInteger(count) || count < 1 || count > maxPerBeast) {
-          console.log(`오류: 1 ~ ${maxPerBeast} 사이의 정수를 입력해야 합니다.`);
+          console.log(`\n[오류] 1 ~ ${maxPerBeast} 사이의 정수를 입력해야 합니다.`);
+          await pause(rl);
           continue;
         }
 
-        if (!await confirm(rl, `황금동물 11종을 각각 ${count}마리씩 (총 ${count * GOLDEN_BEAST_IDS.length}마리) 코인 보관함에 추가할까요?`)) continue;
+        if (!await confirm(rl, `황금동물 11종을 각각 ${count}마리씩 (총 ${count * GOLDEN_BEAST_IDS.length}마리) 코인 보관함에 추가할까요?`)) {
+          console.log('\n[안내] 작업이 취소되었습니다.');
+          await pause(rl);
+          continue;
+        }
         const result = writeGoldenBeasts(savePath, save, count);
         console.log('\n[성공] 황금동물 보관함 지급이 성공적으로 완료되었습니다!');
         console.log(`- 지급 수량: 황금동물 전체 11종 x 각 ${formatNumber(count)}마리 (총 ${formatNumber(result.addedCount)}마리)`);
@@ -4075,11 +4171,18 @@ async function interactive(rl, savePath) {
         console.log(`- 세이브 백업: ${result.backupPath}`);
       } else if (choice === '16') {
         const shop = getBloodniumShopState(save);
+        console.log('\n=========================== [블러드늄 상점 구매 재고 복구] ===========================');
+        console.log(`현재 상태: 구매 가능 ${formatNumber(shop.available.length)}개 / 구매 완료 ${formatNumber(shop.bought.length)}개`);
         if (shop.bought.length === 0) {
-          console.log('\n복구할 블러드늄 상점 구매 완료 재고가 없습니다.');
+          console.log('\n[안내] 복구할 블러드늄 상점 구매 완료 재고가 없습니다. (모든 상품 구매 가능 상태)');
+          await pause(rl);
           continue;
         }
-        if (!await confirm(rl, `구매 완료 ${formatNumber(shop.bought.length)}개를 구매 가능 상태로 되돌릴까요?`)) continue;
+        if (!await confirm(rl, `구매 완료 ${formatNumber(shop.bought.length)}개를 구매 가능 상태로 되돌릴까요?`)) {
+          console.log('\n[안내] 작업이 취소되었습니다.');
+          await pause(rl);
+          continue;
+        }
         const result = writeBloodniumShopReset(savePath, save);
         console.log('\n[성공] 블러드늄 상점 구매 재고 복구가 성공적으로 완료되었습니다.');
         console.log(`- 복구 수량: ${formatNumber(result.restoredCount)}개`);
