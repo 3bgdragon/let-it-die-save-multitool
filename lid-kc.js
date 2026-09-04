@@ -733,10 +733,11 @@ function getRecipeUnlockState(save, recipeIds, label) {
   const missingIds = [];
   for (const id of recipeIds) {
     const levels = levelsById.get(id);
-    if (levels.size > 0 && !levels.has(1)) {
-      fail(`${label} ${id}의 최초 연구 레벨이 누락돼 있어 안전하게 중단했습니다.`);
+    if (levels.size > 0) {
+      ownedIds.push(id);
+    } else {
+      missingIds.push(id);
     }
-    (levels.has(1) ? ownedIds : missingIds).push(id);
   }
   return { research, ownedIds, missingIds };
 }
