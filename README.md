@@ -96,6 +96,11 @@ node .\lid-kc.js queen-spades restore
 node .\lid-kc.js wolf-rage
 node .\lid-kc.js wolf-rage 1000%
 node .\lid-kc.js wolf-rage restore
+node .\lid-kc.js rich-family
+node .\lid-kc.js rich-family max
+node .\lid-kc.js rich-family dur-only
+node .\lid-kc.js rich-family 500 100
+node .\lid-kc.js rich-family restore
 node .\lid-kc.js equipment-materials-free
 node .\lid-kc.js equipment-materials-restore
 node .\lid-kc.js max kc
@@ -122,7 +127,25 @@ node .\lid-kc.js equipment-materials-free --save "C:\My Saves\123456789.sav" --m
 
 ## 업데이트 이력 및 공지
 
-### v5.3.2 (최신 릴리스)
+### v5.4.0 (최신 릴리스)
+- **「부유한 가족」(Rich Family) 데칼 수치 조절 및 장비 무한 내구도 지원**:
+  - **기능 개요**: ★5 프리미엄 데칼 「부유한 가족」(`SKL_RESUP_DECDOWN_P`, Steam No.296)의 자원 획득량 증가 배율과 장비 내구도 감소 완화율을 마스터 DB(`masters.db`)에서 직접 조절할 수 있는 기능을 추가했습니다.
+  - **무한 내구도 구현**: 게임 엔진 내부 정의에 따라 내구도 손실 완화율(`val3`~`val5`)을 100%로 설정하면, 타격 시 무기 내구도 소모 및 피격 시 머리/상의/하의 방어구 내구도 소모가 100% 방지되어 인게임에서 **완전한 무한 내구도** 상태가 적용됩니다.
+  - **자원 수집량 대폭 상향**: 킬코인(KC), 스피리튬(SP), 경험치(EXP), 무기 숙련도(ABP), 체력 회복량, 보물상자 보상 증가율(`val0`~`val2`)을 기본 +20%에서 사용자가 원하는 수치(추천 +500%, 극대 +1,000%)로 자유롭게 증폭할 수 있습니다.
+  - **대화형 메뉴(21번) 및 CLI 지원**:
+    - `node .\lid-kc.js rich-family`: [추천] 자원 +500% + 무한 내구도(100%) 원클릭 적용
+    - `node .\lid-kc.js rich-family max`: [극대] 자원 +1,000% + 무한 내구도(100%) 적용
+    - `node .\lid-kc.js rich-family dur-only`: 자원 기본(+20%) 유지 + 무한 내구도(100%) 적용
+    - `node .\lid-kc.js rich-family <자원수치> [내구도수치]`: 수치 직접 지정 (예: `rich-family 500 100`)
+    - `node .\lid-kc.js rich-family restore` (또는 `rich-family-restore`): 기본값(자원 +20% / 내구도 20%) 원상 복구
+  - **대화형 메뉴 25개 옵션 체계화**:
+    - 21번: 부유한 가족 효과 조절 및 무한 내구도
+    - 22번: 모든 장비 R&D 개발·강화 재료 무료화
+    - 23번: 장비 재료 비용 복원
+    - 24번: 현재 세이브 백업
+    - 25번: 최신 세이브 복원
+
+### v5.3.2
 - **대화형 메뉴 데칼 지급(14번) 및 자원 관리(6·7번) ReferenceError 긴급 수정**:
   - **원인**: 대화형 메뉴 14번(Steam용 전체 데칼 지급) 실행 시 내부 함수명이 `getSteamDecalDefinitions` 및 `getDecalStockSummary`로 잘못 호출되어 `ReferenceError: getSteamDecalDefinitions is not defined` 예외가 발생하던 문제를 수정했습니다.
   - **조치**: 실제 구현된 정규 함수 `getAllDecalDefinitions(savePath)` 및 `getDecalStock(save)`로 바인딩을 교정하고, 정적 호출 검사를 통해 자원 직접 수정 메뉴에서 잠재적 오류를 유발할 수 있던 `getResourceAmount` 헬퍼 함수를 신규 구현하여 안정성을 확보했습니다.
