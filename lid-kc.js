@@ -216,6 +216,12 @@ function getResourceKey(value) {
   return key;
 }
 
+function getResourceAmount(save, resourceKey) {
+  const resource = RESOURCES[resourceKey];
+  if (!resource) fail(`알 수 없는 자원 키: ${resourceKey}`);
+  return save.data?.soul?.[resource.field] ?? 0;
+}
+
 function getFacilityCapacity(level) {
   if (!Number.isInteger(level) || level < 1) return undefined;
   if (BANK_CAPACITY[level]) return BANK_CAPACITY[level];
@@ -4310,10 +4316,10 @@ async function interactive(rl, savePath) {
         console.log(`- 해금 목록: ${formatNumber(result.previousOwnedCount)} → ${formatNumber(result.currentOwnedCount)}종 (총 ${formatNumber(ALL_RECIPE_DEFINITION_COUNT)}종 완료)`);
         console.log(`- 세이브 백업: ${result.backupPath}`);
       } else if (choice === '14') {
-        const definition = getSteamDecalDefinitions(savePath);
-        const currentStock = getDecalStockSummary(save, definition.ids);
+        const definition = getAllDecalDefinitions(savePath);
+        const currentStock = getDecalStock(save);
         console.log('\n============================ [Steam용 전체 데칼 지급] ============================');
-        console.log(`현재 보유 데칼: ${formatNumber(currentStock.typeCount)} / ${formatNumber(STEAM_DECAL_DEFINITION_COUNT)}종`);
+        console.log(`현재 보유 데칼: ${formatNumber(currentStock.length)} / ${formatNumber(STEAM_DECAL_DEFINITION_COUNT)}종`);
         if (!await confirm(rl, `Steam용 전체 데칼 ${formatNumber(STEAM_DECAL_DEFINITION_COUNT)}종을 각각 한 장씩 추가할까요?`)) {
           console.log('\n[안내] 작업이 취소되었습니다.');
           await pause(rl);
