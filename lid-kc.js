@@ -1568,7 +1568,37 @@ function calculateFighterTotalLevel(stats) {
   return (hp + str + dex + vit + stm + luk - 5) + skill + bag + rage;
 }
 
-function getFighterOverLimitWarnings(updates, savePath) {
+function getBaseSkillSlots(grade, type) {
+  const g = Number.isInteger(grade) ? grade : 1;
+  const t = typeof type === 'string' ? type.toUpperCase() : '';
+  if (t === 'SKI') {
+    if (g === 1) return 2;
+    if (g === 2) return 3;
+    if (g === 3) return 4;
+    if (g === 4) return 6;
+    return 9; // Grade 5, 6
+  }
+  if (t === 'OLD') return 8;
+  if (g === 1) return 1;
+  if (g === 2) return 2;
+  if (g === 3) return 3;
+  if (g === 4) return 4;
+  return 5; // Grade 5, 6
+}
+
+function getMaxAddableSkillSlots(grade, type) {
+  const base = getBaseSkillSlots(grade, type);
+  // 언캡 순정 한도는 최대 +4이며, 인게임 3x3 UI 최대치는 9칸
+  return Math.max(0, Math.min(4, 9 - base));
+}
+
+function getTotalSkillSlots(grade, type, skill) {
+  const base = getBaseSkillSlots(grade, type);
+  const s = Number.isInteger(skill) ? skill : 0;
+  return Math.min(9, base + s);
+}
+
+function getFighterOverLimitWarnings(updates, savePath, targetFighter = null) {
   let dbStatMax = 45;
   let dbExpMax = 280;
   if (savePath) {
@@ -1597,10 +1627,13 @@ function getFighterOverLimitWarnings(updates, savePath) {
     );
   }
 
-  if (updates.skill !== undefined && updates.skill > 4) {
+  const baseSlots = targetFighter ? getBaseSkillSlots(targetFighter.grade, targetFighter.type) : 5;
+  const maxAddSkill = targetFighter ? getMaxAddableSkillSlots(targetFighter.grade, targetFighter.type) : 4;
+  if (updates.skill !== undefined && updates.skill > maxAddSkill) {
+    const total = Math.min(9, baseSlots + updates.skill);
     notices.push(
-      `데칼 슬롯 +${updates.skill} (순정/물리 UI 한도 +4 [총 9칸] 초과)\n` +
-      `     -> 인게임 3x3 데칼 UI 한계로 인해 10번째 이후 슬롯은 화면에 표시되지 않습니다. (최대 9칸 권장)`
+      `데칼 슬롯 +${updates.skill} (해당 파이터 공식 한도 +${maxAddSkill} 초과, 총 ${total}칸)\n` +
+      `     -> 인게임 3x3 데칼 UI 한계 및 파이터 등급별 슬롯 제한으로 초과 슬롯은 비활성화될 수 있습니다.`
     );
   }
 
@@ -1628,8 +1661,8 @@ function getFighterOverLimitWarnings(updates, savePath) {
   return notices;
 }
 
-async function promptFighterWarningIfNeeded(rl, updates, savePath, forceYes = false) {
-  const notices = getFighterOverLimitWarnings(updates, savePath);
+async function promptFighterWarningIfNeeded(rl, updates, savePath, forceYes = false, targetFighter = null) {
+  const notices = getFighterOverLimitWarnings(updates, savePath, targetFighter);
   if (notices.length === 0) return true;
 
   console.log('\n' + '='.repeat(78));
@@ -1680,6 +1713,7 @@ function printFighterChangeSummary(result, modeDesc) {
   const p = result.previousStats;
   const u = result.updatedStats;
   const f = result.targetFighter;
+  const baseSlots = getBaseSkillSlots(f.grade, f.type);
 
   const statItems = [
     { label: 'HP (체력)', key: 'hp' },
@@ -1688,7 +1722,7 @@ function printFighterChangeSummary(result, modeDesc) {
     { label: 'VIT (체력/방어)', key: 'vit' },
     { label: 'STM (스태미나)', key: 'stm' },
     { label: 'LUK (행운)', key: 'luk' },
-    { label: '데칼 슬롯', key: 'skill', fmt: (v) => `+${v} (총 ${Math.min(9, 5 + v)}칸)` },
+    { label: '데칼 슬롯', key: 'skill', fmt: (v) => `+${v} (총 ${Math.min(9, baseSlots + v)}칸 / 기본 ${baseSlots}칸)` },
     { label: '가방 용량', key: 'bag', fmt: (v) => `+${v}칸` },
     { label: '분노 게이지', key: 'rage', fmt: (v) => `${v}/5` },
     { label: 'HP 보너스', key: 'hp_bonus', fmt: (v) => `+${v ?? 0}` },
@@ -1745,6 +1779,12 @@ function printFighterChangeSummary(result, modeDesc) {
     console.log(`  ${padEndVisual(item.label, 18)} : ${padEndVisual(bStr, 14)} →  ${padEndVisual(aStr, 14)} [${statusText}]`);
   }
   console.log('------------------------------------------------------------------------------');
+  const finalTotalSlots = Math.min(9, baseSlots + (u.skill ?? 0));
+  if (finalTotalSlots < 9) {
+    console.log(`※ 안내: ${f.grade}성 ${f.typeName}은 기본 ${baseSlots}칸 + 추가 ${u.skill ?? 0}칸 = 총 ${finalTotalSlots}칸 데칼 슬롯이 적용됩니다.`);
+    console.log(`        인게임 3×3 데칼 UI의 나머지 ${9 - finalTotalSlots}칸은 미해금(X 표시) 상태로 표시되는 것이 정상입니다.`);
+    console.log('------------------------------------------------------------------------------');
+  }
   console.log(`• 세이브 백업: ${result.backupPath}`);
   console.log('==============================================================================\n');
 }
@@ -3884,6 +3924,11 @@ async function interactive(rl, savePath) {
 
         const selected = fighters[fIdx];
         const s = selected.stats;
+        const baseSlots = getBaseSkillSlots(selected.grade, selected.type);
+        const maxAddSkill = getMaxAddableSkillSlots(selected.grade, selected.type);
+        const currentTotalSlots = getTotalSkillSlots(selected.grade, selected.type, s.skill);
+        const maxTotalSlots = baseSlots + maxAddSkill;
+
         console.log(`\n================== [파이터 상세 현황: ${selected.name} (${selected.typeName})] ==================`);
         console.log(`등급: ${selected.grade}성 | 한계돌파: ${selected.limitBreak}단계 | 상태: ${selected.state}`);
         console.log(`총 레벨: Lv.${s.lvl}`);
@@ -3896,7 +3941,7 @@ async function interactive(rl, savePath) {
         console.log(`4. VIT (체력)  :     ${String(s.vit).padEnd(6)}     45 (LB4)         50 (더미OLD)   보너스: ${s.vit_bonus ?? 0}/5`);
         console.log(`5. STM (스태미나):   ${String(s.stm).padEnd(6)}     45 (LB4)         50 (더미OLD)   보너스: ${s.stm_bonus ?? 0}/5`);
         console.log(`6. LUK (행운)  :     ${String(s.luk).padEnd(6)}     45 (LB4)         50 (더미OLD)   보너스: ${s.luk_bonus ?? 0}/5`);
-        console.log(`7. 데칼 슬롯   :     +${String(s.skill).padEnd(5)}     총 9칸 (+4)      총 15칸 (+10)  기본 5칸 + 추가 해금`);
+        console.log(`7. 데칼 슬롯   :     +${String(s.skill).padEnd(5)}     총 ${currentTotalSlots}칸 (+${s.skill})      최대 ${maxTotalSlots}칸 (+${maxAddSkill})  기본 ${baseSlots}칸 + 추가 해금`);
         console.log(`8. 가방 용량   :     +${String(s.bag).padEnd(5)}     총 34~54 (+12)   +50칸 확장     기본 22~42칸 + 추가 확장`);
         console.log(`9. 분노 게이지 :     ${String(s.rage).padEnd(6)}     5                5              게이지 확장`);
         console.log('==================================================================================');
@@ -3905,8 +3950,8 @@ async function interactive(rl, savePath) {
         console.log('3. [주 능력치 직접 지정] 6대 주 능력치 수치 직접 입력 일괄 지정 (1~50, 45 초과 시 주의)');
         console.log('4. [보너스 순정 최대]    6대 능력치 보너스 +5로 일괄 적용 (총 +30, 권장)');
         console.log('5. [보너스 확장 지정]    6대 능력치 보너스 수치 직접 입력 일괄 지정 (0~50)');
-        console.log('6. [슬롯·가방 순정 최대] 데칼 슬롯 +4 (총 9칸) / 데스백 +12칸 일괄 적용 (권장)');
-        console.log('7. [슬롯 9칸 + 가방 확장] 데칼 슬롯 +4 (총 9칸) / 데스백 +50칸 일괄 적용 (권장)');
+        console.log(`6. [슬롯·가방 순정 최대] 데칼 슬롯 +${maxAddSkill} (총 ${maxTotalSlots}칸) / 데스백 +12칸 일괄 적용 (권장)`);
+        console.log(`7. [슬롯 최대 + 가방 확장] 데칼 슬롯 +${maxAddSkill} (총 ${maxTotalSlots}칸) / 데스백 +50칸 일괄 적용 (권장)`);
         console.log('8. 개별 능력치/슬롯/보너스 세부 설정');
         console.log('0. 취소');
 
@@ -3948,13 +3993,19 @@ async function interactive(rl, savePath) {
           modeDesc = `보너스 포인트 일괄 ${val}`;
           if (!await confirm(rl, `${selected.name}의 6대 능력치 보너스를 모두 ${val}(으)로 변경할까요?`)) continue;
         } else if (subChoice === '6') {
-          updates = { skill: 4, bag: 12 };
-          modeDesc = '슬롯·가방 순정 최대치(슬롯+4 / 가방+12)';
-          if (!await confirm(rl, `${selected.name}의 데칼 슬롯을 +4(총 9칸), 가방을 +12칸으로 변경할까요?`)) continue;
+          updates = { skill: maxAddSkill, bag: 12 };
+          modeDesc = `슬롯·가방 순정 최대치(슬롯+${maxAddSkill} [총 ${maxTotalSlots}칸] / 가방+12)`;
+          const slotNotice = maxTotalSlots < 9
+            ? `\n  ※ 주의: ${selected.grade}성 캐릭터는 기본 ${baseSlots}칸 + 추가 ${maxAddSkill}칸 = 총 ${maxTotalSlots}칸까지만 지원되며, 인게임 3×3 UI의 나머지 ${9 - maxTotalSlots}칸은 미해금(X 표시) 상태가 됩니다.`
+            : '';
+          if (!await confirm(rl, `${selected.name}의 데칼 슬롯을 +${maxAddSkill}(총 ${maxTotalSlots}칸), 가방을 +12칸으로 변경할까요?${slotNotice}`)) continue;
         } else if (subChoice === '7') {
-          updates = { skill: 4, bag: 50 };
-          modeDesc = '슬롯 9칸 + 가방 50칸 확장 (슬롯+4 / 가방+50)';
-          if (!await confirm(rl, `${selected.name}의 데칼 슬롯을 +4(총 9칸, 인게임 UI 최대), 가방을 +50칸으로 확장할까요?`)) continue;
+          updates = { skill: maxAddSkill, bag: 50 };
+          modeDesc = `슬롯 ${maxTotalSlots}칸 + 가방 50칸 확장 (슬롯+${maxAddSkill} / 가방+50)`;
+          const slotNotice = maxTotalSlots < 9
+            ? `\n  ※ 주의: ${selected.grade}성 캐릭터는 기본 ${baseSlots}칸 + 추가 ${maxAddSkill}칸 = 총 ${maxTotalSlots}칸까지만 지원되며, 인게임 3×3 UI의 나머지 ${9 - maxTotalSlots}칸은 미해금(X 표시) 상태가 됩니다.`
+            : '';
+          if (!await confirm(rl, `${selected.name}의 데칼 슬롯을 +${maxAddSkill}(총 ${maxTotalSlots}칸), 가방을 +50칸으로 확장할까요?${slotNotice}`)) continue;
         } else if (subChoice === '8') {
           console.log('\n개별 설정할 항목을 선택하세요:');
           console.log(' 1. HP (체력)             (1~50, 순정최대: 45)');
@@ -3963,7 +4014,7 @@ async function interactive(rl, savePath) {
           console.log(' 4. VIT (체력/방어)       (1~50, 순정최대: 45)');
           console.log(' 5. STM (스태미나)        (1~50, 순정최대: 45)');
           console.log(' 6. LUK (행운)            (1~50, 순정최대: 45)');
-          console.log(' 7. 데칼 슬롯 추가        (0~4, 총 5~9칸, 인게임 UI 최대: +4)');
+          console.log(` 7. 데칼 슬롯 추가        (0~${maxAddSkill}, 기본: ${baseSlots}칸, 총 ${baseSlots}~${maxTotalSlots}칸, 최대: +${maxAddSkill})`);
           console.log(' 8. 가방 용량 추가        (0~50, 순정최대: 12칸 / 최대 50칸 확장)');
           console.log(' 9. 분노 게이지           (0~5)');
           console.log('10. HP 보너스 포인트      (0~50, 순정최대: 5)');
@@ -3983,7 +4034,7 @@ async function interactive(rl, savePath) {
             '4': { key: 'vit', name: 'VIT', min: 1, legitMax: 45, max: 50 },
             '5': { key: 'stm', name: 'STM', min: 1, legitMax: 45, max: 50 },
             '6': { key: 'luk', name: 'LUK', min: 1, legitMax: 45, max: 50 },
-            '7': { key: 'skill', name: '데칼 슬롯', min: 0, legitMax: 4, max: 4 },
+            '7': { key: 'skill', name: '데칼 슬롯', min: 0, legitMax: maxAddSkill, max: maxAddSkill },
             '8': { key: 'bag', name: '가방 용량', min: 0, legitMax: 12, max: 50 },
             '9': { key: 'rage', name: '분노 게이지', min: 0, legitMax: 5, max: 5 },
             '10': { key: 'hp_bonus', name: 'HP 보너스', min: 0, legitMax: 5, max: 50 },
@@ -4007,13 +4058,21 @@ async function interactive(rl, savePath) {
           }
           updates = { [targetMeta.key]: newVal };
           modeDesc = `${targetMeta.name} ${newVal}`;
-          if (!await confirm(rl, `${selected.name}의 ${targetMeta.name}을(를) ${currentVal} → ${newVal}(으)로 변경할까요?`)) continue;
+          if (targetMeta.key === 'skill') {
+            const newTotal = Math.min(9, baseSlots + newVal);
+            const slotNotice = newTotal < 9
+              ? `\n  ※ 참고: ${selected.grade}성 캐릭터는 기본 ${baseSlots}칸 + 추가 ${newVal}칸 = 총 ${newTotal}칸이 되며, 인게임 3×3 UI의 나머지 ${9 - newTotal}칸은 X 표시로 잠깁니다.`
+              : '';
+            if (!await confirm(rl, `${selected.name}의 데칼 슬롯을 +${currentVal} → +${newVal}(총 ${newTotal}칸)으로 변경할까요?${slotNotice}`)) continue;
+          } else {
+            if (!await confirm(rl, `${selected.name}의 ${targetMeta.name}을(를) ${currentVal} → ${newVal}(으)로 변경할까요?`)) continue;
+          }
         } else {
           console.log('\n잘못된 선택입니다.');
           continue;
         }
 
-        if (!await promptFighterWarningIfNeeded(rl, updates, savePath)) continue;
+        if (!await promptFighterWarningIfNeeded(rl, updates, savePath, false, selected)) continue;
 
         const result = writeFighterStats(savePath, save, fIdx, updates);
         printFighterChangeSummary(result, modeDesc);
@@ -5116,11 +5175,14 @@ async function main() {
       console.log(`\n[캐릭터(파이터) 목록] 총 ${fighters.length}명 (주 능력치 기준: 순정 최대치 Lv.45 / DB 최대치 Lv.50)`);
       fighters.forEach((f, idx) => {
         const s = f.stats;
+        const fBase = getBaseSkillSlots(f.grade, f.type);
+        const fTotal = getTotalSkillSlots(f.grade, f.type, s.skill);
+        const fMaxAdd = getMaxAddableSkillSlots(f.grade, f.type);
         console.log(`\n[#${idx + 1}] ${f.name} (${f.typeName}) | ${f.grade}성 LB${f.limitBreak} | ${f.state}`);
         console.log(`  총 레벨: Lv.${s.lvl}`);
         console.log(`  HP: ${s.hp}/45(순정) [50(DB)](+${s.hp_bonus || 0}) | STR: ${s.str}/45[50](+${s.str_bonus || 0}) | DEX: ${s.dex}/45[50](+${s.dex_bonus || 0})`);
         console.log(`  VIT: ${s.vit}/45(순정) [50(DB)](+${s.vit_bonus || 0}) | STM: ${s.stm}/45[50](+${s.stm_bonus || 0}) | LUK: ${s.luk}/45[50](+${s.luk_bonus || 0})`);
-        console.log(`  데칼 슬롯: +${s.skill} (총 ${Math.min(9, 5 + s.skill)}칸, 순정최대 9칸) | 가방: ${s.bag} | 분노 게이지: ${s.rage}/5`);
+        console.log(`  데칼 슬롯: +${s.skill} (총 ${fTotal}칸 / 기본 ${fBase}칸, 최대 ${fBase + fMaxAdd}칸) | 가방: ${s.bag} | 분노 게이지: ${s.rage}/5`);
       });
       return;
     }
@@ -5143,6 +5205,9 @@ async function main() {
       }
 
       const targetFighter = fighters[fIdx];
+      const targetBase = getBaseSkillSlots(targetFighter.grade, targetFighter.type);
+      const targetMaxSkill = getMaxAddableSkillSlots(targetFighter.grade, targetFighter.type);
+      const targetTotal = targetBase + targetMaxSkill;
       let updates = {};
       let modeDesc = '';
 
@@ -5162,11 +5227,11 @@ async function main() {
         updates = { hp_bonus: val, str_bonus: val, dex_bonus: val, vit_bonus: val, stm_bonus: val, luk_bonus: val };
         modeDesc = `보너스 확장 일괄 +${val}`;
       } else if (['max-slots', 'slots-max'].includes(statKeyArg)) {
-        updates = { skill: 4, bag: 12 };
-        modeDesc = '슬롯·가방 순정 최대(+4/+12)';
+        updates = { skill: targetMaxSkill, bag: 12 };
+        modeDesc = `슬롯·가방 순정 최대(+${targetMaxSkill} [총 ${targetTotal}칸] / +12)`;
       } else if (['expand-slots', 'slots-expand'].includes(statKeyArg)) {
-        updates = { skill: 4, bag: 50 };
-        modeDesc = '슬롯 9칸(UI최대) + 가방 확장(+50)';
+        updates = { skill: targetMaxSkill, bag: 50 };
+        modeDesc = `슬롯 ${targetTotal}칸(최대 +${targetMaxSkill}) + 가방 확장(+50)`;
       } else if (statKeyArg === 'all') {
         if (valArg === undefined) fail('all 옵션 뒤에 설정할 수치(1~50)를 입력해야 합니다.');
         const val = Number(valArg);
@@ -5187,7 +5252,7 @@ async function main() {
           vit: { min: 1, legitMax: 45, max: 50 },
           stm: { min: 1, legitMax: 45, max: 50 },
           luk: { min: 1, legitMax: 45, max: 50 },
-          skill: { min: 0, legitMax: 4, max: 4 },
+          skill: { min: 0, legitMax: targetMaxSkill, max: targetMaxSkill },
           bag: { min: 0, legitMax: 45, max: 50 },
           rage: { min: 0, legitMax: 5, max: 5 },
           hp_bonus: { min: 0, legitMax: 5, max: 50 },
@@ -5210,7 +5275,7 @@ async function main() {
 
       console.log(`대상 파이터: [#${fIdx + 1}] ${targetFighter.name} (${targetFighter.typeName}) [${modeDesc}]`);
       console.log('설정할 변경 사항:', updates);
-      if (!await promptFighterWarningIfNeeded(rl, updates, savePath, parsed.yes)) return;
+      if (!await promptFighterWarningIfNeeded(rl, updates, savePath, parsed.yes, targetFighter)) return;
       if (!parsed.yes && !await confirm(rl, '이 파이터 능력치를 변경할까요?')) return;
       const result = writeFighterStats(savePath, save, fIdx, updates);
       printFighterChangeSummary(result, modeDesc);
@@ -5308,6 +5373,9 @@ module.exports = {
   WOLF_RAGE_DEFAULT_VALUES,
   WOLF_RAGE_TARGET_PERCENT,
   calculateFighterTotalLevel,
+  getBaseSkillSlots,
+  getMaxAddableSkillSlots,
+  getTotalSkillSlots,
   FIGHTER_TYPES,
   getFighterList,
   replaceFighterStats,
