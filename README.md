@@ -101,6 +101,11 @@ node .\lid-kc.js rich-family max
 node .\lid-kc.js rich-family dur-only
 node .\lid-kc.js rich-family 500 100
 node .\lid-kc.js rich-family restore
+node .\lid-kc.js naomi-detox
+node .\lid-kc.js naomi-detox max
+node .\lid-kc.js naomi-detox 5000%
+node .\lid-kc.js naomi-detox kc-only
+node .\lid-kc.js naomi-detox restore
 node .\lid-kc.js equipment-materials-free
 node .\lid-kc.js equipment-materials-restore
 node .\lid-kc.js max kc
@@ -127,7 +132,26 @@ node .\lid-kc.js equipment-materials-free --save "C:\My Saves\123456789.sav" --m
 
 ## 업데이트 이력 및 공지
 
-### v5.4.0 (최신 릴리스)
+### v5.5.0 (최신 릴리스)
+- **오프라인 특전 데칼 「나오미 디톡스」(Naomi Detox) 킬코인·스피리튬 획득 배율 조절 및 무한 내구도 지원**:
+  - **배경 및 개요**: 오프라인판 시작 시 기본 제공되는 핵심 파밍 특전 데칼인 ★5 프리미엄 「나오미 디톡스」(`SKL_RESUP_DECDOWN_01_P`, Steam No.324)의 킬코인(KC) 및 스피리튬(SP) 획득 배율을 원하는 수준으로 대폭 증폭할 수 있는 기능을 마스터 DB(`masters.db`) 패치로 신규 지원합니다.
+  - **무한 내구도 동시 지원**: 엔진 내부적으로 「부유한 가족」과 동일한 `SKLTP_RESOURCEUP_DECDURDOWN` 타입을 공유하므로, 장비 내구도 감소 방지율을 100%로 설정하여 **나오미 디톡스 하나만으로 킬코인 대폭 획득 + 무기/방어구 무한 내구도**를 동시에 달성할 수 있습니다. (내구도 손실 없는 순수 킬코인 파밍 모드도 완벽 지원)
+  - **대화형 메뉴(22번) 및 CLI 지원**:
+    - `node .\lid-kc.js naomi-detox` (단축어: `detox`): [추천] 킬코인·SP +500% + 무한 내구도(100%) 원클릭 적용
+    - `node .\lid-kc.js naomi-detox max`: [극대] 킬코인·SP +1,000% + 무한 내구도(100%) 적용
+    - `node .\lid-kc.js naomi-detox 5000%` (또는 `farm`): [파밍 특화] 킬코인·SP +5,000% + 무한 내구도(100%) 적용
+    - `node .\lid-kc.js naomi-detox kc-only [수치]`: 내구도 변경 없이 킬코인·SP 배율만 상향 (내구도 0% 유지)
+    - `node .\lid-kc.js naomi-detox <수치> [내구도]`: 사용자 직접 입력 (예: `naomi-detox 2000 100`)
+    - `node .\lid-kc.js naomi-detox restore` (또는 `detox-restore`): 기본값(킬코인·SP +50% / 내구도 0%) 원상 복구
+  - **대화형 메뉴 26개 옵션 체계화**:
+    - 21번: 부유한 가족 효과 조절 및 무한 내구도
+    - 22번: 나오미 디톡스 (오프라인 특전) 효과 조절 및 무한 내구도
+    - 23번: 모든 장비 R&D 개발·강화 재료 무료화
+    - 24번: 장비 재료 비용 복원
+    - 25번: 현재 세이브 백업
+    - 26번: 최신 세이브 복원
+
+### v5.4.0
 - **「부유한 가족」(Rich Family) 데칼 수치 조절 및 장비 무한 내구도 지원**:
   - **기능 개요**: ★5 프리미엄 데칼 「부유한 가족」(`SKL_RESUP_DECDOWN_P`, Steam No.296)의 자원 획득량 증가 배율과 장비 내구도 감소 완화율을 마스터 DB(`masters.db`)에서 직접 조절할 수 있는 기능을 추가했습니다.
   - **무한 내구도 구현**: 게임 엔진 내부 정의에 따라 내구도 손실 완화율(`val3`~`val5`)을 100%로 설정하면, 타격 시 무기 내구도 소모 및 피격 시 머리/상의/하의 방어구 내구도 소모가 100% 방지되어 인게임에서 **완전한 무한 내구도** 상태가 적용됩니다.
@@ -138,12 +162,6 @@ node .\lid-kc.js equipment-materials-free --save "C:\My Saves\123456789.sav" --m
     - `node .\lid-kc.js rich-family dur-only`: 자원 기본(+20%) 유지 + 무한 내구도(100%) 적용
     - `node .\lid-kc.js rich-family <자원수치> [내구도수치]`: 수치 직접 지정 (예: `rich-family 500 100`)
     - `node .\lid-kc.js rich-family restore` (또는 `rich-family-restore`): 기본값(자원 +20% / 내구도 20%) 원상 복구
-  - **대화형 메뉴 25개 옵션 체계화**:
-    - 21번: 부유한 가족 효과 조절 및 무한 내구도
-    - 22번: 모든 장비 R&D 개발·강화 재료 무료화
-    - 23번: 장비 재료 비용 복원
-    - 24번: 현재 세이브 백업
-    - 25번: 최신 세이브 복원
 
 ### v5.3.2
 - **대화형 메뉴 데칼 지급(14번) 및 자원 관리(6·7번) ReferenceError 긴급 수정**:

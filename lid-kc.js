@@ -52,6 +52,11 @@ const RICH_FAMILY_DEFAULT_RESOURCE = 20;
 const RICH_FAMILY_DEFAULT_DURABILITY = 20;
 const RICH_FAMILY_RECOMMENDED_RESOURCE = 500;
 const RICH_FAMILY_INFINITE_DURABILITY = 100;
+const NAOMI_DETOX_DECAL_ID = 'SKL_RESUP_DECDOWN_01_P';
+const NAOMI_DETOX_DEFAULT_RESOURCE = 50;
+const NAOMI_DETOX_DEFAULT_DURABILITY = 0;
+const NAOMI_DETOX_RECOMMENDED_RESOURCE = 500;
+const NAOMI_DETOX_INFINITE_DURABILITY = 100;
 const KAMAS_RE_FINAL_PART_ID = 'PT_ARM_WP031_0B5';
 const EQUIPMENT_MATERIAL_COLUMNS = [
   'buy_mate1_num', 'buy_mate2_num', 'buy_mate3_num', 'buy_mate4_num', 'buy_mate5_num',
@@ -3144,6 +3149,101 @@ function restoreRichFamilyDefault(savePath) {
   return setRichFamilyValues(savePath, RICH_FAMILY_DEFAULT_RESOURCE, RICH_FAMILY_DEFAULT_DURABILITY);
 }
 
+function getNaomiDetoxStatus(savePath) {
+  const databasePath = getMasterDatabasePath(savePath);
+  let database;
+  try {
+    database = new DatabaseSync(databasePath, { readOnly: true });
+    const row = database.prepare(
+      `SELECT id, name, type, val0, val1, val2, val3, val4, val5, premium, rarity
+       FROM master_skill WHERE id = ?`,
+    ).get(NAOMI_DETOX_DECAL_ID);
+    if (!row || row.type !== 'SKLTP_RESOURCEUP_DECDURDOWN' || row.premium !== 1 || row.rarity !== 5) {
+      fail('나오미 디톡스 데칼 정의가 예상과 달라 안전하게 중단했습니다.');
+    }
+    const resourcePercent = row.val1;
+    const durabilityPercent = row.val3;
+    const isDefault = resourcePercent === NAOMI_DETOX_DEFAULT_RESOURCE && durabilityPercent === NAOMI_DETOX_DEFAULT_DURABILITY && row.val0 === 0 && row.val2 === 0;
+    const isInfiniteDurability = durabilityPercent >= NAOMI_DETOX_INFINITE_DURABILITY;
+    return {
+      databasePath,
+      row,
+      resourcePercent,
+      durabilityPercent,
+      isDefault,
+      isInfiniteDurability,
+    };
+  } finally {
+    if (database) database.close();
+  }
+}
+
+function setNaomiDetoxValues(savePath, targetResourcePercent, targetDurabilityPercent = 0) {
+  if (isGameRunning()) {
+    fail('LET IT DIE가 실행 중입니다. 게임을 완전히 종료한 뒤 다시 실행하세요.');
+  }
+
+  const resource = Number(targetResourcePercent);
+  const durability = Number(targetDurabilityPercent);
+  if (!Number.isInteger(resource) || resource < 0 || resource > 50_000) {
+    fail('킬코인·스피리튬 획득 증가율은 0 ~ 50,000% 사이의 정수여야 합니다.');
+  }
+  if (!Number.isInteger(durability) || durability < 0 || durability > 100) {
+    fail('내구도 감소 방지율은 0 ~ 100% 사이의 정수여야 합니다. (100% 설정 시 무한 내구도)');
+  }
+
+  const status = getNaomiDetoxStatus(savePath);
+  if (status.resourcePercent === resource && status.durabilityPercent === durability) {
+    return { ...status, changed: false, backupPath: undefined, targetResource: resource, targetDurability: durability };
+  }
+
+  const original = fs.readFileSync(status.databasePath);
+  const originalHash = sha256(original);
+  const backupPath = createMasterDatabaseBackup(original);
+  let database;
+  try {
+    if (sha256(fs.readFileSync(status.databasePath)) !== originalHash) {
+      fail('마스터 DB를 읽은 뒤 파일이 변경됐습니다. 안전하게 중단했습니다.');
+    }
+    database = new DatabaseSync(status.databasePath);
+    database.exec('BEGIN IMMEDIATE');
+    const result = database.prepare(
+      'UPDATE master_skill SET val0 = 0, val1 = ?, val2 = 0, val3 = ?, val4 = ?, val5 = ? WHERE id = ?',
+    ).run(
+      resource,
+      durability, durability, resource,
+      NAOMI_DETOX_DECAL_ID,
+    );
+    if (Number(result.changes) !== 1) {
+      fail('나오미 디톡스 데칼 수치 수정 건수가 올바르지 않습니다.');
+    }
+    const integrity = database.prepare('PRAGMA integrity_check').get();
+    if (!integrity || integrity.integrity_check !== 'ok') {
+      fail('마스터 DB 무결성 검사에 실패했습니다.');
+    }
+    database.exec('COMMIT');
+  } catch (error) {
+    if (database) {
+      try { database.exec('ROLLBACK'); } catch {}
+    }
+    throw error;
+  } finally {
+    if (database) database.close();
+  }
+
+  const verified = getNaomiDetoxStatus(savePath);
+  if (verified.resourcePercent !== resource || verified.durabilityPercent !== durability) {
+    fs.copyFileSync(backupPath, status.databasePath);
+    fail('수정 결과 검증에 실패해 원본 DB를 복구했습니다.');
+  }
+
+  return { ...verified, changed: true, backupPath, targetResource: resource, targetDurability: durability };
+}
+
+function restoreNaomiDetoxDefault(savePath) {
+  return setNaomiDetoxValues(savePath, NAOMI_DETOX_DEFAULT_RESOURCE, NAOMI_DETOX_DEFAULT_DURABILITY);
+}
+
 const FIGHTER_LIMIT_BACKUP_PREFIX = 'masters.db.fighter-limits.';
 const PLAYABLE_6STAR_TYPES = ['BAL', 'BRE', 'COL', 'DEF', 'LUK', 'SHT', 'SKI', 'TEC'];
 
@@ -3881,6 +3981,10 @@ const MASTER_DATABASE_COMMANDS = new Set([
   'wolf-rage-restore',
   'rich-family',
   'rich-family-restore',
+  'naomi-detox',
+  'naomi-detox-restore',
+  'detox',
+  'detox-restore',
   'equipment-materials-free',
   'equipment-materials-restore',
   'expand-fighter-limits',
@@ -4001,11 +4105,12 @@ async function interactive(rl, savePath) {
     console.log('19. 스페이드 여왕 공격력 수치 변경(배율/퍼센트 직접 입력) / 기본값 복구');
     console.log('20. 슈퍼 울프·매드 울프 레이지 축적 속도 +1,000% 적용 (게이지 즉시 충전) / 기본값 복구');
     console.log('21. 부유한 가족 데칼 수치 설정 (자원 수집 배율 + 장비 무한 내구도) / 기본값 복구');
-    console.log('22. 모든 장비 개발·강화 재료 비용을 0으로 변경');
-    console.log('23. 장비 개발·강화 재료 비용을 전용 백업에서 복원');
+    console.log('22. 나오미 디톡스(오프라인 특전) 데칼 수치 설정 (킬코인·스피리튬 배율 + 무한 내구도) / 기본값 복구');
+    console.log('23. 모든 장비 개발·강화 재료 비용을 0으로 변경');
+    console.log('24. 장비 개발·강화 재료 비용을 전용 백업에서 복원');
     console.log('\n=========================== [6. 세이브 백업 및 복원] ===========================');
-    console.log('24. 현재 세이브 백업하기');
-    console.log('25. 최신 백업 복원');
+    console.log('25. 현재 세이브 백업하기');
+    console.log('26. 최신 백업 복원');
     console.log('\n 0. 프로그램 종료');
 
     const choice = (await rl.question('\n선택: ')).trim();
@@ -4804,6 +4909,89 @@ async function interactive(rl, savePath) {
           continue;
         }
       } else if (choice === '22') {
+        const status = getNaomiDetoxStatus(savePath);
+        const currentResource = status.resourcePercent;
+        const currentDurability = status.durabilityPercent;
+        console.log(`\n마스터 DB: ${status.databasePath}`);
+        console.log('나오미 디톡스 (Naomi Detox / SKL_RESUP_DECDOWN_01_P) [오프라인 특전]:');
+        console.log(`- 킬코인·스피리튬 증가율 : +${formatNumber(currentResource)}% (적 처치 / 보물상자 획득) (기본값: +50%)`);
+        console.log(`- 장비 내구도 보호       : ${currentDurability >= 100 ? '★ 무한 내구도 (100% 보호)' : currentDurability > 0 ? `내구도 손실 ${formatNumber(currentDurability)}% 완화` : '없음 (0%)'} (기본값: 0%)`);
+        console.log('※ 장비 내구도 보호율을 100%로 설정하면, 착용한 무기와 머리/상의/하의 방어구의 내구도가');
+        console.log('   전혀 닳지 않는 무한 내구도 상태가 함께 적용됩니다.');
+        console.log('\n수정 방식을 선택하세요:');
+        console.log('1. [추천] 킬코인·SP +500% (5배) + 장비 무한 내구도(100%) 원클릭 적용');
+        console.log('2. [극대] 킬코인·SP +1,000% (10배) + 장비 무한 내구도(100%) 원클릭 적용');
+        console.log('3. [파밍 특화] 킬코인·SP +5,000% (50배) + 장비 무한 내구도(100%) 원클릭 적용');
+        console.log('4. [킬코인 전용] 킬코인·SP +500% 적용 (내구도 0% 유지)');
+        console.log('5. 수치 직접 입력 (획득 증가율 % 및 내구도 보호율 %)');
+        console.log('6. 기본값 복구 (킬코인·SP +50% / 내구도 0%)');
+        console.log('0. 뒤로 가기');
+
+        const subChoice = (await rl.question('\n선택 (기본값 0): ')).trim();
+        if (subChoice === '1') {
+          if (!await confirm(rl, '나오미 디톡스 효과를 [킬코인·SP +500% / 무한 내구도 100%]로 변경할까요?')) continue;
+          const result = setNaomiDetoxValues(savePath, NAOMI_DETOX_RECOMMENDED_RESOURCE, NAOMI_DETOX_INFINITE_DURABILITY);
+          console.log('\n[성공] 나오미 디톡스 데칼 수치 변경이 성공적으로 완료되었습니다!');
+          console.log(`- 킬코인·SP 획득량: +${formatNumber(currentResource)}% → +${formatNumber(result.resourcePercent)}%`);
+          console.log(`- 내구도 보호: ${currentDurability}% → ${result.durabilityPercent}% (무한 내구도)`);
+          console.log(`- 마스터 DB 백업: ${result.backupPath}`);
+        } else if (subChoice === '2') {
+          if (!await confirm(rl, '나오미 디톡스 효과를 [킬코인·SP +1,000% / 무한 내구도 100%]로 변경할까요?')) continue;
+          const result = setNaomiDetoxValues(savePath, 1_000, NAOMI_DETOX_INFINITE_DURABILITY);
+          console.log('\n[성공] 나오미 디톡스 데칼 수치 변경이 성공적으로 완료되었습니다!');
+          console.log(`- 킬코인·SP 획득량: +${formatNumber(currentResource)}% → +${formatNumber(result.resourcePercent)}%`);
+          console.log(`- 내구도 보호: ${currentDurability}% → ${result.durabilityPercent}% (무한 내구도)`);
+          console.log(`- 마스터 DB 백업: ${result.backupPath}`);
+        } else if (subChoice === '3') {
+          if (!await confirm(rl, '나오미 디톡스 효과를 [킬코인·SP +5,000% / 무한 내구도 100%]로 변경할까요?')) continue;
+          const result = setNaomiDetoxValues(savePath, 5_000, NAOMI_DETOX_INFINITE_DURABILITY);
+          console.log('\n[성공] 나오미 디톡스 데칼 수치 변경이 성공적으로 완료되었습니다!');
+          console.log(`- 킬코인·SP 획득량: +${formatNumber(currentResource)}% → +${formatNumber(result.resourcePercent)}%`);
+          console.log(`- 내구도 보호: ${currentDurability}% → ${result.durabilityPercent}% (무한 내구도)`);
+          console.log(`- 마스터 DB 백업: ${result.backupPath}`);
+        } else if (subChoice === '4') {
+          if (!await confirm(rl, '나오미 디톡스 효과를 [킬코인·SP +500% / 내구도 0% 유지]로 변경할까요?')) continue;
+          const result = setNaomiDetoxValues(savePath, NAOMI_DETOX_RECOMMENDED_RESOURCE, 0);
+          console.log('\n[성공] 나오미 디톡스 데칼 수치 변경이 성공적으로 완료되었습니다!');
+          console.log(`- 킬코인·SP 획득량: +${formatNumber(currentResource)}% → +${formatNumber(result.resourcePercent)}%`);
+          console.log(`- 내구도 보호: ${result.durabilityPercent}% (유지)`);
+          console.log(`- 마스터 DB 백업: ${result.backupPath}`);
+        } else if (subChoice === '5') {
+          const resInput = (await rl.question(`\n설정할 킬코인·스피리튬 획득 증가 퍼센트(%) (현재: +${currentResource}%, 추천: 500): `)).trim();
+          if (!resInput) continue;
+          const targetResource = Number(resInput.replace(/[%]/g, ''));
+          if (!Number.isInteger(targetResource) || targetResource < 0 || targetResource > 50_000) {
+            console.log('오류: 획득 증가율은 0 ~ 50,000 사이의 정수를 입력해야 합니다.');
+            continue;
+          }
+          const durInput = (await rl.question(`설정할 내구도 감소 방지 퍼센트(%) (현재: ${currentDurability}%, 무한 내구도: 100, 범위: 0~100): `)).trim();
+          if (!durInput) continue;
+          const targetDurability = Number(durInput.replace(/[%]/g, ''));
+          if (!Number.isInteger(targetDurability) || targetDurability < 0 || targetDurability > 100) {
+            console.log('오류: 내구도 방지율은 0 ~ 100 사이의 정수를 입력해야 합니다.');
+            continue;
+          }
+          if (!await confirm(rl, `나오미 디톡스 효과를 [킬코인·SP +${formatNumber(targetResource)}% / 내구도 보호 ${targetDurability}%]로 변경할까요?`)) continue;
+          const result = setNaomiDetoxValues(savePath, targetResource, targetDurability);
+          console.log('\n[성공] 나오미 디톡스 데칼 수치 변경이 성공적으로 완료되었습니다!');
+          console.log(`- 킬코인·SP 획득량: +${formatNumber(currentResource)}% → +${formatNumber(result.resourcePercent)}%`);
+          console.log(`- 내구도 보호: ${currentDurability}% → ${result.durabilityPercent}%${result.isInfiniteDurability ? ' (무한 내구도)' : ''}`);
+          console.log(`- 마스터 DB 백업: ${result.backupPath}`);
+        } else if (subChoice === '6') {
+          if (status.isDefault) {
+            console.log('\n이미 기본값(킬코인·SP +50% / 내구도 0%) 상태입니다.');
+            continue;
+          }
+          if (!await confirm(rl, '나오미 디톡스 데칼을 기본값(킬코인·SP +50% / 내구도 0%)으로 복구할까요?')) continue;
+          const result = restoreNaomiDetoxDefault(savePath);
+          console.log('\n[성공] 나오미 디톡스 데칼 기본값 복구가 성공적으로 완료되었습니다!');
+          console.log(`- 킬코인·SP 획득량: +${formatNumber(currentResource)}% → +50% (기본값)`);
+          console.log(`- 내구도 보호: ${currentDurability}% → 0% (기본값)`);
+          console.log(`- 마스터 DB 백업: ${result.backupPath}`);
+        } else {
+          continue;
+        }
+      } else if (choice === '23') {
         const status = getEquipmentMaterialStatus(savePath);
         console.log(`\n마스터 DB: ${status.databasePath}`);
         console.log(`장비 연구 정의: ${formatNumber(status.rowCount)}종`);
@@ -4818,7 +5006,7 @@ async function interactive(rl, savePath) {
           console.log('- 킬코인·스피리튬 비용과 연구 시간은 유지됩니다.');
           console.log(`- 마스터 DB 백업: ${result.backupPath}`);
         }
-      } else if (choice === '23') {
+      } else if (choice === '24') {
         const backups = listEquipmentMaterialBackups();
         if (backups.length === 0) {
           console.log('\n복원할 장비 재료 비용 전용 백업이 없습니다.');
@@ -4833,7 +5021,7 @@ async function interactive(rl, savePath) {
         console.log('\n[성공] 장비 재료 비용 복원이 성공적으로 완료되었습니다.');
         console.log(`- 복원 완료: 장비 재료 비용 ${formatNumber(result.nonZeroRows)}종`);
         console.log(`- 복원 전 안전 백업: ${result.safetyBackup}`);
-      } else if (choice === '24') {
+      } else if (choice === '25') {
         if (isGameRunning()) {
           console.log('\nLET IT DIE를 완전히 종료한 뒤 백업하세요.');
           continue;
@@ -4841,7 +5029,7 @@ async function interactive(rl, savePath) {
         const backupPath = createBackup(savePath, save.packed);
         console.log('\n[성공] 현재 세이브 백업이 성공적으로 완료되었습니다.');
         console.log(`- 백업 파일: ${backupPath}`);
-      } else if (choice === '25') {
+      } else if (choice === '26') {
         const backups = listBackups(savePath);
         if (backups.length === 0) {
           console.log('\n복원할 백업이 없습니다.');
@@ -5345,6 +5533,98 @@ async function main() {
       console.log(`- 마스터 DB 백업: ${result.backupPath}`);
       return;
     }
+    if (command === 'naomi-detox' || command === 'detox' || command === 'naomi-detox-restore' || command === 'detox-restore') {
+      const status = getNaomiDetoxStatus(savePath);
+      const currentResource = status.resourcePercent;
+      const currentDurability = status.durabilityPercent;
+      console.log(`마스터 DB: ${status.databasePath}`);
+      console.log(`현재 효과: 킬코인·스피리튬 +${formatNumber(currentResource)}% / 내구도 보호 ${currentDurability >= 100 ? '★ 무한 내구도 (100% 보호)' : currentDurability > 0 ? `${currentDurability}%` : '없음 (0%)'}`);
+
+      if (command === 'naomi-detox-restore' || command === 'detox-restore') {
+        if (status.isDefault) {
+          console.log('이미 나오미 디톡스 데칼이 기본값(킬코인·SP +50% / 내구도 0%)입니다.');
+          return;
+        }
+        if (!parsed.yes && !await confirm(rl, '나오미 디톡스 데칼을 기본값(킬코인·SP +50% / 내구도 0%)으로 복구할까요?')) return;
+        const result = restoreNaomiDetoxDefault(savePath);
+        console.log('\n[성공] 나오미 디톡스 데칼 기본값 복구가 성공적으로 완료되었습니다!');
+        console.log(`- 킬코인·SP 획득량: +${formatNumber(currentResource)}% → +50% (기본값)`);
+        console.log(`- 내구도 보호: ${currentDurability}% → 0% (기본값)`);
+        console.log(`- 마스터 DB 백업: ${result.backupPath}`);
+        return;
+      }
+
+      const arg1 = parsed.args[1];
+      const arg2 = parsed.args[2];
+      let targetResource = NAOMI_DETOX_RECOMMENDED_RESOURCE; // 기본 500
+      let targetDurability = NAOMI_DETOX_INFINITE_DURABILITY; // 기본 100 (무한)
+      let modeDesc = '킬코인·SP +500% + 무한 내구도(100%)';
+
+      if (arg1) {
+        const lower1 = arg1.toLowerCase();
+        if (lower1 === 'restore' || lower1 === 'default') {
+          if (status.isDefault) {
+            console.log('이미 나오미 디톡스 데칼이 기본값(킬코인·SP +50% / 내구도 0%)입니다.');
+            return;
+          }
+          if (!parsed.yes && !await confirm(rl, '나오미 디톡스 데칼을 기본값(킬코인·SP +50% / 내구도 0%)으로 복구할까요?')) return;
+          const result = restoreNaomiDetoxDefault(savePath);
+          console.log('\n[성공] 나오미 디톡스 데칼 기본값 복구가 성공적으로 완료되었습니다!');
+          console.log(`- 킬코인·SP 획득량: +${formatNumber(currentResource)}% → +50% (기본값)`);
+          console.log(`- 내구도 보호: ${currentDurability}% → 0% (기본값)`);
+          console.log(`- 마스터 DB 백업: ${result.backupPath}`);
+          return;
+        }
+        if (lower1 === 'max' || lower1 === 'extreme') {
+          targetResource = 1_000;
+          targetDurability = NAOMI_DETOX_INFINITE_DURABILITY;
+          modeDesc = '킬코인·SP +1,000% + 무한 내구도(100%)';
+        } else if (lower1 === 'farm' || lower1 === 'farming') {
+          targetResource = 5_000;
+          targetDurability = NAOMI_DETOX_INFINITE_DURABILITY;
+          modeDesc = '킬코인·SP +5,000% + 무한 내구도(100%)';
+        } else if (lower1 === 'kc-only' || lower1 === 'no-dur') {
+          targetResource = arg2 ? Number(arg2.replace(/[%]/g, '')) : NAOMI_DETOX_RECOMMENDED_RESOURCE;
+          if (!Number.isInteger(targetResource) || targetResource < 0 || targetResource > 50_000) {
+            fail('오류: 킬코인·스피리튬 증가율은 0 ~ 50,000 사이의 정수여야 합니다.');
+          }
+          targetDurability = 0;
+          modeDesc = `킬코인·SP +${formatNumber(targetResource)}% (내구도 0% 유지)`;
+        } else {
+          const rawRes = Number(arg1.replace(/[%]/g, ''));
+          if (!Number.isInteger(rawRes) || rawRes < 0 || rawRes > 50_000) {
+            fail('오류: 킬코인·스피리튬 증가율은 0 ~ 50,000 사이의 정수여야 합니다 (예: 500, 1000).');
+          }
+          targetResource = rawRes;
+
+          if (arg2) {
+            const rawDur = Number(arg2.replace(/[%]/g, ''));
+            if (!Number.isInteger(rawDur) || rawDur < 0 || rawDur > 100) {
+              fail('오류: 내구도 방지율은 0 ~ 100 사이의 정수여야 합니다 (100 입력 시 무한 내구도).');
+            }
+            targetDurability = rawDur;
+          } else {
+            targetDurability = NAOMI_DETOX_INFINITE_DURABILITY;
+          }
+          modeDesc = `킬코인·SP +${formatNumber(targetResource)}% / 내구도 보호 ${targetDurability}%${targetDurability >= 100 ? ' (무한 내구도)' : ''}`;
+        }
+      }
+
+      if (currentResource === targetResource && currentDurability === targetDurability) {
+        console.log(`이미 나오미 디톡스 데칼에 동일한 수치(킬코인·SP +${formatNumber(targetResource)}% / 내구도 ${targetDurability}%)가 적용되어 있습니다.`);
+        return;
+      }
+
+      if (!parsed.yes && !await confirm(rl, `나오미 디톡스 효과를 [${modeDesc}]로 변경할까요?`)) return;
+
+      const result = setNaomiDetoxValues(savePath, targetResource, targetDurability);
+      console.log('\n[성공] 나오미 디톡스 데칼 수치 변경이 성공적으로 완료되었습니다!');
+      console.log(`- 설정 모드: [${modeDesc}]`);
+      console.log(`- 킬코인·SP 획득량: +${formatNumber(currentResource)}% → +${formatNumber(result.resourcePercent)}%`);
+      console.log(`- 내구도 보호: ${currentDurability}% → ${result.durabilityPercent}%${result.isInfiniteDurability ? ' (무한 내구도)' : ''}`);
+      console.log(`- 마스터 DB 백업: ${result.backupPath}`);
+      return;
+    }
     if (command === 'equipment-materials-free') {
       const status = getEquipmentMaterialStatus(savePath);
       console.log(`마스터 DB: ${status.databasePath}`);
@@ -5588,7 +5868,7 @@ async function main() {
       return;
     }
 
-    fail('사용법: node lid-kc.js [status | backup | reset-shop | grant-all-decals | grant-golden-beasts [마리수] | grant-limited-recipes | grant-all-recipes | max-facility | max-mastery | max-equipment | fighters | set-fighter-stat <번호/이름> <max-legit | max-db | max-bonus | bonus 수치 | max-slots | expand-slots | all 수치 | stat 수치> | expand-fighter-limits | restore-fighter-limits | collision-30m | collision-restore | ultimate-fighter <수치|배율|restore> | ultimate-fighter-5x | ultimate-fighter-restore | kamas-re-max | queen-spades <수치|배율|extreme|restore> | queen-spades-extreme | queen-spades-restore | wolf-rage [수치|restore] | wolf-rage-restore | rich-family [수치|max|dur-only|restore] [내구도] | rich-family-restore | equipment-materials-free | equipment-materials-restore [백업] | set [kc|sp|blood] 숫자 | max [kc|sp|blood] | restore] [--save 경로] [--game 설치폴더 | --master DB경로] [--yes]');
+    fail('사용법: node lid-kc.js [status | backup | reset-shop | grant-all-decals | grant-golden-beasts [마리수] | grant-limited-recipes | grant-all-recipes | max-facility | max-mastery | max-equipment | fighters | set-fighter-stat <번호/이름> <max-legit | max-db | max-bonus | bonus 수치 | max-slots | expand-slots | all 수치 | stat 수치> | expand-fighter-limits | restore-fighter-limits | collision-30m | collision-restore | ultimate-fighter <수치|배율|restore> | ultimate-fighter-5x | ultimate-fighter-restore | kamas-re-max | queen-spades <수치|배율|extreme|restore> | queen-spades-extreme | queen-spades-restore | wolf-rage [수치|restore] | wolf-rage-restore | rich-family [수치|max|dur-only|restore] [내구도] | rich-family-restore | naomi-detox [수치|max|farm|kc-only|restore] [내구도] | naomi-detox-restore | equipment-materials-free | equipment-materials-restore [백업] | set [kc|sp|blood] 숫자 | max [kc|sp|blood] | restore] [--save 경로] [--game 설치폴더 | --master DB경로] [--yes]');
   } finally {
     if (rl) rl.close();
   }
@@ -5649,6 +5929,14 @@ module.exports = {
   RICH_FAMILY_DEFAULT_DURABILITY,
   RICH_FAMILY_RECOMMENDED_RESOURCE,
   RICH_FAMILY_INFINITE_DURABILITY,
+  getNaomiDetoxStatus,
+  setNaomiDetoxValues,
+  restoreNaomiDetoxDefault,
+  NAOMI_DETOX_DECAL_ID,
+  NAOMI_DETOX_DEFAULT_RESOURCE,
+  NAOMI_DETOX_DEFAULT_DURABILITY,
+  NAOMI_DETOX_RECOMMENDED_RESOURCE,
+  NAOMI_DETOX_INFINITE_DURABILITY,
   calculateFighterTotalLevel,
   getBaseSkillSlots,
   getMaxAddableSkillSlots,
