@@ -1569,7 +1569,6 @@ const FIGHTER_STAT_KEYS = ['hp', 'str', 'dex', 'vit', 'stm', 'luk'];
 const FIGHTER_EXTRA_KEYS = ['skill', 'bag', 'rage'];
 const FIGHTER_BONUS_KEYS = ['hp_bonus', 'str_bonus', 'dex_bonus', 'vit_bonus', 'stm_bonus', 'luk_bonus'];
 const FIGHTER_PARAM_LEGIT_MAX = 45;
-const FIGHTER_PARAM_DB_MAX = 50;
 
 function calculateFighterTotalLevel(stats) {
   const hp = Number.isInteger(stats.hp) ? stats.hp : 1;
@@ -1910,6 +1909,11 @@ function writeFighterStats(savePath, save, fighterIndex, statUpdates) {
     fail('세이브를 읽은 뒤 파일이 변경됐습니다. 게임을 종료하고 다시 시도하세요.');
   }
 
+  const target = getFighterList(save)[fighterIndex];
+  if (!target) fail('유효하지 않은 파이터 번호입니다.');
+  if (FIGHTER_STAT_KEYS.some((key) => statUpdates[key] !== undefined && statUpdates[key] !== null)) {
+    require('./fighter-db-limits').validateFighterStatUpdates(getMasterDatabasePath(savePath), target, statUpdates);
+  }
   const mutation = replaceFighterStats(save, fighterIndex, statUpdates);
   const packed = packSave(mutation.changedText, save.blockCount, save.trailer);
   const tempPath = `${savePath}.fighter-edit.tmp`;
@@ -4147,20 +4151,18 @@ async function interactive(rl, savePath) {
         console.log(`등급: ${selected.grade}성 | 한계돌파: ${selected.limitBreak}단계 | 상태: ${selected.state}`);
         console.log(`총 레벨: Lv.${s.lvl}`);
         console.log('----------------------------------------------------------------------------------');
-        console.log('항목                 현재값     순정 최대치      DB 더미 최대치 비고');
+        console.log('항목                 현재값     현재 파이터의 DB 유효 최대치');
         console.log('----------------------------------------------------------------------------------');
-        console.log(`1. HP          :     ${String(s.hp).padEnd(6)}     45 (LB4)         50 (더미OLD)   보너스: ${s.hp_bonus ?? 0}/5`);
-        console.log(`2. STR (공격력):     ${String(s.str).padEnd(6)}     45 (LB4)         50 (더미OLD)   보너스: ${s.str_bonus ?? 0}/5`);
-        console.log(`3. DEX (기교)  :     ${String(s.dex).padEnd(6)}     45 (LB4)         50 (더미OLD)   보너스: ${s.dex_bonus ?? 0}/5`);
-        console.log(`4. VIT (체력)  :     ${String(s.vit).padEnd(6)}     45 (LB4)         50 (더미OLD)   보너스: ${s.vit_bonus ?? 0}/5`);
-        console.log(`5. STM (스태미나):   ${String(s.stm).padEnd(6)}     45 (LB4)         50 (더미OLD)   보너스: ${s.stm_bonus ?? 0}/5`);
-        console.log(`6. LUK (행운)  :     ${String(s.luk).padEnd(6)}     45 (LB4)         50 (더미OLD)   보너스: ${s.luk_bonus ?? 0}/5`);
+        let dbMaxima;
+        try { dbMaxima = require('./fighter-db-limits').readFighterLimits(getMasterDatabasePath(savePath), selected).maxima; }
+        catch (error) { console.log(`DB 상한 확인 불가: ${error.message}`); }
+        FIGHTER_STAT_KEYS.forEach((key, index) => console.log(`${index + 1}. ${key.toUpperCase().padEnd(12)}: ${String(s[key]).padEnd(8)} ${dbMaxima?.[key] ?? '확인 불가'} / 보너스 ${s[`${key}_bonus`] ?? 0}`));
         console.log(`7. 데칼 슬롯   :     +${String(s.skill).padEnd(5)}     총 ${currentTotalSlots}칸 (+${s.skill})      최대 ${maxTotalSlots}칸 (+${maxAddSkill})  기본 ${baseSlots}칸 + 추가 해금`);
         console.log(`8. 가방 용량   :     +${String(s.bag).padEnd(5)}     총 34~54 (+12)   +50칸 확장     기본 22~42칸 + 추가 확장`);
         console.log(`9. 분노 게이지 :     ${String(s.rage).padEnd(6)}     5                5              게이지 확장`);
         console.log('==================================================================================');
         console.log('1. [주 능력치 순정 최대] 6대 주 능력치(HP/STR/DEX/VIT/STM/LUK) 45로 일괄 변경 (권장)');
-        console.log('2. [주 능력치 DB 더미]   6대 주 능력치(HP/STR/DEX/VIT/STM/LUK) 50으로 일괄 변경 (주의: 롤백 발생)');
+        console.log('2. [주 능력치 DB 최대]   선택한 클래스·등급·한계돌파의 유효한 DB 최대 레벨로 변경');
         console.log('3. [주 능력치 직접 지정] 6대 주 능력치 수치 직접 입력 일괄 지정 (1~50, 45 초과 시 주의)');
         console.log('4. [보너스 순정 최대]    6대 능력치 보너스 +5로 일괄 적용 (총 +30, 권장)');
         console.log('5. [보너스 확장 지정]    6대 능력치 보너스 수치 직접 입력 일괄 지정 (0~50)');
@@ -4179,9 +4181,9 @@ async function interactive(rl, savePath) {
           modeDesc = '주 능력치 순정 최대치(45)';
           if (!await confirm(rl, `${selected.name}의 6대 능력치를 모두 순정 최대치(45)로 변경할까요?`)) continue;
         } else if (subChoice === '2') {
-          updates = { hp: 50, str: 50, dex: 50, vit: 50, stm: 50, luk: 50 };
-          modeDesc = '주 능력치 DB 더미 최대치(50)';
-          if (!await confirm(rl, `${selected.name}의 6대 능력치를 모두 50으로 변경할까요?`)) continue;
+          updates = require('./fighter-db-limits').readFighterLimits(getMasterDatabasePath(savePath), selected).maxima;
+          modeDesc = `주 능력치 DB 유효 최대치 (${Object.entries(updates).map(([key, value]) => `${key.toUpperCase()} ${value}`).join(' / ')})`;
+          if (!await confirm(rl, `${selected.name}: ${modeDesc}로 변경할까요?`)) continue;
         } else if (subChoice === '3') {
           const valStr = (await rl.question('6대 능력치에 설정할 레벨 (1~50, 순정 최대:45 / 45초과 시 스탯롤백 주의): ')).trim();
           const val = Number(valStr);
@@ -5721,7 +5723,7 @@ async function main() {
     if (command === 'fighters' || command === 'fighter-status') {
       printStatus(savePath, save);
       const fighters = getFighterList(save);
-      console.log(`\n[캐릭터(파이터) 목록] 총 ${fighters.length}명 (주 능력치 기준: 순정 최대치 Lv.45 / DB 최대치 Lv.50)`);
+      console.log(`\n[캐릭터(파이터) 목록] 총 ${fighters.length}명 (DB 최대치는 클래스·등급·한계돌파별 실제 데이터로 결정)`);
       fighters.forEach((f, idx) => {
         const s = f.stats;
         const fBase = getBaseSkillSlots(f.grade, f.type);
@@ -5764,8 +5766,8 @@ async function main() {
         updates = { hp: 45, str: 45, dex: 45, vit: 45, stm: 45, luk: 45 };
         modeDesc = '순정 최대치(45)';
       } else if (['db', 'max-db'].includes(statKeyArg)) {
-        updates = { hp: 50, str: 50, dex: 50, vit: 50, stm: 50, luk: 50 };
-        modeDesc = 'DB 최대치(50)';
+        updates = require('./fighter-db-limits').readFighterLimits(getMasterDatabasePath(savePath), targetFighter).maxima;
+        modeDesc = `DB 유효 최대치 (${Object.entries(updates).map(([key, value]) => `${key.toUpperCase()} ${value}`).join(' / ')})`;
       } else if (['max-bonus', 'bonus-max'].includes(statKeyArg)) {
         updates = { hp_bonus: 5, str_bonus: 5, dex_bonus: 5, vit_bonus: 5, stm_bonus: 5, luk_bonus: 5 };
         modeDesc = '보너스 순정 최대치(+5)';
@@ -5784,7 +5786,7 @@ async function main() {
       } else if (statKeyArg === 'all') {
         if (valArg === undefined) fail('all 옵션 뒤에 설정할 수치(1~50)를 입력해야 합니다.');
         const val = Number(valArg);
-        if (!Number.isInteger(val) || val < 1 || val > 50) fail('6대 주 능력치(all)는 1~50 범위(순정최대:45 / DB최대:50)여야 합니다.');
+        if (!Number.isInteger(val) || val < 1 || val > 50) fail('6대 주 능력치(all) 입력 범위는 1~50입니다. 실제 저장 가능 레벨은 선택한 파이터의 현재 DB 데이터로 검사합니다.');
         updates = { hp: val, str: val, dex: val, vit: val, stm: val, luk: val };
         modeDesc = `일괄 ${val}`;
       } else {
@@ -5953,4 +5955,3 @@ module.exports = {
   restoreFighterLimits,
   getFighterLimitStatus,
 };
-
