@@ -23,6 +23,7 @@ function fixture(t, { cap=45, max=45, exp=280 }={}) {
   db.exec(`CREATE TABLE master_body_detail(type TEXT,grade INTEGER,limit_break INTEGER,param_lv_max INTEGER);
     CREATE TABLE master_bodylvl_status_value(type TEXT,grade INTEGER,limit_break INTEGER,lvl INTEGER,hp REAL,str REAL,dex REAL,vit REAL,stm REAL,luk REAL);
     CREATE TABLE master_bodylvl_exp(grade INTEGER,lvl INTEGER);`);
+  db.prepare('INSERT INTO master_body_detail VALUES (?,6,0,?)').run('BAL',25);
   db.prepare('INSERT INTO master_body_detail VALUES (?,6,4,?)').run('BAL',cap);
   const insert=db.prepare("INSERT INTO master_bodylvl_status_value VALUES ('BAL',6,4,?,100,10,10,10,10,10)");
   for(let i=1;i<=max;i++) insert.run(i);
@@ -62,16 +63,18 @@ test('zero and NULL placeholders are excluded per stat',t=>{
 test('grade, class and limit break are respected',t=>{
   const file=fixture(t);
   for(const changes of [{type:'BRE'},{grade:5},{limitBreak:0}])
-    assert.throws(()=>readFighterLimits(file,{...fighter,...changes}),/상한 정보/);
+    assert.throws(()=>readFighterLimits(file,{...fighter,...changes}),/상한 정보|유효한 DB/);
   change(file,"INSERT INTO master_body_detail VALUES ('BAL',6,0,25)");
-  assert.throws(()=>readFighterLimits(file,{...fighter,limitBreak:0}),/유효한 DB/);
+    assert.throws(()=>readFighterLimits(file,{...fighter,limitBreak:0}),/유효한 DB|상한 정보/);
 });
 test('missing total-level experience prevents saving',t=>{
   const file=fixture(t,{cap:50,max:50});
   assert.throws(()=>validateFighterStatUpdates(file,fighter,stats(50)),/총 레벨 295/);
 });
-test('unrelated bonus edits do not require stat DB lookup',()=>{
-  assert.doesNotThrow(()=>validateFighterStatUpdates('missing.db',fighter,{hp_bonus:5}));
+test('bonus edits are constrained to the stock grade range',t=>{
+  const file=fixture(t);
+  assert.doesNotThrow(()=>validateFighterStatUpdates(file,{...fighter,stats:{...stats(45),hp_bonus:5}}, {hp_bonus:5}));
+  assert.throws(()=>validateFighterStatUpdates(file,{...fighter,stats:{...stats(45),hp_bonus:50}}, {hp_bonus:50}),/순정 보너스 범위/);
 });
 test('valid DB maximum repairs selected in-memory fighter and preserves other data',t=>{
   const file=fixture(t);

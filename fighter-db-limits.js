@@ -1,6 +1,8 @@
 'use strict';
 const { DatabaseSync } = require('node:sqlite');
 const STAT_KEYS = ['hp', 'str', 'dex', 'vit', 'stm', 'luk'];
+const BONUS_KEYS = STAT_KEYS.map((key) => `${key}_bonus`);
+const BONUS_RATES = [0, 5, 10, 15, 20];
 
 function readFighterLimits(databasePath, fighter) {
   if (!fighter || typeof fighter.type !== 'string' || !Number.isInteger(fighter.grade) ||
@@ -14,6 +16,12 @@ function readFighterLimits(databasePath, fighter) {
     if (!detail || !Number.isInteger(detail.param_lv_max) || detail.param_lv_max < 1) {
       throw new Error('선택한 파이터의 DB 능력치 상한 정보가 없습니다. 저장하지 않습니다.');
     }
+    const baseDetail = db.prepare('SELECT param_lv_max FROM master_body_detail WHERE type = ? AND grade = ? AND limit_break = 0')
+      .get(fighter.type, fighter.grade);
+    if (!baseDetail || !Number.isInteger(baseDetail.param_lv_max) || baseDetail.param_lv_max < 1) {
+      throw new Error('선택한 파이터의 순정 보너스 상한 정보가 없습니다. 저장하지 않습니다.');
+    }
+    const bonusValues = [...new Set(BONUS_RATES.map((rate) => Math.floor(baseDetail.param_lv_max * rate / 100)))];
     const rows = db.prepare(`SELECT lvl, hp, str, dex, vit, stm, luk FROM master_bodylvl_status_value
       WHERE type = ? AND grade = ? AND limit_break <= ? AND lvl BETWEEN 1 AND ? ORDER BY lvl`)
       .all(fighter.type, fighter.grade, fighter.limitBreak, detail.param_lv_max);
@@ -25,14 +33,23 @@ function readFighterLimits(databasePath, fighter) {
       maxima[key] = Math.max(...levels[key]);
     }
     const totalLevels = db.prepare('SELECT lvl FROM master_bodylvl_exp WHERE grade = ?').all(fighter.grade).map((r) => r.lvl);
-    return { levels, maxima, totalLevels, declaredMax: detail.param_lv_max };
+    return { levels, maxima, totalLevels, declaredMax: detail.param_lv_max, bonusValues, bonusMax: Math.max(...bonusValues) };
   } finally { db.close(); }
 }
 
 function validateFighterStatUpdates(databasePath, fighter, updates) {
-  if (!STAT_KEYS.some((key) => updates[key] !== undefined && updates[key] !== null)) return;
+  const hasStatUpdate = STAT_KEYS.some((key) => updates[key] !== undefined && updates[key] !== null);
+  const hasBonusUpdate = BONUS_KEYS.some((key) => updates[key] !== undefined && updates[key] !== null);
+  if (!hasStatUpdate && !hasBonusUpdate) return;
   const limits = readFighterLimits(databasePath, fighter);
   const next = { ...fighter.stats, ...updates };
+  for (const key of BONUS_KEYS) {
+    const value = next[key] ?? 0;
+    if (!Number.isInteger(value) || !limits.bonusValues.includes(value)) {
+      throw new Error(`${key.toUpperCase()} 값 ${value}은(는) 순정 보너스 범위(${limits.bonusValues.join(', ')})에 없습니다. 세이브는 변경하지 않았습니다.`);
+    }
+  }
+  if (!hasStatUpdate) return;
   for (const key of STAT_KEYS) {
     if (!Number.isInteger(next[key]) || !limits.levels[key].includes(next[key])) {
       throw new Error(`${key.toUpperCase()} 레벨 ${next[key]}은(는) 선택한 파이터의 현재 DB에 유효한 데이터가 없습니다 (유효 최대 ${limits.maxima[key]}). 세이브는 변경하지 않았습니다. DB 최대 설정으로 유효한 값에 맞추세요.`);

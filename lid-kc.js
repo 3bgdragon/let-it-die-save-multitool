@@ -4253,12 +4253,12 @@ async function interactive(rl, savePath) {
             '7': { key: 'skill', name: '데칼 슬롯', min: 0, legitMax: maxAddSkill, max: maxAddSkill },
             '8': { key: 'bag', name: '가방 용량', min: 0, legitMax: 12, max: 50 },
             '9': { key: 'rage', name: '분노 게이지', min: 0, legitMax: 5, max: 5 },
-            '10': { key: 'hp_bonus', name: 'HP 보너스', min: 0, legitMax: 5, max: 50 },
-            '11': { key: 'str_bonus', name: 'STR 보너스', min: 0, legitMax: 5, max: 50 },
-            '12': { key: 'dex_bonus', name: 'DEX 보너스', min: 0, legitMax: 5, max: 50 },
-            '13': { key: 'vit_bonus', name: 'VIT 보너스', min: 0, legitMax: 5, max: 50 },
-            '14': { key: 'stm_bonus', name: 'STM 보너스', min: 0, legitMax: 5, max: 50 },
-            '15': { key: 'luk_bonus', name: 'LUK 보너스', min: 0, legitMax: 5, max: 50 },
+            '10': { key: 'hp_bonus', name: 'HP 보너스', min: 0, legitMax: 5, max: 5 },
+            '11': { key: 'str_bonus', name: 'STR 보너스', min: 0, legitMax: 5, max: 5 },
+            '12': { key: 'dex_bonus', name: 'DEX 보너스', min: 0, legitMax: 5, max: 5 },
+            '13': { key: 'vit_bonus', name: 'VIT 보너스', min: 0, legitMax: 5, max: 5 },
+            '14': { key: 'stm_bonus', name: 'STM 보너스', min: 0, legitMax: 5, max: 5 },
+            '15': { key: 'luk_bonus', name: 'LUK 보너스', min: 0, legitMax: 5, max: 5 },
           };
           const targetMeta = statKeyMap[statChoice];
           if (!targetMeta) {
@@ -5772,9 +5772,9 @@ async function main() {
         updates = { hp_bonus: 5, str_bonus: 5, dex_bonus: 5, vit_bonus: 5, stm_bonus: 5, luk_bonus: 5 };
         modeDesc = '보너스 순정 최대치(+5)';
       } else if (statKeyArg === 'bonus') {
-        if (valArg === undefined) fail('bonus 옵션 뒤에 설정할 수치(0~50, 순정 최대:5)를 입력해야 합니다.');
+        if (valArg === undefined) fail('bonus 옵션 뒤에 설정할 수치(0~5, 순정 허용값: 0·1·2·3·5)를 입력해야 합니다.');
         const val = Number(valArg);
-        if (!Number.isInteger(val) || val < 0 || val > 50) fail('보너스 수치(bonus)는 0~50 범위여야 합니다.');
+        if (!Number.isInteger(val) || ![0, 1, 2, 3, 5].includes(val)) fail('6성 보너스 수치는 0·1·2·3·5 중 하나여야 합니다.');
         updates = { hp_bonus: val, str_bonus: val, dex_bonus: val, vit_bonus: val, stm_bonus: val, luk_bonus: val };
         modeDesc = `보너스 확장 일괄 +${val}`;
       } else if (['max-slots', 'slots-max'].includes(statKeyArg)) {
@@ -5806,12 +5806,12 @@ async function main() {
           skill: { min: 0, legitMax: targetMaxSkill, max: targetMaxSkill },
           bag: { min: 0, legitMax: 45, max: 50 },
           rage: { min: 0, legitMax: 5, max: 5 },
-          hp_bonus: { min: 0, legitMax: 5, max: 50 },
-          str_bonus: { min: 0, legitMax: 5, max: 50 },
-          dex_bonus: { min: 0, legitMax: 5, max: 50 },
-          vit_bonus: { min: 0, legitMax: 5, max: 50 },
-          stm_bonus: { min: 0, legitMax: 5, max: 50 },
-          luk_bonus: { min: 0, legitMax: 5, max: 50 },
+          hp_bonus: { min: 0, legitMax: 5, max: 5 },
+          str_bonus: { min: 0, legitMax: 5, max: 5 },
+          dex_bonus: { min: 0, legitMax: 5, max: 5 },
+          vit_bonus: { min: 0, legitMax: 5, max: 5 },
+          stm_bonus: { min: 0, legitMax: 5, max: 5 },
+          luk_bonus: { min: 0, legitMax: 5, max: 5 },
         };
         const meta = allowedKeys[statKeyArg];
         if (!meta) {
