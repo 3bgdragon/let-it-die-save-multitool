@@ -1613,67 +1613,10 @@ function getTotalSkillSlots(grade, type, skill) {
   return Math.min(9, base + s);
 }
 
-function getFighterOverLimitWarnings(updates, savePath, targetFighter = null) {
-  let dbStatMax = 45;
-  let dbExpMax = 280;
-  if (savePath) {
-    try {
-      const status = getFighterLimitStatus(savePath);
-      dbStatMax = status.statMaxLevel;
-      dbExpMax = status.expMaxLevel;
-    } catch {}
-  }
-
-  const notices = [];
-  const statKeys = ['hp', 'str', 'dex', 'vit', 'stm', 'luk'];
-  const overLegitStats = statKeys.filter((k) => updates[k] !== undefined && updates[k] > 45);
-  const overDbStats = statKeys.filter((k) => updates[k] !== undefined && updates[k] > dbStatMax);
-
-  if (overDbStats.length > 0) {
-    notices.push(
-      `6대 주 능력치(${overDbStats.map((s) => s.toUpperCase()).join(', ')}) DB 등록 상한(Lv.${dbStatMax}) 초과\n` +
-      `     -> 마스터 DB(masters.db)에 데이터가 없어 인게임에서 ATK 10 / DEF 30으로 롤백됩니다.\n` +
-      `     -> 'expand-fighter-limits' DB 패치로 상한을 먼저 해제해야 합니다.`
-    );
-  } else if (overLegitStats.length > 0) {
-    notices.push(
-      `6대 주 능력치(${overLegitStats.map((s) => s.toUpperCase()).join(', ')}) 순정 공식 한도(Lv.45) 초과 [상한 해제 Lv.50 적용]\n` +
-      `     -> masters.db 상한 해제 패치를 통해 인게임에서 HP 31,320 / STR 582 등 최고 스펙이 온전히 유지됩니다.`
-    );
-  }
-
-  const baseSlots = targetFighter ? getBaseSkillSlots(targetFighter.grade, targetFighter.type) : 5;
-  const maxAddSkill = targetFighter ? getMaxAddableSkillSlots(targetFighter.grade, targetFighter.type) : 4;
-  if (updates.skill !== undefined && updates.skill > maxAddSkill) {
-    const total = Math.min(9, baseSlots + updates.skill);
-    notices.push(
-      `데칼 슬롯 +${updates.skill} (해당 파이터 공식 한도 +${maxAddSkill} 초과, 총 ${total}칸)\n` +
-      `     -> 인게임 3x3 데칼 UI 한계 및 파이터 등급별 슬롯 제한으로 초과 슬롯은 비활성화될 수 있습니다.`
-    );
-  }
-
-  if (updates.bag !== undefined && updates.bag > 12) {
-    if (dbExpMax < 500) {
-      notices.push(
-        `가방 용량 +${updates.bag} (순정 상한 +12 초과)\n` +
-        `     -> 총 레벨 280 초과로 밍고 헤드 프리즈 발생 위험 ('expand-fighter-limits' DB 패치 필요)`
-      );
-    } else {
-      notices.push(
-        `가방 용량 +${updates.bag} (순정 상한 +12를 넘어선 [가방 상한 해제] 적용)\n` +
-        `     -> 인게임 데스 백이 74칸으로 대폭 확장 스크롤됩니다.`
-      );
-    }
-  }
-
-  const bonusKeys = ['hp_bonus', 'str_bonus', 'dex_bonus', 'vit_bonus', 'stm_bonus', 'luk_bonus'];
-  const overBonuses = bonusKeys.filter((k) => updates[k] !== undefined && updates[k] > 5);
-  if (overBonuses.length > 0) {
-    notices.push(
-      `블러드늄 언캡 보너스(+${updates[overBonuses[0]]}) 순정 공식 상한(+5) 초과 적용`
-    );
-  }
-  return notices;
+function getFighterOverLimitWarnings(updates, savePath, fighter = null) {
+  if (!fighter || !savePath) return [];
+  require('./fighter-db-limits').validateFighterStatUpdates(getMasterDatabasePath(savePath), fighter, updates);
+  return [];
 }
 
 async function promptFighterWarningIfNeeded(rl, updates, savePath, forceYes = false, targetFighter = null) {
@@ -1911,9 +1854,7 @@ function writeFighterStats(savePath, save, fighterIndex, statUpdates) {
 
   const target = getFighterList(save)[fighterIndex];
   if (!target) fail('유효하지 않은 파이터 번호입니다.');
-  if (FIGHTER_STAT_KEYS.some((key) => statUpdates[key] !== undefined && statUpdates[key] !== null)) {
-    require('./fighter-db-limits').validateFighterStatUpdates(getMasterDatabasePath(savePath), target, statUpdates);
-  }
+  require('./fighter-db-limits').validateFighterStatUpdates(getMasterDatabasePath(savePath), target, statUpdates);
   const mutation = replaceFighterStats(save, fighterIndex, statUpdates);
   const packed = packSave(mutation.changedText, save.blockCount, save.trailer);
   const tempPath = `${savePath}.fighter-edit.tmp`;
@@ -3294,7 +3235,7 @@ function expandFighterLimits(savePath, targetStatMax = 50, targetExpMax = 500) {
 
   const databasePath = getMasterDatabasePath(savePath);
   const status = getFighterLimitStatus(savePath);
-  if (status.statMaxLevel >= targetStatMax && status.expMaxLevel >= targetExpMax && status.bodyDetailParamMax >= targetStatMax && status.skillSlotsCount >= 15) {
+  if (status.statMaxLevel >= targetStatMax && status.expMaxLevel >= targetExpMax && status.bodyDetailParamMax >= targetStatMax && status.skillSlotsCount === 9) {
     return { ...status, changed: false, backupPath: undefined };
   }
 
@@ -3364,12 +3305,14 @@ function expandFighterLimits(savePath, targetStatMax = 50, targetExpMax = 500) {
     }
 
     // 3. master_body_detail 테이블 param_lv_max 및 skill_slots 확장
-    const slotsString = Array.from({ length: 15 }, (_, i) => i + 1).join(',');
+    // The decal UI and stock final limit-break tier support exactly 9 slots.
+    // Expanding this list beyond 9 changes the skill-level conversion ranges.
+    const slotsString = Array.from({ length: 9 }, (_, i) => i + 1).join(',');
     database.prepare(`
       UPDATE master_body_detail 
-      SET param_lv_max = 50, skill_slots = ? 
+      SET param_lv_max = ?, skill_slots = ?
       WHERE grade = 6 AND limit_break = 4
-    `).run(slotsString);
+    `).run(targetStatMax, slotsString);
 
     const integrity = database.prepare('PRAGMA integrity_check').get();
     if (!integrity || integrity.integrity_check !== 'ok') {
@@ -4084,8 +4027,8 @@ async function interactive(rl, savePath) {
     printStatus(savePath, save);
 
     console.log('\n======================= [1. 캐릭터(파이터) 육성 & DB 상한 해제] =======================');
-    console.log(' 1. 캐릭터(파이터) 능력치 레벨 현황 조회 및 세부 설정');
-    console.log(' 2. 파이터 스탯(Lv.50) 및 레벨 경험치(Lv.500) 상한 해제 DB 패치');
+    console.log(' 1. 캐릭터 강화 / 직접 설정 (세이브에 적용)');
+    console.log(' 2. Lv.50 강화 준비 / 슬롯 상한 정리 (게임 DB에 적용)');
     console.log(' 3. 파이터 상한 해제 DB 패치 복원 (순정 DB 복구)');
     console.log('\n============================ [2. 보유 자원 및 시설 관리] ============================');
     console.log(' 4. 킬코인을 알려진 한도로 채우기');
@@ -4127,7 +4070,7 @@ async function interactive(rl, savePath) {
         console.log('\n============================= [캐릭터(파이터) 목록] =============================');
         fighters.forEach((f, idx) => {
           const s = f.stats;
-          console.log(`  ${idx + 1}. [${f.state}] ${f.name} (${f.typeName}) | ${f.grade}성 LB${f.limitBreak} | Lv.${s.lvl} (HP:${s.hp}, STR:${s.str}, DEX:${s.dex}, VIT:${s.vit}, STM:${s.stm}, LUK:${s.luk})`);
+          console.log(`  ${idx + 1}. ${f.name} · ${f.grade}성 ${f.typeName} · Lv.${s.lvl} [${f.state}]`);
         });
         console.log('  0. 이전 메뉴로 돌아가기');
         console.log('==================================================================================');
@@ -4141,164 +4084,21 @@ async function interactive(rl, savePath) {
         }
 
         const selected = fighters[fIdx];
-        const s = selected.stats;
-        const baseSlots = getBaseSkillSlots(selected.grade, selected.type);
-        const maxAddSkill = getMaxAddableSkillSlots(selected.grade, selected.type);
-        const currentTotalSlots = getTotalSkillSlots(selected.grade, selected.type, s.skill);
-        const maxTotalSlots = baseSlots + maxAddSkill;
-
-        console.log(`\n================== [파이터 상세 현황: ${selected.name} (${selected.typeName})] ==================`);
-        console.log(`등급: ${selected.grade}성 | 한계돌파: ${selected.limitBreak}단계 | 상태: ${selected.state}`);
-        console.log(`총 레벨: Lv.${s.lvl}`);
-        console.log('----------------------------------------------------------------------------------');
-        console.log('항목                 현재값     현재 파이터의 DB 유효 최대치');
-        console.log('----------------------------------------------------------------------------------');
-        let dbMaxima;
-        try { dbMaxima = require('./fighter-db-limits').readFighterLimits(getMasterDatabasePath(savePath), selected).maxima; }
-        catch (error) { console.log(`DB 상한 확인 불가: ${error.message}`); }
-        FIGHTER_STAT_KEYS.forEach((key, index) => console.log(`${index + 1}. ${key.toUpperCase().padEnd(12)}: ${String(s[key]).padEnd(8)} ${dbMaxima?.[key] ?? '확인 불가'} / 보너스 ${s[`${key}_bonus`] ?? 0}`));
-        console.log(`7. 데칼 슬롯   :     +${String(s.skill).padEnd(5)}     총 ${currentTotalSlots}칸 (+${s.skill})      최대 ${maxTotalSlots}칸 (+${maxAddSkill})  기본 ${baseSlots}칸 + 추가 해금`);
-        console.log(`8. 가방 용량   :     +${String(s.bag).padEnd(5)}     총 34~54 (+12)   +50칸 확장     기본 22~42칸 + 추가 확장`);
-        console.log(`9. 분노 게이지 :     ${String(s.rage).padEnd(6)}     5                5              게이지 확장`);
-        console.log('==================================================================================');
-        console.log('1. [주 능력치 순정 최대] 6대 주 능력치(HP/STR/DEX/VIT/STM/LUK) 45로 일괄 변경 (권장)');
-        console.log('2. [주 능력치 DB 최대]   선택한 클래스·등급·한계돌파의 유효한 DB 최대 레벨로 변경');
-        console.log('3. [주 능력치 직접 지정] 6대 주 능력치 수치 직접 입력 일괄 지정 (1~50, 45 초과 시 주의)');
-        console.log('4. [보너스 순정 최대]    6대 능력치 보너스 +5로 일괄 적용 (총 +30, 권장)');
-        console.log('5. [보너스 확장 지정]    6대 능력치 보너스 수치 직접 입력 일괄 지정 (0~50)');
-        console.log(`6. [슬롯·가방 순정 최대] 데칼 슬롯 +${maxAddSkill} (총 ${maxTotalSlots}칸) / 데스백 +12칸 일괄 적용 (권장)`);
-        console.log(`7. [슬롯 최대 + 가방 확장] 데칼 슬롯 +${maxAddSkill} (총 ${maxTotalSlots}칸) / 데스백 +50칸 일괄 적용 (권장)`);
-        console.log('8. 개별 능력치/슬롯/보너스 세부 설정');
-        console.log('0. 취소');
-
-        const subChoice = (await rl.question('선택: ')).trim();
-        if (subChoice === '0' || !subChoice) continue;
-
-        let updates = {};
-        let modeDesc = '';
-        if (subChoice === '1') {
-          updates = { hp: 45, str: 45, dex: 45, vit: 45, stm: 45, luk: 45 };
-          modeDesc = '주 능력치 순정 최대치(45)';
-          if (!await confirm(rl, `${selected.name}의 6대 능력치를 모두 순정 최대치(45)로 변경할까요?`)) continue;
-        } else if (subChoice === '2') {
-          updates = require('./fighter-db-limits').readFighterLimits(getMasterDatabasePath(savePath), selected).maxima;
-          modeDesc = `주 능력치 DB 유효 최대치 (${Object.entries(updates).map(([key, value]) => `${key.toUpperCase()} ${value}`).join(' / ')})`;
-          if (!await confirm(rl, `${selected.name}: ${modeDesc}로 변경할까요?`)) continue;
-        } else if (subChoice === '3') {
-          const valStr = (await rl.question('6대 능력치에 설정할 레벨 (1~50, 순정 최대:45 / 45초과 시 스탯롤백 주의): ')).trim();
-          const val = Number(valStr);
-          if (!Number.isInteger(val) || val < 1 || val > 50) {
-            console.log('\n능력치 레벨은 1~50 사이의 정수여야 합니다.');
-            continue;
-          }
-          updates = { hp: val, str: val, dex: val, vit: val, stm: val, luk: val };
-          modeDesc = `주 능력치 일괄 ${val}`;
-          if (!await confirm(rl, `${selected.name}의 6대 능력치를 모두 ${val}(으)로 변경할까요?`)) continue;
-        } else if (subChoice === '4') {
-          updates = { hp_bonus: 5, str_bonus: 5, dex_bonus: 5, vit_bonus: 5, stm_bonus: 5, luk_bonus: 5 };
-          modeDesc = '보너스 순정 최대치(+5)';
-          if (!await confirm(rl, `${selected.name}의 6대 능력치 보너스를 모두 순정 최대치인 +5(총 +30)로 적용할까요?`)) continue;
-        } else if (subChoice === '5') {
-          const valStr = (await rl.question('6대 능력치에 설정할 보너스 포인트 (0~50, 순정 최대: 5): ')).trim();
-          const val = Number(valStr);
-          if (!Number.isInteger(val) || val < 0 || val > 50) {
-            console.log('\n보너스 포인트는 0~50 사이의 정수여야 합니다.');
-            continue;
-          }
-          updates = { hp_bonus: val, str_bonus: val, dex_bonus: val, vit_bonus: val, stm_bonus: val, luk_bonus: val };
-          modeDesc = `보너스 포인트 일괄 ${val}`;
-          if (!await confirm(rl, `${selected.name}의 6대 능력치 보너스를 모두 ${val}(으)로 변경할까요?`)) continue;
-        } else if (subChoice === '6') {
-          updates = { skill: maxAddSkill, bag: 12 };
-          modeDesc = `슬롯·가방 순정 최대치(슬롯+${maxAddSkill} [총 ${maxTotalSlots}칸] / 가방+12)`;
-          const slotNotice = maxTotalSlots < 9
-            ? `\n  ※ 주의: ${selected.grade}성 캐릭터는 기본 ${baseSlots}칸 + 추가 ${maxAddSkill}칸 = 총 ${maxTotalSlots}칸까지만 지원되며, 인게임 3×3 UI의 나머지 ${9 - maxTotalSlots}칸은 미해금(X 표시) 상태가 됩니다.`
-            : '';
-          if (!await confirm(rl, `${selected.name}의 데칼 슬롯을 +${maxAddSkill}(총 ${maxTotalSlots}칸), 가방을 +12칸으로 변경할까요?${slotNotice}`)) continue;
-        } else if (subChoice === '7') {
-          updates = { skill: maxAddSkill, bag: 50 };
-          modeDesc = `슬롯 ${maxTotalSlots}칸 + 가방 50칸 확장 (슬롯+${maxAddSkill} / 가방+50)`;
-          const slotNotice = maxTotalSlots < 9
-            ? `\n  ※ 주의: ${selected.grade}성 캐릭터는 기본 ${baseSlots}칸 + 추가 ${maxAddSkill}칸 = 총 ${maxTotalSlots}칸까지만 지원되며, 인게임 3×3 UI의 나머지 ${9 - maxTotalSlots}칸은 미해금(X 표시) 상태가 됩니다.`
-            : '';
-          if (!await confirm(rl, `${selected.name}의 데칼 슬롯을 +${maxAddSkill}(총 ${maxTotalSlots}칸), 가방을 +50칸으로 확장할까요?${slotNotice}`)) continue;
-        } else if (subChoice === '8') {
-          console.log('\n개별 설정할 항목을 선택하세요:');
-          console.log(' 1. HP (체력)             (1~50, 순정최대: 45)');
-          console.log(' 2. STR (공격력)          (1~50, 순정최대: 45)');
-          console.log(' 3. DEX (기교)            (1~50, 순정최대: 45)');
-          console.log(' 4. VIT (체력/방어)       (1~50, 순정최대: 45)');
-          console.log(' 5. STM (스태미나)        (1~50, 순정최대: 45)');
-          console.log(' 6. LUK (행운)            (1~50, 순정최대: 45)');
-          console.log(` 7. 데칼 슬롯 추가        (0~${maxAddSkill}, 기본: ${baseSlots}칸, 총 ${baseSlots}~${maxTotalSlots}칸, 최대: +${maxAddSkill})`);
-          console.log(' 8. 가방 용량 추가        (0~50, 순정최대: 12칸 / 최대 50칸 확장)');
-          console.log(' 9. 분노 게이지           (0~5)');
-          console.log('10. HP 보너스 포인트      (0~50, 순정최대: 5)');
-          console.log('11. STR 보너스 포인트     (0~50, 순정최대: 5)');
-          console.log('12. DEX 보너스 포인트     (0~50, 순정최대: 5)');
-          console.log('13. VIT 보너스 포인트     (0~50, 순정최대: 5)');
-          console.log('14. STM 보너스 포인트     (0~50, 순정최대: 5)');
-          console.log('15. LUK 보너스 포인트     (0~50, 순정최대: 5)');
-          console.log(' 0. 취소');
-          const statChoice = (await rl.question('선택: ')).trim();
-          if (statChoice === '0' || !statChoice) continue;
-
-          const statKeyMap = {
-            '1': { key: 'hp', name: 'HP', min: 1, legitMax: 45, max: 50 },
-            '2': { key: 'str', name: 'STR', min: 1, legitMax: 45, max: 50 },
-            '3': { key: 'dex', name: 'DEX', min: 1, legitMax: 45, max: 50 },
-            '4': { key: 'vit', name: 'VIT', min: 1, legitMax: 45, max: 50 },
-            '5': { key: 'stm', name: 'STM', min: 1, legitMax: 45, max: 50 },
-            '6': { key: 'luk', name: 'LUK', min: 1, legitMax: 45, max: 50 },
-            '7': { key: 'skill', name: '데칼 슬롯', min: 0, legitMax: maxAddSkill, max: maxAddSkill },
-            '8': { key: 'bag', name: '가방 용량', min: 0, legitMax: 12, max: 50 },
-            '9': { key: 'rage', name: '분노 게이지', min: 0, legitMax: 5, max: 5 },
-            '10': { key: 'hp_bonus', name: 'HP 보너스', min: 0, legitMax: 5, max: 5 },
-            '11': { key: 'str_bonus', name: 'STR 보너스', min: 0, legitMax: 5, max: 5 },
-            '12': { key: 'dex_bonus', name: 'DEX 보너스', min: 0, legitMax: 5, max: 5 },
-            '13': { key: 'vit_bonus', name: 'VIT 보너스', min: 0, legitMax: 5, max: 5 },
-            '14': { key: 'stm_bonus', name: 'STM 보너스', min: 0, legitMax: 5, max: 5 },
-            '15': { key: 'luk_bonus', name: 'LUK 보너스', min: 0, legitMax: 5, max: 5 },
-          };
-          const targetMeta = statKeyMap[statChoice];
-          if (!targetMeta) {
-            console.log('\n잘못된 항목 번호입니다.');
-            continue;
-          }
-          const currentVal = s[targetMeta.key] ?? 0;
-          const newValStr = (await rl.question(`새 ${targetMeta.name} 수치 (범위: ${targetMeta.min}~${targetMeta.max}, 순정최대:${targetMeta.legitMax}, 현재: ${currentVal}): `)).trim();
-          const newVal = Number(newValStr);
-          if (!Number.isInteger(newVal) || newVal < targetMeta.min || newVal > targetMeta.max) {
-            console.log(`\n수치는 ${targetMeta.min}~${targetMeta.max} 사이의 정수여야 합니다.`);
-            continue;
-          }
-          updates = { [targetMeta.key]: newVal };
-          modeDesc = `${targetMeta.name} ${newVal}`;
-          if (targetMeta.key === 'skill') {
-            const newTotal = Math.min(9, baseSlots + newVal);
-            const slotNotice = newTotal < 9
-              ? `\n  ※ 참고: ${selected.grade}성 캐릭터는 기본 ${baseSlots}칸 + 추가 ${newVal}칸 = 총 ${newTotal}칸이 되며, 인게임 3×3 UI의 나머지 ${9 - newTotal}칸은 X 표시로 잠깁니다.`
-              : '';
-            if (!await confirm(rl, `${selected.name}의 데칼 슬롯을 +${currentVal} → +${newVal}(총 ${newTotal}칸)으로 변경할까요?${slotNotice}`)) continue;
-          } else {
-            if (!await confirm(rl, `${selected.name}의 ${targetMeta.name}을(를) ${currentVal} → ${newVal}(으)로 변경할까요?`)) continue;
-          }
-        } else {
-          console.log('\n잘못된 선택입니다.');
-          continue;
-        }
-
-        if (!await promptFighterWarningIfNeeded(rl, updates, savePath, false, selected)) continue;
-
-        const result = writeFighterStats(savePath, save, fIdx, updates);
-        printFighterChangeSummary(result, modeDesc);
+        const selection = await require('./fighter-menu').chooseFighterUpdate({
+          rl, fighter: selected, databasePath: getMasterDatabasePath(savePath), confirm,
+        });
+        if (!selection) continue;
+        const result = writeFighterStats(savePath, save, fIdx, selection.updates);
+        console.log(`\n${selected.name}: ${selection.modeDesc} 저장 완료`);
+        console.log(`세이브 백업: ${result.backupPath}`);
+        console.log('게임을 다시 실행해 적용 결과를 확인하세요.');
       } else if (choice === '2') {
         const status = getFighterLimitStatus(savePath);
         console.log(`\n==================== [파이터 스탯 & 경험치 상한 해제 DB 패치] ====================`);
         console.log(`마스터 DB: ${status.databasePath}`);
         console.log(`현재 DB 주 능력치 한도: Lv.${status.statMaxLevel} / 총 레벨 경험치 한도: Lv.${status.expMaxLevel}`);
-        if (status.statMaxLevel >= 50 && status.expMaxLevel >= 500 && status.skillSlotsCount >= 15) {
-          console.log('\n[안내] 파이터 스탯(Lv.50), 경험치(Lv.500), 슬롯(15개) 상한 해제가 이미 DB에 적용돼 있습니다.');
+        if (status.statMaxLevel >= 50 && status.expMaxLevel >= 500 && status.skillSlotsCount === 9) {
+          console.log('\n[안내] 파이터 스탯(Lv.50), 경험치(Lv.500), 데칼 슬롯(순정 9칸) 설정이 이미 DB에 적용돼 있습니다.');
           await pause(rl);
           continue;
         }
@@ -4307,7 +4107,7 @@ async function interactive(rl, savePath) {
         console.log('-'.repeat(72));
         console.log('- 본 기능은 게임 클라이언트의 원본 마스터 DB를 직접 패치합니다.');
         console.log('- 6성 8개 파이터 클래스의 주 능력치를 Lv.50까지 확장하고,');
-        console.log('  경험치 테이블을 Lv.500까지 확장하여 스탯 롤백 및 레벨 오류를 방지합니다.');
+        console.log('  경험치 테이블을 Lv.500까지 확장합니다. 슬롯·가방은 유효 DB 용량을 사용합니다.');
         console.log('- Steam 무결성 검사 시 순정으로 초기화될 수 있습니다.');
         console.log('- 패치 전 원본 DB는 backups 폴더에 자동 백업됩니다.');
         console.log('='.repeat(72));
@@ -5756,33 +5556,34 @@ async function main() {
       }
 
       const targetFighter = fighters[fIdx];
+      const targetLimits = require('./fighter-db-limits').readFighterLimits(getMasterDatabasePath(savePath), targetFighter);
       const targetBase = getBaseSkillSlots(targetFighter.grade, targetFighter.type);
-      const targetMaxSkill = getMaxAddableSkillSlots(targetFighter.grade, targetFighter.type);
+      const targetMaxSkill = targetLimits.extraMaxima.skill;
       const targetTotal = targetBase + targetMaxSkill;
       let updates = {};
       let modeDesc = '';
 
       if (['legit', 'max-legit'].includes(statKeyArg)) {
-        updates = { hp: 45, str: 45, dex: 45, vit: 45, stm: 45, luk: 45 };
-        modeDesc = '순정 최대치(45)';
+        updates = require('./fighter-db-limits').buildFighterMaximum(getMasterDatabasePath(savePath), targetFighter, true);
+        modeDesc = `순정 최대 설정 (${Object.entries(updates).map(([k,v]) => `${k}=${v}`).join(' / ')})`;
       } else if (['db', 'max-db'].includes(statKeyArg)) {
-        updates = require('./fighter-db-limits').readFighterLimits(getMasterDatabasePath(savePath), targetFighter).maxima;
+        updates = require('./fighter-db-limits').buildFighterMaximum(getMasterDatabasePath(savePath), targetFighter);
         modeDesc = `DB 유효 최대치 (${Object.entries(updates).map(([key, value]) => `${key.toUpperCase()} ${value}`).join(' / ')})`;
       } else if (['max-bonus', 'bonus-max'].includes(statKeyArg)) {
-        updates = { hp_bonus: 5, str_bonus: 5, dex_bonus: 5, vit_bonus: 5, stm_bonus: 5, luk_bonus: 5 };
-        modeDesc = '보너스 순정 최대치(+5)';
+        updates = Object.fromEntries(FIGHTER_BONUS_KEYS.map(key => [key, targetLimits.bonusMax]));
+        modeDesc = `보너스 순정 최대치(+${targetLimits.bonusMax})`;
       } else if (statKeyArg === 'bonus') {
-        if (valArg === undefined) fail('bonus 옵션 뒤에 설정할 수치(0~5, 순정 허용값: 0·1·2·3·5)를 입력해야 합니다.');
+        if (valArg === undefined) fail(`bonus 허용값: ${targetLimits.bonusValues.join(', ')}`);
         const val = Number(valArg);
-        if (!Number.isInteger(val) || ![0, 1, 2, 3, 5].includes(val)) fail('6성 보너스 수치는 0·1·2·3·5 중 하나여야 합니다.');
+        if (!targetLimits.bonusValues.includes(val)) fail(`bonus 허용값: ${targetLimits.bonusValues.join(', ')}`);
         updates = { hp_bonus: val, str_bonus: val, dex_bonus: val, vit_bonus: val, stm_bonus: val, luk_bonus: val };
         modeDesc = `보너스 확장 일괄 +${val}`;
       } else if (['max-slots', 'slots-max'].includes(statKeyArg)) {
-        updates = { skill: targetMaxSkill, bag: 12 };
+        updates = { skill: targetMaxSkill, bag: targetLimits.extraMaxima.bag };
         modeDesc = `슬롯·가방 순정 최대(+${targetMaxSkill} [총 ${targetTotal}칸] / +12)`;
       } else if (['expand-slots', 'slots-expand'].includes(statKeyArg)) {
-        updates = { skill: targetMaxSkill, bag: 50 };
-        modeDesc = `슬롯 ${targetTotal}칸(최대 +${targetMaxSkill}) + 가방 확장(+50)`;
+        updates = { skill: targetMaxSkill, bag: targetLimits.extraMaxima.bag };
+        modeDesc = `슬롯 ${targetTotal}칸 / 가방 +${updates.bag} (DB 최대)`;
       } else if (statKeyArg === 'all') {
         if (valArg === undefined) fail('all 옵션 뒤에 설정할 수치(1~50)를 입력해야 합니다.');
         const val = Number(valArg);
@@ -5817,6 +5618,8 @@ async function main() {
         if (!meta) {
           fail(`지원하지 않는 능력치 키 '${statKeyArg}'입니다. (가능한 키: max-legit, max-db, all, hp, str, dex, vit, stm, luk, skill, bag, rage)`);
         }
+        meta.max = statKeyArg.endsWith('_bonus') ? targetLimits.bonusMax : (targetLimits.extraMaxima[statKeyArg] ?? targetLimits.maxima[statKeyArg]);
+        meta.legitMax = Math.min(meta.legitMax, meta.max);
         if (val < meta.min || val > meta.max) {
           fail(`${statKeyArg.toUpperCase()} 수치는 ${meta.min}~${meta.max}(순정최대:${meta.legitMax}) 범위여야 합니다.`);
         }
@@ -5836,8 +5639,8 @@ async function main() {
       const status = getFighterLimitStatus(savePath);
       console.log(`마스터 DB: ${status.databasePath}`);
       console.log(`현재 DB 주 능력치 한도: Lv.${status.statMaxLevel} / 총 레벨 경험치 한도: Lv.${status.expMaxLevel}`);
-      if (status.statMaxLevel >= 50 && status.expMaxLevel >= 500 && status.skillSlotsCount >= 15) {
-        console.log('파이터 스탯(Lv.50), 경험치(Lv.500), 슬롯(15개) 상한 해제가 이미 DB에 적용돼 있습니다.');
+      if (status.statMaxLevel >= 50 && status.expMaxLevel >= 500 && status.skillSlotsCount === 9) {
+        console.log('파이터 스탯(Lv.50), 경험치(Lv.500), 데칼 슬롯(순정 9칸) 설정이 이미 DB에 적용돼 있습니다.');
         return;
       }
       console.log('\n' + '='.repeat(72));
@@ -5845,7 +5648,7 @@ async function main() {
       console.log('-'.repeat(72));
       console.log('- 본 기능은 게임 클라이언트의 원본 마스터 DB를 직접 패치합니다.');
       console.log('- 6성 8개 파이터 클래스의 주 능력치를 Lv.50까지 확장하고,');
-      console.log('  경험치 테이블을 Lv.500까지 확장하여 스탯 롤백 및 레벨 오류를 방지합니다.');
+      console.log('  경험치 테이블을 Lv.500까지 확장합니다. 슬롯·가방은 유효 DB 용량을 사용합니다.');
       console.log('- Steam 무결성 검사 시 순정으로 초기화될 수 있습니다.');
       console.log('- 패치 전 원본 DB는 backups 폴더에 자동 백업됩니다.');
       console.log('='.repeat(72));

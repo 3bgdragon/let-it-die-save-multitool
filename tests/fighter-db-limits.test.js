@@ -1,111 +1,120 @@
 'use strict';
-const { test } = require('node:test');
-const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const os = require('node:os');
-const path = require('node:path');
-const vm = require('node:vm');
-const { DatabaseSync } = require('node:sqlite');
-const { readFighterLimits, validateFighterStatUpdates } = require('../fighter-db-limits');
-const keys = ['hp','str','dex','vit','stm','luk'];
-const stats = (level) => Object.fromEntries(keys.map((key) => [key, level]));
-const fighter = { type:'BAL', grade:6, limitBreak:4, stats:stats(45) };
-
-function fixture(t, { cap=45, max=45, exp=280 }={}) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(),'lid-stat-db-'));
-  t.after(() => {
-    assert.equal(path.dirname(dir),path.resolve(os.tmpdir()));
-    assert.ok(path.basename(dir).startsWith('lid-stat-db-'));
-    fs.rmSync(dir,{recursive:true,force:true});
-  });
-  const file = path.join(dir,'masters.db');
-  const db = new DatabaseSync(file);
-  db.exec(`CREATE TABLE master_body_detail(type TEXT,grade INTEGER,limit_break INTEGER,param_lv_max INTEGER);
-    CREATE TABLE master_bodylvl_status_value(type TEXT,grade INTEGER,limit_break INTEGER,lvl INTEGER,hp REAL,str REAL,dex REAL,vit REAL,stm REAL,luk REAL);
-    CREATE TABLE master_bodylvl_exp(grade INTEGER,lvl INTEGER);`);
-  db.prepare('INSERT INTO master_body_detail VALUES (?,6,0,?)').run('BAL',25);
-  db.prepare('INSERT INTO master_body_detail VALUES (?,6,4,?)').run('BAL',cap);
-  const insert=db.prepare("INSERT INTO master_bodylvl_status_value VALUES ('BAL',6,4,?,100,10,10,10,10,10)");
-  for(let i=1;i<=max;i++) insert.run(i);
-  const experience=db.prepare('INSERT INTO master_bodylvl_exp VALUES (6,?)');
-  for(let i=1;i<=exp;i++) experience.run(i);
-  db.close();
-  return file;
+const {test}=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const os=require('node:os');
+const path=require('node:path');
+const {DatabaseSync}=require('node:sqlite');
+const model=require('../fighter-model');
+const keys=['hp','str','dex','vit','stm','luk'];
+const six=v=>Object.fromEntries(keys.map(k=>[k,v]));
+const fighter={type:'BAL',grade:6,limitBreak:3,stats:{...six(40),skill:4,bag:50,rage:0,...Object.fromEntries(keys.map(k=>[k+'_bonus',5]))}};
+function fixture(t,{max=50,exp=500,slots=15}={}) {
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'lid-fighter-model-'));
+ t.after(()=>{assert.ok(path.basename(dir).startsWith('lid-fighter-model-')); assert.equal(path.dirname(dir),path.resolve(os.tmpdir())); fs.rmSync(dir,{recursive:true,force:true});});
+ const file=path.join(dir,'masters.db'), db=new DatabaseSync(file);
+ db.exec('CREATE TABLE master_body_detail(type TEXT,grade INTEGER,limit_break INTEGER,param_lv_max INTEGER,skill_slots TEXT,bag_capacity INTEGER,rage_capacity INTEGER); CREATE TABLE master_bodylvl_status_value(type TEXT,grade INTEGER,limit_break INTEGER,lvl INTEGER,hp INTEGER,str INTEGER,dex INTEGER,vit INTEGER,stm INTEGER,luk INTEGER,skill INTEGER,bag INTEGER,rage INTEGER); CREATE TABLE master_bodylvl_exp(grade INTEGER,lvl INTEGER);');
+ for(let lb=0;lb<=4;lb++) db.prepare('INSERT INTO master_body_detail VALUES (?,?,?,?,?,?,?)').run('BAL',6,lb,lb===4?max:25+lb*5,Array.from({length:lb===4?slots:5+lb},(_,i)=>i+1).join(','),24+3*lb,5);
+ for(let level=1;level<=max;level++){
+  const lb=level<=25?0:Math.min(4,Math.floor((level-26)/5)+1);
+  const skill=level<=25?5:([26,31,36,41].includes(level)?5+lb:0);
+  const bag=level<=25?24:(level<=43 && (level-26)%5<3?24+(lb-1)*3+1+(level-26)%5:0);
+  db.prepare('INSERT INTO master_bodylvl_status_value VALUES (?,?,?,?,100,10,10,10,10,10,?,?,?)').run('BAL',6,lb,level,skill,bag,skill?5:0);
+ }
+ for(let i=1;i<=exp;i++) db.prepare('INSERT INTO master_bodylvl_exp VALUES(6,?)').run(i);
+ db.close(); return file;
 }
-function change(file,sql) { const db=new DatabaseSync(file); try { db.exec(sql); } finally { db.close(); } }
+test('Darleen regression: bag 50 maps to absent row 88; DB max retains 50, nine slots',t=>{
+ const file=fixture(t), before=fs.readFileSync(file);
+ const limits=model.readFighterLimits(file,fighter), current=model.inspectFighter(limits,fighter.stats);
+ assert.equal(current.converted.bag,88); assert.equal(current.limitBreak,undefined);
+ assert.throws(()=>model.validateFighterStatUpdates(file,fighter,{hp:50}),/bag.*88/);
+ const update=model.buildFighterMaximum(file,fighter);
+ assert.deepEqual({...six(50),skill:4,bag:12,rage:0},Object.fromEntries(Object.entries(update).filter(([k])=>!k.endsWith('_bonus'))));
+ const state=model.validateFighterStatUpdates(file,fighter,update);
+ assert.equal(state.limitBreak,4); assert.equal(state.slots,9); assert.equal(state.bag,36);
+ assert.deepEqual(fs.readFileSync(file),before);
+});
+test('stock DB reaches 45 despite cached limit break 3; expanded DB reaches 50',t=>{
+ const file=fixture(t,{max:45,exp:280,slots:9});
+ assert.equal(model.buildFighterMaximum(file,fighter).hp,45);
+ assert.equal(model.buildFighterMaximum(fixture(t),fighter,true).hp,45);
+});
+test('missing, zero and NULL rows are never selected as maxima',t=>{
+ const file=fixture(t),db=new DatabaseSync(file);
+ db.exec('DELETE FROM master_bodylvl_status_value WHERE lvl=49; UPDATE master_bodylvl_status_value SET hp=0,str=NULL WHERE lvl=50'); db.close();
+ const u=model.buildFighterMaximum(file,fighter);
+ assert.equal(u.hp,48);assert.equal(u.str,48);assert.equal(u.dex,50);
+ assert.throws(()=>model.validateFighterStatUpdates(file,fighter,{...u,hp:49}),/HP/);
+});
+test('bonus-only and extra-only edits run full validation; maximum repairs old bonus 50',t=>{
+ const file=fixture(t), good={...fighter,stats:model.buildFighterMaximum(file,fighter)};
+ for(const edit of [{hp_bonus:50},{hp_bonus:4},{bag:50},{skill:10},{rage:-1},{hp:0}])
+  assert.throws(()=>model.validateFighterStatUpdates(file,good,edit));
+ const bad={...fighter,stats:{...fighter.stats,hp_bonus:50}};
+ assert.equal(model.buildFighterMaximum(file,bad).hp_bonus,5);
+});
+test('missing experience blocks complete preset before mutation',t=>{
+ const file=fixture(t,{exp:280});
+ assert.throws(()=>model.buildFighterMaximum(file,fighter),/총 레벨 311/);
+});
+test('grade and class are looked up independently; no global fallback',t=>{
+ const file=fixture(t);
+ for(const change of [{type:'BRE'},{grade:5}]) assert.throws(()=>model.buildFighterMaximum(file,{...fighter,...change}),/상한 정보/);
+});
+test('in-memory preset changes only selected fighter body; other save data is preserved',t=>{
+ const {getFighterList,replaceFighterStats}=require('../lid-kc'),file=fixture(t);
+ const data={soul:{uid:1,chr:{chrs:[{cid:'a',name:'Darleen',type:'BAL',grade:6,limit_break:3}]}},bodyuser:{'1':[{cid:'a',...fighter.stats},{cid:'other',hp:12}]},untouched:{coins:123}};
+ const save={data,jsonText:JSON.stringify(data)},target=getFighterList(save)[0],u=model.buildFighterMaximum(file,target);
+ const result=JSON.parse(replaceFighterStats(save,0,u).changedText);
+ assert.equal(result.bodyuser['1'][0].lvl,311);assert.equal(result.bodyuser['1'][0].hp,50);
+ assert.equal(result.bodyuser['1'][0].skill,4);assert.equal(result.bodyuser['1'][0].bag,12);
+ assert.deepEqual(result.soul,data.soul);assert.deepEqual(result.untouched,data.untouched);
+ assert.deepEqual(result.bodyuser['1'][1],data.bodyuser['1'][1]);
+ assert.equal(save.data.bodyuser['1'][0].bag,50);
+});
+test('writer routes bonus-only and bag-only edits through validation before any mutation',t=>{
+ const vm=require('node:vm'), file=fixture(t), sentinel=Buffer.from('original-save');
+ const source=fs.readFileSync(path.join(__dirname,'../lid-kc.js'),'utf8');
+ const code=source.slice(source.indexOf('function writeFighterStats('),source.indexOf('function packSave('));
+ let mutations=0;
+ const context=vm.createContext({fs:{readFileSync:()=>sentinel},isGameRunning:()=>false,
+  getFighterList:()=>[fighter],getMasterDatabasePath:()=>file,require:()=>model,
+  replaceFighterStats:()=>{mutations++;throw Error('unexpected mutation');},fail:message=>{throw Error(message);}});
+ vm.runInContext(code,context);
+ for(const update of [{hp_bonus:50},{bag:50}]) assert.throws(()=>context.writeFighterStats('unused.sav',{packed:sentinel},0,update),/보너스|bag/);
+ assert.equal(mutations,0);
+});
 
-test('updated stock DB returns 45, rejects 50, never changes DB',t=>{
-  const file=fixture(t),before=fs.readFileSync(file);
-  assert.deepEqual(readFighterLimits(file,fighter).maxima,stats(45));
-  assert.throws(()=>validateFighterStatUpdates(file,fighter,stats(50)),/유효한 데이터/);
-  assert.doesNotThrow(()=>validateFighterStatUpdates(file,fighter,stats(45)));
-  assert.deepEqual(fs.readFileSync(file),before);
+function menuSession(databasePath, target, answers, confirmations) {
+ const {chooseFighterUpdate}=require('../fighter-menu');
+ const lines=[], questions=[];
+ let confirmationCount=0;
+ const result=chooseFighterUpdate({databasePath,fighter:target,print:line=>lines.push(line),
+  rl:{question:async prompt=>{questions.push(prompt);if(!answers.length)throw Error('input exhausted');return answers.shift();}},
+  confirm:async()=>{confirmationCount++;return confirmations.shift();}});
+ return {result,lines,questions,count:()=>confirmationCount};
+}
+test('simple menu maximum previews actual capacities and confirms once',async t=>{
+ const file=fixture(t),before=structuredClone(fighter);
+ const session=menuSession(file,fighter,['1'],[true]);
+ const result=await session.result;
+ assert.equal(result.updates.hp,50);assert.equal(result.updates.skill,4);assert.equal(result.updates.bag,12);
+ assert.equal(session.count(),1);
+ assert.ok(session.lines.includes('데칼: 9칸 → 9칸'));
+ assert.ok(session.lines.includes('가방: 확인 불가칸 → 36칸'));
+ assert.deepEqual(fighter,before);
 });
-test('complete expansion allows 50 and recovery from invalid saved levels',t=>{
-  const file=fixture(t,{cap:50,max:50,exp:500});
-  const updates=readFighterLimits(file,fighter).maxima;
-  assert.deepEqual(updates,stats(50));
-  assert.doesNotThrow(()=>validateFighterStatUpdates(file,{...fighter,stats:stats(0)},updates));
+test('custom menu converts final nine decal slots to save upgrade count four',async t=>{
+ const file=fixture(t),target={...fighter,stats:{...model.buildFighterMaximum(file,fighter),skill:1}};
+ const session=menuSession(file,target,['3','3','9'],[true]);
+ assert.deepEqual((await session.result).updates,{skill:4});
+ assert.ok(session.lines.includes('데칼: 6칸 → 9칸'));
 });
-test('declared cap does not substitute for missing rows; holes are rejected',t=>{
-  const file=fixture(t,{cap:50});
-  assert.deepEqual(readFighterLimits(file,fighter).maxima,stats(45));
-  change(file,'DELETE FROM master_bodylvl_status_value WHERE lvl=40');
-  assert.throws(()=>validateFighterStatUpdates(file,fighter,{hp:40}),/HP/);
-});
-test('zero and NULL placeholders are excluded per stat',t=>{
-  const file=fixture(t,{cap:50,max:50,exp:500});
-  change(file,'UPDATE master_bodylvl_status_value SET hp=0,str=NULL WHERE lvl=50');
-  const limits=readFighterLimits(file,fighter);
-  assert.equal(limits.maxima.hp,49);assert.equal(limits.maxima.str,49);assert.equal(limits.maxima.dex,50);
-  assert.throws(()=>validateFighterStatUpdates(file,fighter,stats(50)),/HP/);
-});
-test('grade, class and limit break are respected',t=>{
-  const file=fixture(t);
-  for(const changes of [{type:'BRE'},{grade:5},{limitBreak:0}])
-    assert.throws(()=>readFighterLimits(file,{...fighter,...changes}),/상한 정보|유효한 DB/);
-  change(file,"INSERT INTO master_body_detail VALUES ('BAL',6,0,25)");
-    assert.throws(()=>readFighterLimits(file,{...fighter,limitBreak:0}),/유효한 DB|상한 정보/);
-});
-test('missing total-level experience prevents saving',t=>{
-  const file=fixture(t,{cap:50,max:50});
-  assert.throws(()=>validateFighterStatUpdates(file,fighter,stats(50)),/총 레벨 295/);
-});
-test('bonus edits are constrained to the stock grade range',t=>{
-  const file=fixture(t);
-  assert.doesNotThrow(()=>validateFighterStatUpdates(file,{...fighter,stats:{...stats(45),hp_bonus:5}}, {hp_bonus:5}));
-  assert.throws(()=>validateFighterStatUpdates(file,{...fighter,stats:{...stats(45),hp_bonus:50}}, {hp_bonus:50}),/순정 보너스 범위/);
-});
-test('valid DB maximum repairs selected in-memory fighter and preserves other data',t=>{
-  const file=fixture(t);
-  const {getFighterList,replaceFighterStats}=require('../lid-kc');
-  const data={soul:{uid:1,chr:{chrs:[{cid:'a',name:'Test',type:'BAL',grade:6,limit_break:4}]}},
-    bodyuser:{'1':[{cid:'a',...stats(50),lvl:295,skill:0,bag:0,rage:0},{cid:'other',hp:12}]},untouched:{coins:123}};
-  const save={data,jsonText:JSON.stringify(data)};
-  const target=getFighterList(save)[0];
-  const updates=readFighterLimits(file,target).maxima;
-  validateFighterStatUpdates(file,target,updates);
-  const result=JSON.parse(replaceFighterStats(save,0,updates).changedText);
-  assert.equal(result.bodyuser['1'][0].hp,45);
-  assert.equal(result.bodyuser['1'][0].lvl,265);
-  assert.deepEqual(result.bodyuser['1'][1],data.bodyuser['1'][1]);
-  assert.deepEqual(result.untouched,data.untouched);
-  assert.deepEqual(result.soul,data.soul);
-  assert.equal(data.bodyuser['1'][0].hp,50);
-});
-test('writer rejects invalid stat before packing, backups or writes',t=>{
-  const file=fixture(t),sentinel=Buffer.from('original-save');
-  const source=fs.readFileSync(path.resolve(__dirname,'../lid-kc.js'),'utf8');
-  const code=source.slice(source.indexOf('function writeFighterStats('),source.indexOf('function packSave('));
-  let mutated=false;
-  const context=vm.createContext({
-    fs:{readFileSync:()=>sentinel},isGameRunning:()=>false,
-    getFighterList:()=>[fighter],FIGHTER_STAT_KEYS:keys,getMasterDatabasePath:()=>file,
-    require:()=>({validateFighterStatUpdates}),
-    replaceFighterStats:()=>{mutated=true;throw Error('should not mutate');},
-    fail:message=>{throw Error(message);}
-  });
-  vm.runInContext(code,context);
-  assert.throws(()=>context.writeFighterStats('fake.sav',{packed:sentinel},0,stats(50)),/유효한 데이터/);
-  assert.equal(mutated,false);
+test('custom bag uses final capacity and cancel returns without an update',async t=>{
+ const file=fixture(t),target={...fighter,stats:model.buildFighterMaximum(file,fighter)};
+ const bag=menuSession(file,target,['3','4','36'],[true]);
+ assert.deepEqual((await bag.result).updates,{bag:12});
+ const cancelled=menuSession(file,target,['1','0'],[false]);
+ assert.equal(await cancelled.result,null);assert.equal(cancelled.count(),1);
 });
