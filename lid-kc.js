@@ -39,7 +39,8 @@ const ULTIMATE_FIGHTER_RETURN_TARGET_PERCENT =
   ULTIMATE_FIGHTER_RETURN_BASE_PERCENT * 5;
 const QUEEN_OF_SPADES_ID = 'SKL_SYLVIA_NMH_02_P';
 const QUEEN_OF_SPADES_BASE_ATTACK_PERCENT = 30;
-const QUEEN_OF_SPADES_EXTREME_ATTACK_PERCENT = 1_000; // 32비트 정수 연산 오버플로 방지 안전 극대치 (+1,000% = 11배 대미지)
+const QUEEN_OF_SPADES_EXTREME_ATTACK_PERCENT = 1_000; // Backward-compatible quick preset.
+const QUEEN_OF_SPADES_MAX_PERCENT = 2_147_483_647; // Positive signed 32-bit effect parameter, not a safe damage bound.
 const WOLF_RAGE_DECAL_IDS = ['SKL_RGSPDUP_02', 'SKL_RGSPDUP_02_P', 'SKL_RGSPUP_RDURDOWN_01_P'];
 const WOLF_RAGE_DEFAULT_VALUES = {
   SKL_RGSPDUP_02: 80,
@@ -2808,15 +2809,21 @@ function getQueenOfSpadesStatus(savePath) {
   }
 }
 
+function parseQueenOfSpadesValue(input, multiplier = false) {
+  const value = Number(input);
+  const percent = multiplier ? Math.round(QUEEN_OF_SPADES_BASE_ATTACK_PERCENT * value) : value;
+  if (!Number.isFinite(value) || value <= 0 || !Number.isSafeInteger(percent) || percent < 1 || percent > QUEEN_OF_SPADES_MAX_PERCENT) {
+    fail('스페이드 여왕 효과는 +1% ~ +2,147,483,647%의 정수로 저장해야 합니다. 배율은 기본 효과(+30%)에 곱한 결과를 반올림합니다.');
+  }
+  return percent;
+}
+
 function setQueenOfSpadesPercent(savePath, targetPercent) {
   if (isGameRunning()) {
     fail('LET IT DIE가 실행 중입니다. 게임을 완전히 종료한 뒤 다시 실행하세요.');
   }
 
-  const percent = Number(targetPercent);
-  if (!Number.isInteger(percent) || percent < 1 || percent > 5_000) {
-    fail('스페이드 여왕 공격력 수치는 1 ~ 5,000 사이의 정수여야 합니다. (32비트 연산 오버플로 방지 안전 한도)');
-  }
+  const percent = parseQueenOfSpadesValue(targetPercent);
 
   const status = getQueenOfSpadesStatus(savePath);
   if (status.row.val0 === percent) {
@@ -4505,24 +4512,20 @@ async function interactive(rl, savePath) {
         console.log(`스페이드 여왕 (Queen of Spades) 데칼:`);
         console.log(`- 현재 효과: 공격력 +${formatNumber(currentPercent)}% (기본 30% 대비 ${currentRatio}배)`);
         console.log(`- 기타 효과: 치명타 확률 +${formatNumber(status.row.val1)}% / 피해 무효화 ${formatNumber(status.row.val2)}% (기본 유지)`);
-        console.log('※ 주의: 공격력이 지나치게 높으면(수십만 이상 단일 대미지) 엔진의 32비트 연산 오버플로로');
-        console.log('   인해 레이지 게이지가 충전되지 않을 수 있으므로 +5,000% 이하로 안전하게 설정하는 것을 권장합니다.');
+        console.log('기존 +5,000% / 166배 입력 제한 해제. 저장 범위: +1% ~ +2,147,483,647%.');
+        console.log('큰 값은 게임의 데미지·레이지 계산에 이상을 일으킬 수 있습니다. 엔진 연산 한계는 그대로입니다.');
         console.log('\n수정 방식을 선택하세요:');
-        console.log('1. 퍼센트(%) 직접 입력 (1 ~ 5,000% 안전 한도)');
-        console.log('2. 배율(배)로 입력 (기본 30% 기준, 최대 166배)');
-        console.log(`3. 극단 공격력(+${formatNumber(QUEEN_OF_SPADES_EXTREME_ATTACK_PERCENT)}%) 바로 적용 (오버플로 방지 안전 극대치)`);
+        console.log('1. 공격력 증가 퍼센트(%) 직접 입력');
+        console.log('2. 기본 효과(+30%)의 배율 입력');
+        console.log(`3. 빠른 설정: +${formatNumber(QUEEN_OF_SPADES_EXTREME_ATTACK_PERCENT)}%`);
         console.log(`4. 기본값(+${QUEEN_OF_SPADES_BASE_ATTACK_PERCENT}%)으로 복구`);
         console.log('0. 뒤로 가기');
 
         const subChoice = (await rl.question('\n선택 (기본값 0): ')).trim();
         if (subChoice === '1') {
-          const input = (await rl.question(`\n설정할 공격력 증가 퍼센트(%)를 입력하세요 (현재: +${currentPercent}%, 권장최대: 5000): `)).trim();
+          const input = (await rl.question(`\n설정할 공격력 증가 퍼센트(%)를 입력하세요 (현재: +${currentPercent}%): `)).trim();
           if (!input) continue;
-          const targetPercent = Number(input.replace(/[%]/g, ''));
-          if (!Number.isInteger(targetPercent) || targetPercent < 1 || targetPercent > 5_000) {
-            console.log('오류: 1 ~ 5,000 사이의 정수를 입력해야 합니다. (32비트 연산 오버플로 방지 안전 한도)');
-            continue;
-          }
+          const targetPercent = parseQueenOfSpadesValue(input.replace(/[%]/g, ''));
           if (targetPercent === currentPercent) {
             console.log(`이미 +${formatNumber(currentPercent)}%가 적용되어 있습니다.`);
             continue;
@@ -4534,14 +4537,10 @@ async function interactive(rl, savePath) {
           console.log(`- 공격력 증가: +${formatNumber(currentPercent)}% → +${formatNumber(result.row.val0)}% (${targetRatio}배)`);
           console.log(`- 마스터 DB 백업: ${result.backupPath}`);
         } else if (subChoice === '2') {
-          const input = (await rl.question(`\n설정할 배율을 입력하세요 (기본 30% 기준, 현재: ${currentRatio}배, 최대 166배): `)).trim();
+          const input = (await rl.question(`\n설정할 배율을 입력하세요 (기본 30% 기준, 현재: ${currentRatio}배): `)).trim();
           if (!input) continue;
           const multiplier = Number(input.replace(/[x배X]/g, ''));
-          if (isNaN(multiplier) || multiplier <= 0 || multiplier > 166) {
-            console.log('오류: 0보다 크고 166 이하의 숫자를 입력해야 합니다.');
-            continue;
-          }
-          const targetPercent = Math.round(QUEEN_OF_SPADES_BASE_ATTACK_PERCENT * multiplier);
+          const targetPercent = parseQueenOfSpadesValue(multiplier, true);
           if (targetPercent === currentPercent) {
             console.log(`이미 +${formatNumber(currentPercent)}% (${multiplier}배)가 적용되어 있습니다.`);
             continue;
@@ -4556,7 +4555,7 @@ async function interactive(rl, savePath) {
             console.log(`이미 극단 공격력(+${formatNumber(QUEEN_OF_SPADES_EXTREME_ATTACK_PERCENT)}%)이 적용되어 있습니다.`);
             continue;
           }
-          if (!await confirm(rl, `공격력을 오버플로 방지 안전 극대치인 +${formatNumber(QUEEN_OF_SPADES_EXTREME_ATTACK_PERCENT)}%로 변경할까요?`)) continue;
+          if (!await confirm(rl, `공격력을 빠른 설정값인 +${formatNumber(QUEEN_OF_SPADES_EXTREME_ATTACK_PERCENT)}%로 변경할까요?`)) continue;
           const result = setQueenOfSpadesExtremeDamage(savePath);
           console.log('\n[성공] 스페이드 여왕 공격력 변경이 성공적으로 완료되었습니다!');
           console.log(`- 공격력 증가: +${formatNumber(currentPercent)}% → +${formatNumber(QUEEN_OF_SPADES_EXTREME_ATTACK_PERCENT)}%`);
@@ -5155,17 +5154,11 @@ async function main() {
           modeDesc = `극단화(+${formatNumber(QUEEN_OF_SPADES_EXTREME_ATTACK_PERCENT)}%) 적용`;
         } else if (/[x배X]$/i.test(arg)) {
           const mult = Number(arg.replace(/[x배X]/gi, ''));
-          if (isNaN(mult) || mult <= 0 || mult > 166) {
-            fail('오류: 배율은 0보다 크고 166 이하의 숫자여야 합니다 (예: 5x, 10배).');
-          }
-          targetPercent = Math.round(QUEEN_OF_SPADES_BASE_ATTACK_PERCENT * mult);
+          targetPercent = parseQueenOfSpadesValue(mult, true);
           modeDesc = `${mult}배(+${formatNumber(targetPercent)}%) 설정`;
         } else {
           const raw = Number(arg.replace(/[%]/g, ''));
-          if (!Number.isInteger(raw) || raw < 1 || raw > 5_000) {
-            fail('오류: 퍼센트는 1 ~ 5,000 사이의 정수여야 합니다 (32비트 연산 오버플로 방지 안전 한도).');
-          }
-          targetPercent = raw;
+          targetPercent = parseQueenOfSpadesValue(raw);
           const ratio = (targetPercent / QUEEN_OF_SPADES_BASE_ATTACK_PERCENT).toFixed(1).replace(/\.0$/, '');
           modeDesc = `+${formatNumber(targetPercent)}% (${ratio}배) 설정`;
         }
@@ -5719,6 +5712,7 @@ module.exports = {
   setMasterDatabaseOverride,
   setQueenOfSpadesExtremeDamage,
   setQueenOfSpadesPercent,
+  parseQueenOfSpadesValue,
   setUltimateFighterReturnFiveTimes,
   setUltimateFighterReturnPercent,
   setWolfRagePercent,

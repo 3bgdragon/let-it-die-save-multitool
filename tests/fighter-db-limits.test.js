@@ -95,6 +95,19 @@ function menuSession(databasePath, target, answers, confirmations) {
   confirm:async()=>{confirmationCount++;return confirmations.shift();}});
  return {result,lines,questions,count:()=>confirmationCount};
 }
+
+test('overview shows every current bonus and editing path without changing fighter', t => {
+ const {overviewLines}=require('../fighter-menu');
+ const file=fixture(t), target=structuredClone(fighter);
+ [0,1,2,3,5,50].forEach((value,i)=>{target.stats[keys[i]+'_bonus']=value;});
+ const before=structuredClone(target), limits=model.readFighterLimits(file,target);
+ const lines=overviewLines(target,limits);
+ assert.ok(lines.includes('생성 보너스: HP +0 / STR +1 / DEX +2 / VIT +3 / STM +5 / LUK +50'));
+ assert.ok(lines.some(line=>line.includes('3. 직접 설정 → 5. 생성 보너스') && line.includes('+0, +1, +2, +3, +5')));
+ assert.deepEqual(target,before);
+ delete target.stats.hp_bonus;
+ assert.ok(overviewLines(target,limits).some(line=>line.startsWith('생성 보너스: HP +0')));
+});
 test('simple menu maximum previews actual capacities and confirms once',async t=>{
  const file=fixture(t),before=structuredClone(fighter);
  const session=menuSession(file,fighter,['1'],[true]);
