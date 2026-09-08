@@ -35,7 +35,7 @@ function overviewLines(fighter, limits) {
     '',
     `DB 최대 강화: ${new Set(Object.values(limits.maxima)).size === 1 ? `능력치 각각 Lv.${limits.maxima.hp}` : KEYS.map(key => `${key.toUpperCase()} ${limits.maxima[key]}`).join(' / ')} · 데칼 ${maximum.skill}칸 · 가방 ${maximum.bag}칸`,
     '능력치 레벨은 성장 단계입니다. 실제 HP·공격력 수치와는 다릅니다.',
-    `생성 보너스는 별도 저장값입니다. 현재 등급 허용값: ${limits.bonusValues.map(value => `+${value}`).join(', ')}. 변경: 3. 직접 설정 → 5. 생성 보너스`,
+    `생성 보너스 순정 생성값: ${limits.bonusValues.map(value => `+${value}`).join(', ')} (엔진 절대 상한이 아님). 변경: 3. 직접 설정 → 5. 생성 보너스`,
     ...(fighter.grade === 6 && limits.maxima.hp < 50 ? ['Lv.50까지 강화하려면 메인 메뉴의 «Lv.50 강화 준비»를 먼저 적용하세요.'] : []),
     ...(String(limits.details.at(-1).skill_slots).split(',').length > 9 ? ['게임에 슬롯 15칸 등 이전 설정이 남아 있습니다. 메인 메뉴 «Lv.50 강화 준비 / 슬롯 상한 정리»로 정리하세요.'] : []),
     ...(levels.some(value => !Number.isInteger(value)) || current.bag === '확인 불가' ? ['현재 설정에 확인할 수 없는 값이 있습니다. «DB 최대 강화»에서 정리 내용을 확인하세요.'] : []),
@@ -56,8 +56,7 @@ function previewLines(fighter, limits, updates, modeDesc) {
   return lines;
 }
 
-async function chooseFighterUpdate({ rl, fighter, databasePath, confirm, print = console.log }) {
-  const limits = model.readFighterLimits(databasePath, fighter);
+async function chooseFighterUpdate({ rl, fighter, databasePath, confirm, manageBag, print = console.log }) {
   const ask = async prompt => (await rl.question(prompt)).trim();
   const show = lines => lines.forEach(line => print(line));
   const inputValue = async (label, allowed) => {
@@ -70,13 +69,17 @@ async function chooseFighterUpdate({ rl, fighter, databasePath, confirm, print =
     return value;
   };
   while (true) {
+    const limits = model.readFighterLimits(databasePath, fighter);
     show(overviewLines(fighter, limits));
-    show(['', '1. DB 최대 강화 (가장 강하게)', '2. 순정 최대 설정 (6성 능력치는 최대 45)', '3. 직접 설정', '4. 상세 정보 보기', '0. 파이터 설정 나가기']);
+    show(['', '1. DB 최대 강화 (가장 강하게)', '2. 순정 최대 설정 (6성 능력치는 최대 45)', '3. 직접 설정', '4. 상세 정보 보기', ...(manageBag && fighter.grade===6 ? ['5. 가방 실제 용량 +50칸 / 복원 (같은 6성 클래스 DB)'] : []), '0. 파이터 설정 나가기']);
     const choice = await ask('선택: ');
     if (!choice || choice === '0') return null;
     try {
       let updates, modeDesc;
-      if (choice === '1' || choice === '2') {
+      if (choice === '5' && manageBag && fighter.grade === 6) {
+        await manageBag(fighter);
+        continue;
+      } else if (choice === '1' || choice === '2') {
         updates = model.buildFighterMaximum(databasePath, fighter, choice === '2');
         modeDesc = choice === '1' ? 'DB 최대 강화' : '순정 최대 설정';
         print('능력치·데칼·가방·분노를 함께 맞춥니다. 잘못된 생성 보너스가 있으면 정리합니다.');
@@ -119,7 +122,8 @@ async function chooseFighterUpdate({ rl, fighter, databasePath, confirm, print =
           updates = { [key]: (existing || choices.find(item => item.value === value)).count };
           modeDesc = `${label} ${value}칸 설정`;
         } else if (custom === '5') {
-          print('생성 보너스는 파이터 생성 시 정해지는 별도 값입니다. 보너스 +50은 지원하지 않습니다.');
+          print('생성 보너스는 성장 판정에서 레벨에서 차감되기도 합니다. +5는 6성 순정 생성 최대이며 엔진 절대 상한은 아닙니다.');
+          print('레벨 50 / 보너스 +50은 차감 결과가 0입니다. 순정 범위 초과의 전체 경로가 검증되지 않아 현재 도구는 순정 생성값만 허용합니다.');
           print('m. 6개 보너스를 등급별 최대값으로 / a. 6개를 같은 값으로 / 1~6. HP·STR·DEX·VIT·STM·LUK 중 하나');
           const bonus = await ask('선택 (빈칸 또는 0=취소): ');
           if (!bonus || bonus === '0') continue;

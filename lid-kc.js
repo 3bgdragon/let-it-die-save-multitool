@@ -3235,6 +3235,26 @@ function getFighterLimitStatus(savePath) {
   }
 }
 
+function setFighterBagExpansion(savePath, type, enabled) {
+  return require('./fighter-bag').setExpansion(getMasterDatabasePath(savePath), type, enabled, {
+    isGameRunning,
+    backup: bytes => createMasterDatabaseBackup(bytes, 'masters.db.fighter-bag'),
+  });
+}
+
+async function manageFighterBag(rl, savePath, fighter) {
+  if (fighter.grade !== 6) fail('가방 +50칸은 6성 파이터용입니다.');
+  const status = require('./fighter-bag').getStatus(getMasterDatabasePath(savePath),fighter.type);
+  console.log(`\n${fighter.typeName || fighter.type} 6성 가방: ${status.applied ? '+50칸 적용 중' : '미적용'} / 최대 ${status.maximum}칸`);
+  console.log('이름이 같은 파이터 한 명만이 아니라 같은 6성 클래스 전체(적 포함)에 공통 적용됩니다.');
+  console.log('현재 확장 단계는 유지하고 실제 칸 수만 +50합니다. 능력치·총 레벨·슬롯·보너스는 변경하지 않습니다.');
+  if (status.applied) console.log(`복원 전에 해당 클래스의 모든 파이터 가방을 기존 용량(최대 ${status.originalMaximum}칸) 이내로 비우세요. 아이템은 자동으로 옮기지 않습니다.`);
+  if (!await confirm(rl,status.applied ? '가방을 비웠으며 +50칸을 복원할까요?' : `현재 용량을 +50칸 늘릴까요? (최대 ${status.maximum} → ${status.maximum+50}칸)`)) return;
+  const result = setFighterBagExpansion(savePath,fighter.type,!status.applied);
+  console.log(`가방 DB ${result.applied ? '확장' : '복원'} 완료. 최대 ${result.maximum}칸 / 백업: ${result.backupPath}`);
+  console.log('게임에서 표시·아이템 수납을 확인하세요. 실제 플레이 검증은 별도입니다.');
+}
+
 function expandFighterLimits(savePath, targetStatMax = 50, targetExpMax = 500) {
   if (isGameRunning()) {
     fail('LET IT DIE가 실행 중입니다. 게임을 완전히 종료한 뒤 다시 실행하세요.');
@@ -4093,6 +4113,7 @@ async function interactive(rl, savePath) {
         const selected = fighters[fIdx];
         const selection = await require('./fighter-menu').chooseFighterUpdate({
           rl, fighter: selected, databasePath: getMasterDatabasePath(savePath), confirm,
+          manageBag: fighter => manageFighterBag(rl,savePath,fighter),
         });
         if (!selection) continue;
         const result = writeFighterStats(savePath, save, fIdx, selection.updates);
@@ -5749,6 +5770,7 @@ module.exports = {
   writeFighterStats,
   writeWeaponMasteriesMaximum,
   expandFighterLimits,
+  setFighterBagExpansion,
   restoreFighterLimits,
   getFighterLimitStatus,
 };
