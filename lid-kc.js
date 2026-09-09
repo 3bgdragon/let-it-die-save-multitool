@@ -2582,6 +2582,42 @@ function restoreEquipmentMaterials(savePath, requestedBackupPath) {
   };
 }
 
+function listEquipmentSpiritBackups() {
+  const directory = backupDirectory();
+  if (!fs.existsSync(directory)) return [];
+  return fs.readdirSync(directory,{withFileTypes:true})
+    .filter(entry=>entry.isFile() && entry.name.startsWith('masters.db.equipment-spirit.') && entry.name.endsWith('.bak'))
+    .map(entry=>path.join(directory,entry.name))
+    .sort((a,b)=>path.basename(b).localeCompare(path.basename(a)));
+}
+
+function setEquipmentSpiritFree(savePath) {
+  return require('./equipment-spirit').setFree(getMasterDatabasePath(savePath), {
+    isGameRunning,backup:bytes=>createMasterDatabaseBackup(bytes,'masters.db.equipment-spirit'),
+  });
+}
+
+function restoreEquipmentSpirit(savePath, sourcePath) {
+  const source = sourcePath || listEquipmentSpiritBackups()[0];
+  if (!source) fail('복원할 장비 스피리튬 전용 백업이 없습니다.');
+  return require('./equipment-spirit').restore(getMasterDatabasePath(savePath),source,{
+    isGameRunning,backup:bytes=>createMasterDatabaseBackup(bytes,'masters.db.before-equipment-spirit-restore'),
+  });
+}
+
+async function manageEquipmentSpirit(rl,savePath,restore=false,yes=false,requestedBackup) {
+  const status = require('./equipment-spirit').status(getMasterDatabasePath(savePath));
+  console.log(`\n마스터 DB: ${status.databasePath}`);
+  console.log(`스피리튬 비용이 있는 장비 정의: ${formatNumber(status.nonZeroRows)} / ${formatNumber(status.rowCount)}종`);
+  console.log('재료 수량·킬코인·연구 시간·강화 단계는 변경하지 않습니다. 기존 재료 무료화와 독립적으로 적용·복원됩니다.');
+  const source = restore ? (requestedBackup || listEquipmentSpiritBackups()[0]) : null;
+  if (restore && !source) fail('복원할 장비 스피리튬 전용 백업이 없습니다.');
+  if (source) console.log(`복원 대상: ${source}`);
+  if (!yes && !await confirm(rl,restore ? '이 백업의 장비 개발·강화 스피리튬 비용만 복원할까요?' : '장비 개발·강화 스피리튬 비용만 0으로 변경할까요?')) return;
+  const result = restore ? restoreEquipmentSpirit(savePath,source) : setEquipmentSpiritFree(savePath);
+  console.log(result.changed ? `스피리튬 비용 ${restore ? '복원' : '무료화'} 완료. 백업: ${result.backupPath}` : '이미 요청한 스피리튬 비용 상태입니다. 변경하지 않았습니다.');
+}
+
 function setCollisionMushroomThirtyMinutes(savePath) {
   if (isGameRunning()) {
     fail('LET IT DIE가 실행 중입니다. 게임을 완전히 종료한 뒤 다시 실행하세요.');
@@ -3961,6 +3997,8 @@ const MASTER_DATABASE_COMMANDS = new Set([
   'detox-restore',
   'equipment-materials-free',
   'equipment-materials-restore',
+  'equipment-spirit-free',
+  'equipment-spirit-restore',
   'expand-fighter-limits',
   'restore-fighter-limits',
 ]);
@@ -4082,6 +4120,8 @@ async function interactive(rl, savePath) {
     console.log('22. 나오미 디톡스(오프라인 특전) 데칼 수치 설정 (킬코인·스피리튬 배율 + 무한 내구도) / 기본값 복구');
     console.log('23. 모든 장비 개발·강화 재료 비용을 0으로 변경');
     console.log('24. 장비 개발·강화 재료 비용을 전용 백업에서 복원');
+    console.log('27. 장비 개발·강화 스피리튬 비용만 0으로 변경 (재료는 유지)');
+    console.log('28. 장비 개발·강화 스피리튬 비용만 전용 백업에서 복원');
     console.log('\n=========================== [6. 세이브 백업 및 복원] ===========================');
     console.log('25. 현재 세이브 백업하기');
     console.log('26. 최신 백업 복원');
@@ -4843,6 +4883,8 @@ async function interactive(rl, savePath) {
         console.log('\n[성공] 장비 재료 비용 복원이 성공적으로 완료되었습니다.');
         console.log(`- 복원 완료: 장비 재료 비용 ${formatNumber(result.nonZeroRows)}종`);
         console.log(`- 복원 전 안전 백업: ${result.safetyBackup}`);
+      } else if (choice === '27' || choice === '28') {
+        await manageEquipmentSpirit(rl,savePath,choice==='28');
       } else if (choice === '25') {
         if (isGameRunning()) {
           console.log('\nLET IT DIE를 완전히 종료한 뒤 백업하세요.');
@@ -5441,6 +5483,10 @@ async function main() {
       console.log(`- 마스터 DB 백업: ${result.backupPath}`);
       return;
     }
+    if (command === 'equipment-spirit-free' || command === 'equipment-spirit-restore') {
+      await manageEquipmentSpirit(rl,savePath,command==='equipment-spirit-restore',parsed.yes,parsed.args[1] ? path.resolve(parsed.args[1]) : undefined);
+      return;
+    }
     if (command === 'equipment-materials-free') {
       const status = getEquipmentMaterialStatus(savePath);
       console.log(`마스터 DB: ${status.databasePath}`);
@@ -5687,7 +5733,7 @@ async function main() {
       return;
     }
 
-    fail('사용법: node lid-kc.js [status | backup | reset-shop | grant-all-decals | grant-golden-beasts [마리수] | grant-limited-recipes | grant-all-recipes | max-facility | max-mastery | max-equipment | fighters | set-fighter-stat <번호/이름> <max-legit | max-db | max-bonus | bonus 수치 | max-slots | expand-slots | all 수치 | stat 수치> | expand-fighter-limits | restore-fighter-limits | collision-30m | collision-restore | ultimate-fighter <수치|배율|restore> | ultimate-fighter-5x | ultimate-fighter-restore | kamas-re-max | queen-spades <수치|배율|extreme|restore> | queen-spades-extreme | queen-spades-restore | wolf-rage [수치|restore] | wolf-rage-restore | rich-family [수치|max|dur-only|restore] [내구도] | rich-family-restore | naomi-detox [수치|max|farm|kc-only|restore] [내구도] | naomi-detox-restore | equipment-materials-free | equipment-materials-restore [백업] | set [kc|sp|blood] 숫자 | max [kc|sp|blood] | restore] [--save 경로] [--game 설치폴더 | --master DB경로] [--yes]');
+    fail('사용법: node lid-kc.js [status | backup | reset-shop | grant-all-decals | grant-golden-beasts [마리수] | grant-limited-recipes | grant-all-recipes | max-facility | max-mastery | max-equipment | fighters | set-fighter-stat <번호/이름> <max-legit | max-db | max-bonus | bonus 수치 | max-slots | expand-slots | all 수치 | stat 수치> | expand-fighter-limits | restore-fighter-limits | collision-30m | collision-restore | ultimate-fighter <수치|배율|restore> | ultimate-fighter-5x | ultimate-fighter-restore | kamas-re-max | queen-spades <수치|배율|extreme|restore> | queen-spades-extreme | queen-spades-restore | wolf-rage [수치|restore] | wolf-rage-restore | rich-family [수치|max|dur-only|restore] [내구도] | rich-family-restore | naomi-detox [수치|max|farm|kc-only|restore] [내구도] | naomi-detox-restore | equipment-materials-free | equipment-materials-restore [백업] | equipment-spirit-free | equipment-spirit-restore [백업] | set [kc|sp|blood] 숫자 | max [kc|sp|blood] | restore] [--save 경로] [--game 설치폴더 | --master DB경로] [--yes]');
   } finally {
     if (rl) rl.close();
   }
@@ -5771,6 +5817,8 @@ module.exports = {
   writeWeaponMasteriesMaximum,
   expandFighterLimits,
   setFighterBagExpansion,
+  setEquipmentSpiritFree,
+  restoreEquipmentSpirit,
   restoreFighterLimits,
   getFighterLimitStatus,
 };
