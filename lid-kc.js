@@ -2618,6 +2618,35 @@ async function manageEquipmentSpirit(rl,savePath,restore=false,yes=false,request
   console.log(result.changed ? `스피리튬 비용 ${restore ? '복원' : '무료화'} 완료. 백업: ${result.backupPath}` : '이미 요청한 스피리튬 비용 상태입니다. 변경하지 않았습니다.');
 }
 
+async function manageJackalOption(rl,savePath,feature,restore=false,yes=false,requestedValue) {
+  const jackal = require('./jackal-options');
+  const file = getMasterDatabasePath(savePath);
+  const current = jackal.status(file,feature);
+  console.log(`\n마스터 DB: ${file}\n자칼 ${feature==='spawn'?'빠른 등장':'청사진 비중'}: ${current.applied?'적용됨':'전용 패치 기록 없음'}`);
+  if (feature==='spawn') {
+    console.log('최초 대기시간만 단축하고 첫 확률 검사를 100%로 설정합니다. 적 처치·층 조건·스폰 위치가 충족돼야 등장합니다.');
+    console.log('두 번째·세 번째 자칼의 간격과 확률은 유지합니다.');
+    for (const row of current.rows.filter(row=>row.id.endsWith('_TIME_1'))) console.log(`  ${row.id}: ${row.value}초`);
+  } else {
+    console.log('원래 청사진이 있는 자칼 6종만 변경합니다. 다른 종류의 재료 드랍은 유지합니다.');
+    console.log('청사진 비중을 높이면 해당 6종의 코인·장비·재료 비중은 줄어듭니다. 미보유 청사진을 보장하지 않습니다.');
+    for (const row of current.rows) console.log(`  ${row.type}: 청사진 추첨 비중 ${(row.drop_rmap_weapon_rate+row.drop_rmap_armor_rate)/10}%`);
+  }
+  if (restore && !current.applied) { console.log('복원할 전용 패치 기록이 없습니다. 변경하지 않았습니다.'); return; }
+  let value = null;
+  if (!restore) {
+    const fallback = feature==='spawn'?10:80;
+    const input = requestedValue ?? (yes ? String(fallback) : (await rl.question(feature==='spawn'?'첫 자칼 대기시간 (1~300초, Enter=10): ':'청사진 추첨 비중 (50/80/100%, Enter=80): ')).trim() || String(fallback));
+    if (!/^\d+$/.test(String(input))) fail('숫자로 입력하세요.');
+    value = Number(input);
+    if (feature==='spawn' ? value<1 || value>300 : ![50,80,100].includes(value)) fail('허용된 범위의 값을 입력하세요.');
+  }
+  if (!yes && !await confirm(rl,restore?'이 자칼 옵션만 최초 적용 전 값으로 복원할까요?':`게임을 종료했습니까? ${feature==='spawn'?value+'초 / 첫 검사 100%':value+'% 청사진 비중'}로 적용할까요?`)) return;
+  const result = jackal.change(file,feature,value,{isGameRunning,backup:bytes=>createMasterDatabaseBackup(bytes,`masters.db.jackal-${feature}`)});
+  console.log(result.changed ? `자칼 옵션 ${restore?'복원':'적용'} 완료. 백업: ${result.backupPath}` : '이미 요청한 상태입니다. 변경하지 않았습니다.');
+  console.log('게임을 다시 실행하고 새로 층에 진입하세요. 기존 층에서 생성된 보상에는 반영되지 않을 수 있습니다.');
+}
+
 function setCollisionMushroomThirtyMinutes(savePath) {
   if (isGameRunning()) {
     fail('LET IT DIE가 실행 중입니다. 게임을 완전히 종료한 뒤 다시 실행하세요.');
@@ -3999,6 +4028,10 @@ const MASTER_DATABASE_COMMANDS = new Set([
   'equipment-materials-restore',
   'equipment-spirit-free',
   'equipment-spirit-restore',
+  'jackal-spawn-fast',
+  'jackal-spawn-restore',
+  'jackal-blueprints',
+  'jackal-blueprints-restore',
   'expand-fighter-limits',
   'restore-fighter-limits',
 ]);
@@ -4122,6 +4155,10 @@ async function interactive(rl, savePath) {
     console.log('24. 장비 개발·강화 재료 비용을 전용 백업에서 복원');
     console.log('27. 장비 개발·강화 스피리튬 비용만 0으로 변경 (재료는 유지)');
     console.log('28. 장비 개발·강화 스피리튬 비용만 전용 백업에서 복원');
+    console.log('29. 자칼 첫 등장 빠르게 (기본 10초 / 후속 간격 유지)');
+    console.log('30. 자칼 첫 등장 설정만 복원');
+    console.log('31. 자칼 청사진 추첨 비중 변경 (50 / 80 / 100%)');
+    console.log('32. 자칼 청사진 추첨 비중만 복원');
     console.log('\n=========================== [6. 세이브 백업 및 복원] ===========================');
     console.log('25. 현재 세이브 백업하기');
     console.log('26. 최신 백업 복원');
@@ -4885,6 +4922,8 @@ async function interactive(rl, savePath) {
         console.log(`- 복원 전 안전 백업: ${result.safetyBackup}`);
       } else if (choice === '27' || choice === '28') {
         await manageEquipmentSpirit(rl,savePath,choice==='28');
+      } else if (['29','30','31','32'].includes(choice)) {
+        await manageJackalOption(rl,savePath,['29','30'].includes(choice)?'spawn':'blueprints',['30','32'].includes(choice));
       } else if (choice === '25') {
         if (isGameRunning()) {
           console.log('\nLET IT DIE를 완전히 종료한 뒤 백업하세요.');
@@ -5487,6 +5526,10 @@ async function main() {
       await manageEquipmentSpirit(rl,savePath,command==='equipment-spirit-restore',parsed.yes,parsed.args[1] ? path.resolve(parsed.args[1]) : undefined);
       return;
     }
+    if (['jackal-spawn-fast','jackal-spawn-restore','jackal-blueprints','jackal-blueprints-restore'].includes(command)) {
+      await manageJackalOption(rl,savePath,command.startsWith('jackal-spawn-')?'spawn':'blueprints',command.endsWith('-restore'),parsed.yes,parsed.args[1]);
+      return;
+    }
     if (command === 'equipment-materials-free') {
       const status = getEquipmentMaterialStatus(savePath);
       console.log(`마스터 DB: ${status.databasePath}`);
@@ -5733,7 +5776,7 @@ async function main() {
       return;
     }
 
-    fail('사용법: node lid-kc.js [status | backup | reset-shop | grant-all-decals | grant-golden-beasts [마리수] | grant-limited-recipes | grant-all-recipes | max-facility | max-mastery | max-equipment | fighters | set-fighter-stat <번호/이름> <max-legit | max-db | max-bonus | bonus 수치 | max-slots | expand-slots | all 수치 | stat 수치> | expand-fighter-limits | restore-fighter-limits | collision-30m | collision-restore | ultimate-fighter <수치|배율|restore> | ultimate-fighter-5x | ultimate-fighter-restore | kamas-re-max | queen-spades <수치|배율|extreme|restore> | queen-spades-extreme | queen-spades-restore | wolf-rage [수치|restore] | wolf-rage-restore | rich-family [수치|max|dur-only|restore] [내구도] | rich-family-restore | naomi-detox [수치|max|farm|kc-only|restore] [내구도] | naomi-detox-restore | equipment-materials-free | equipment-materials-restore [백업] | equipment-spirit-free | equipment-spirit-restore [백업] | set [kc|sp|blood] 숫자 | max [kc|sp|blood] | restore] [--save 경로] [--game 설치폴더 | --master DB경로] [--yes]');
+    fail('사용법: node lid-kc.js [status | backup | reset-shop | grant-all-decals | grant-golden-beasts [마리수] | grant-limited-recipes | grant-all-recipes | max-facility | max-mastery | max-equipment | fighters | set-fighter-stat <번호/이름> <max-legit | max-db | max-bonus | bonus 수치 | max-slots | expand-slots | all 수치 | stat 수치> | expand-fighter-limits | restore-fighter-limits | collision-30m | collision-restore | ultimate-fighter <수치|배율|restore> | ultimate-fighter-5x | ultimate-fighter-restore | kamas-re-max | queen-spades <수치|배율|extreme|restore> | queen-spades-extreme | queen-spades-restore | wolf-rage [수치|restore] | wolf-rage-restore | rich-family [수치|max|dur-only|restore] [내구도] | rich-family-restore | naomi-detox [수치|max|farm|kc-only|restore] [내구도] | naomi-detox-restore | equipment-materials-free | equipment-materials-restore [백업] | equipment-spirit-free | equipment-spirit-restore [백업] | jackal-spawn-fast [초] | jackal-spawn-restore | jackal-blueprints [50|80|100] | jackal-blueprints-restore | set [kc|sp|blood] 숫자 | max [kc|sp|blood] | restore] [--save 경로] [--game 설치폴더 | --master DB경로] [--yes]');
   } finally {
     if (rl) rl.close();
   }
