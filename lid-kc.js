@@ -2647,6 +2647,20 @@ async function manageJackalOption(rl,savePath,feature,restore=false,yes=false,re
   console.log('게임을 다시 실행하고 새로 층에 진입하세요. 기존 층에서 생성된 보상에는 반영되지 않을 수 있습니다.');
 }
 
+async function manageM2gKnife(rl,savePath,restore=false,yes=false) {
+  const m2g=require('./m2g-knife'),file=getMasterDatabasePath(savePath),current=m2g.status(file);
+  console.log(`\n마스터 DB: ${file}\nM2G 나이프 피해 보정: ${current.applied?'적용됨':'전용 패치 기록 없음'}`);
+  for(const row of current.rows) console.log(`  ${row.id.includes('_FF_')?'FireFly':'일반 M2G'} 나이프 배율: ${row.scale}`);
+  console.log('나이프 배율만 100 → 200으로 보정합니다. 다른 공격·탄약 소비·내구도 소비는 그대로입니다.');
+  console.log('공유 DB 설정이므로 같은 공격 정의를 사용하는 적에게도 영향을 줄 수 있습니다.');
+  console.log('나이프 전용 발사는 지원하지 않습니다. DB에서 다른 탄종을 없애면 연속 발사가 막힐 수 있습니다.');
+  if(restore&&!current.applied){console.log('복원할 M2G 전용 기록이 없습니다. 변경하지 않았습니다.');return;}
+  if(!yes&&!await confirm(rl,restore?'M2G 나이프 배율만 최초 적용 전 값으로 복원할까요?':'게임을 종료했습니까? M2G 나이프 배율을 200으로 보정할까요?'))return;
+  const result=m2g.change(file,restore,{isGameRunning,backup:bytes=>createMasterDatabaseBackup(bytes,'masters.db.m2g-knife')});
+  console.log(result.changed?`M2G 나이프 ${restore?'복원':'보정'} 완료. 백업: ${result.backupPath}`:'이미 요청한 배율입니다. 변경하지 않았습니다.');
+  console.log('게임을 다시 실행해서 확인하세요. 실제 피해량은 방어력·데칼 등에도 영향을 받습니다.');
+}
+
 function setCollisionMushroomThirtyMinutes(savePath) {
   if (isGameRunning()) {
     fail('LET IT DIE가 실행 중입니다. 게임을 완전히 종료한 뒤 다시 실행하세요.');
@@ -4032,6 +4046,8 @@ const MASTER_DATABASE_COMMANDS = new Set([
   'jackal-spawn-restore',
   'jackal-blueprints',
   'jackal-blueprints-restore',
+  'm2g-knife-compensate',
+  'm2g-knife-restore',
   'expand-fighter-limits',
   'restore-fighter-limits',
 ]);
@@ -4159,6 +4175,8 @@ async function interactive(rl, savePath) {
     console.log('30. 자칼 첫 등장 설정만 복원');
     console.log('31. 자칼 청사진 추첨 비중 변경 (50 / 80 / 100%)');
     console.log('32. 자칼 청사진 추첨 비중만 복원');
+    console.log('33. M2G 계열 나이프 피해 보정 (배율 100 → 200 / 다른 공격 유지)');
+    console.log('34. M2G 나이프 피해 배율만 복원');
     console.log('\n=========================== [6. 세이브 백업 및 복원] ===========================');
     console.log('25. 현재 세이브 백업하기');
     console.log('26. 최신 백업 복원');
@@ -4924,6 +4942,8 @@ async function interactive(rl, savePath) {
         await manageEquipmentSpirit(rl,savePath,choice==='28');
       } else if (['29','30','31','32'].includes(choice)) {
         await manageJackalOption(rl,savePath,['29','30'].includes(choice)?'spawn':'blueprints',['30','32'].includes(choice));
+      } else if (choice==='33'||choice==='34') {
+        await manageM2gKnife(rl,savePath,choice==='34');
       } else if (choice === '25') {
         if (isGameRunning()) {
           console.log('\nLET IT DIE를 완전히 종료한 뒤 백업하세요.');
@@ -5522,6 +5542,10 @@ async function main() {
       console.log(`- 마스터 DB 백업: ${result.backupPath}`);
       return;
     }
+    if (command==='m2g-knife-compensate'||command==='m2g-knife-restore') {
+      await manageM2gKnife(rl,savePath,command==='m2g-knife-restore',parsed.yes);
+      return;
+    }
     if (command === 'equipment-spirit-free' || command === 'equipment-spirit-restore') {
       await manageEquipmentSpirit(rl,savePath,command==='equipment-spirit-restore',parsed.yes,parsed.args[1] ? path.resolve(parsed.args[1]) : undefined);
       return;
@@ -5776,7 +5800,7 @@ async function main() {
       return;
     }
 
-    fail('사용법: node lid-kc.js [status | backup | reset-shop | grant-all-decals | grant-golden-beasts [마리수] | grant-limited-recipes | grant-all-recipes | max-facility | max-mastery | max-equipment | fighters | set-fighter-stat <번호/이름> <max-legit | max-db | max-bonus | bonus 수치 | max-slots | expand-slots | all 수치 | stat 수치> | expand-fighter-limits | restore-fighter-limits | collision-30m | collision-restore | ultimate-fighter <수치|배율|restore> | ultimate-fighter-5x | ultimate-fighter-restore | kamas-re-max | queen-spades <수치|배율|extreme|restore> | queen-spades-extreme | queen-spades-restore | wolf-rage [수치|restore] | wolf-rage-restore | rich-family [수치|max|dur-only|restore] [내구도] | rich-family-restore | naomi-detox [수치|max|farm|kc-only|restore] [내구도] | naomi-detox-restore | equipment-materials-free | equipment-materials-restore [백업] | equipment-spirit-free | equipment-spirit-restore [백업] | jackal-spawn-fast [초] | jackal-spawn-restore | jackal-blueprints [50|80|100] | jackal-blueprints-restore | set [kc|sp|blood] 숫자 | max [kc|sp|blood] | restore] [--save 경로] [--game 설치폴더 | --master DB경로] [--yes]');
+    fail('사용법: node lid-kc.js [status | backup | reset-shop | grant-all-decals | grant-golden-beasts [마리수] | grant-limited-recipes | grant-all-recipes | max-facility | max-mastery | max-equipment | fighters | set-fighter-stat <번호/이름> <max-legit | max-db | max-bonus | bonus 수치 | max-slots | expand-slots | all 수치 | stat 수치> | expand-fighter-limits | restore-fighter-limits | collision-30m | collision-restore | ultimate-fighter <수치|배율|restore> | ultimate-fighter-5x | ultimate-fighter-restore | kamas-re-max | queen-spades <수치|배율|extreme|restore> | queen-spades-extreme | queen-spades-restore | wolf-rage [수치|restore] | wolf-rage-restore | rich-family [수치|max|dur-only|restore] [내구도] | rich-family-restore | naomi-detox [수치|max|farm|kc-only|restore] [내구도] | naomi-detox-restore | equipment-materials-free | equipment-materials-restore [백업] | equipment-spirit-free | equipment-spirit-restore [백업] | jackal-spawn-fast [초] | jackal-spawn-restore | jackal-blueprints [50|80|100] | jackal-blueprints-restore | m2g-knife-compensate | m2g-knife-restore | set [kc|sp|blood] 숫자 | max [kc|sp|blood] | restore] [--save 경로] [--game 설치폴더 | --master DB경로] [--yes]');
   } finally {
     if (rl) rl.close();
   }
