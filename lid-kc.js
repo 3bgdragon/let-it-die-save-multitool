@@ -455,9 +455,6 @@ function parseGoodsIds(value, fieldName) {
   if (ids.some((id) => !/^\d+$/.test(id))) {
     fail(`세이브의 ${fieldName} 상품 ID 형식이 올바르지 않습니다.`);
   }
-  if (new Set(ids).size !== ids.length) {
-    fail(`세이브의 ${fieldName}에 중복 상품 ID가 있습니다.`);
-  }
   return ids;
 }
 
@@ -473,9 +470,13 @@ function getBloodniumShopState(save) {
     save.data.user[BLOODNIUM_SHOP_BOUGHT_FIELD],
     BLOODNIUM_SHOP_BOUGHT_FIELD,
   );
-  const duplicate = available.find((id) => bought.includes(id));
-  if (duplicate) fail(`블러드늄 상점 상품 ${duplicate}이 두 목록에 중복되어 있습니다.`);
-  return { available, bought };
+  // Repeated purchase-history entries are not an item quantity. Reading must
+  // not rewrite the save or prevent unrelated tool features from opening.
+  const uniqueAvailable = [...new Set(available)];
+  const uniqueBought = [...new Set(bought)];
+  const duplicateCount = available.length + bought.length - new Set([...available, ...bought]).size;
+  return { available: uniqueAvailable, bought: uniqueBought, duplicateCount,
+    needsReset: bought.length > 0 || duplicateCount > 0 };
 }
 
 function replaceObjectStringProperty(jsonText, objectName, propertyName, expectedValue, newValue) {
@@ -497,19 +498,19 @@ function replaceObjectStringProperty(jsonText, objectName, propertyName, expecte
 
 function replaceBloodniumShopHistory(save) {
   const state = getBloodniumShopState(save);
-  const restored = [...state.available, ...state.bought];
+  const restored = [...new Set([...state.available, ...state.bought])];
   let changedText = replaceObjectStringProperty(
     save.jsonText,
     'user',
     BLOODNIUM_SHOP_AVAILABLE_FIELD,
-    state.available.join(','),
+    save.data.user[BLOODNIUM_SHOP_AVAILABLE_FIELD],
     restored.join(','),
   );
   changedText = replaceObjectStringProperty(
     changedText,
     'user',
     BLOODNIUM_SHOP_BOUGHT_FIELD,
-    state.bought.join(','),
+    save.data.user[BLOODNIUM_SHOP_BOUGHT_FIELD],
     '',
   );
 
@@ -3559,7 +3560,7 @@ function writeBloodniumShopReset(savePath, save) {
   }
 
   const mutation = replaceBloodniumShopHistory(save);
-  if (mutation.previous.bought.length === 0) {
+  if (!mutation.previous.needsReset) {
     fail('블러드늄 상점에서 복구할 구매 완료 재고가 없습니다.');
   }
   const packed = packSave(mutation.changedText, save.blockCount, save.trailer);
@@ -4110,6 +4111,7 @@ function printStatus(savePath, save) {
   }
   const shop = getBloodniumShopState(save);
   console.log(`블러드늄 상점: 구매 가능 ${formatNumber(shop.available.length)}개 / 구매 완료 ${formatNumber(shop.bought.length)}개`);
+  if (shop.duplicateCount) console.log(`상점 기록 중복 ${formatNumber(shop.duplicateCount)}건: 조회는 가능하며 16번 재고 복구 시 중복을 정리합니다. 조회만으로 세이브는 변경하지 않습니다.`);
   const decalStock = getDecalStock(save);
   console.log(`데칼 소유 목록: ${formatNumber(decalStock.length)} / ${formatNumber(STEAM_DECAL_DEFINITION_COUNT)}종`);
   const goldenBeasts = getGoldenBeastSummary(save);
@@ -4508,12 +4510,12 @@ async function interactive(rl, savePath) {
         const shop = getBloodniumShopState(save);
         console.log('\n=========================== [블러드늄 상점 구매 재고 복구] ===========================');
         console.log(`현재 상태: 구매 가능 ${formatNumber(shop.available.length)}개 / 구매 완료 ${formatNumber(shop.bought.length)}개`);
-        if (shop.bought.length === 0) {
+        if (!shop.needsReset) {
           console.log('\n[안내] 복구할 블러드늄 상점 구매 완료 재고가 없습니다. (모든 상품 구매 가능 상태)');
           await pause(rl);
           continue;
         }
-        if (!await confirm(rl, `구매 완료 ${formatNumber(shop.bought.length)}개를 구매 가능 상태로 되돌릴까요?`)) {
+        if (!await confirm(rl, `구매 완료 ${formatNumber(shop.bought.length)}종을 복구하고 중복 기록 ${formatNumber(shop.duplicateCount)}건을 정리할까요?`)) {
           console.log('\n[안내] 작업이 취소되었습니다.');
           await pause(rl);
           continue;
@@ -5055,8 +5057,8 @@ async function main() {
     if (command === 'reset-shop') {
       const shop = getBloodniumShopState(save);
       printStatus(savePath, save);
-      if (shop.bought.length === 0) fail('복구할 블러드늄 상점 구매 완료 재고가 없습니다.');
-      if (!parsed.yes && !await confirm(rl, `구매 완료 ${formatNumber(shop.bought.length)}개를 구매 가능 상태로 되돌릴까요?`)) return;
+      if (!shop.needsReset) fail('복구할 블러드늄 상점 구매 완료 재고가 없습니다.');
+      if (!parsed.yes && !await confirm(rl, `구매 완료 ${formatNumber(shop.bought.length)}종을 복구하고 중복 기록 ${formatNumber(shop.duplicateCount)}건을 정리할까요?`)) return;
       const result = writeBloodniumShopReset(savePath, save);
       console.log('\n[성공] 블러드늄 상점 구매 재고 복구가 성공적으로 완료되었습니다.');
       console.log(`- 복구 수량: ${formatNumber(result.restoredCount)}개`);
