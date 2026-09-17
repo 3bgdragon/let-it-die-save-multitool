@@ -1,5 +1,6 @@
 * text=auto
-*.bat text eol=crlf
+# Keep CRLF in repository blobs too: GitHub ZIP archives do not run checkout conversion.
+*.bat -text
 *.js text eol=lf
 *.json text eol=lf
 *.md text eol=lf

@@ -4004,7 +4004,7 @@ function parseArguments(argv) {
   for (let index = 0; index < args.length;) {
     if (args[index] === '--save') {
       if (!args[index + 1]) fail('--save 뒤에 세이브 경로가 필요합니다.');
-      savePath = path.resolve(args[index + 1]);
+      savePath = path.resolve(stripPathInputQuotes(args[index + 1]));
       args.splice(index, 2);
     } else if (args[index] === '--game' || args[index] === '--master') {
       const option = args[index];
@@ -4017,6 +4017,15 @@ function parseArguments(argv) {
     } else {
       index += 1;
     }
+  }
+  // Explorer passes a dropped file/folder as a bare positional argument.
+  const dropped = stripPathInputQuotes(args[0] || '');
+  const looksLikePath = /[\\/]/.test(dropped) || /\.sav$/i.test(dropped) ||
+    (args.length === 1 && fs.existsSync(dropped) && fs.statSync(dropped).isDirectory());
+  if (looksLikePath) {
+    if (savePath || args.length !== 1) fail('세이브 파일 또는 폴더는 한 개만 지정하세요. 명령어 사용 시 --save 옵션을 사용하세요.');
+    savePath = path.resolve(dropped);
+    args.shift();
   }
   return { args, masterPath, savePath, yes };
 }
@@ -4071,11 +4080,19 @@ async function configureMasterDatabase(rl, savePath, explicitPath, required) {
 }
 
 async function chooseSave(rl, explicitPath) {
+  let saves;
   if (explicitPath) {
-    if (!fs.existsSync(explicitPath)) fail(`세이브 파일이 없습니다: ${explicitPath}`);
-    return explicitPath;
+    if (!fs.existsSync(explicitPath)) fail(`세이브 파일 또는 폴더가 없습니다: ${explicitPath}`);
+    if (fs.statSync(explicitPath).isFile()) {
+      if (!/\.sav$/i.test(explicitPath)) fail('세이브는 .sav 파일을 지정하세요.');
+      return explicitPath;
+    }
+    saves = resolveManualSaveInput(explicitPath);
+    if (!saves.length) fail('지정한 폴더에서 숫자 이름의 .sav 세이브 파일을 찾지 못했습니다.');
+    if (saves.length > 1 && !rl) fail('폴더에 세이브가 여러 개 있습니다. --save로 파일 하나를 지정하세요.');
+  } else {
+    saves = discoverSaves();
   }
-  let saves = discoverSaves();
   if (saves.length === 0) {
     if (!rl) {
       fail('Steam LET IT DIE 세이브를 자동으로 찾지 못했습니다. --save 경로를 지정하세요.');
