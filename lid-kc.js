@@ -2009,11 +2009,24 @@ function findSteamRoots() {
   return uniquePaths(roots);
 }
 
+function isSupportedSaveName(name) {
+  return /^(?:\d+|brggame)\.sav$/i.test(name);
+}
+
 function listNumericSaveFiles(directory) {
   if (!fs.existsSync(directory) || !fs.statSync(directory).isDirectory()) return [];
-  return fs.readdirSync(directory)
-    .filter((name) => /^\d+\.sav$/i.test(name))
-    .map((name) => path.join(directory, name));
+  const entries = fs.readdirSync(directory, { withFileTypes: true });
+  const saves = entries.filter(entry => entry.isFile() && isSupportedSaveName(entry.name))
+    .map(entry => path.join(directory, entry.name));
+  // Only inspect Steam-ID child folders, never recursively scan unrelated data.
+  for (const entry of entries) {
+    if (!entry.isDirectory() || !/^\d+$/.test(entry.name)) continue;
+    const accountDirectory = path.join(directory, entry.name);
+    for (const child of fs.readdirSync(accountDirectory, { withFileTypes: true })) {
+      if (child.isFile() && /^brggame\.sav$/i.test(child.name)) saves.push(path.join(accountDirectory, child.name));
+    }
+  }
+  return saves;
 }
 
 function stripPathInputQuotes(input) {
@@ -2032,7 +2045,7 @@ function resolveManualSaveInput(input) {
   const resolved = path.resolve(enteredPath);
   if (!fs.existsSync(resolved)) return [];
   if (fs.statSync(resolved).isFile()) {
-    return /^\d+\.sav$/i.test(path.basename(resolved)) ? [resolved] : [];
+    return isSupportedSaveName(path.basename(resolved)) ? [resolved] : [];
   }
 
   const directories = [
@@ -2087,10 +2100,7 @@ function discoverSaves() {
   const saves = [];
   for (const installDirectory of findGameInstallDirectories()) {
     const saveDirectory = path.join(installDirectory, 'Savedata');
-    if (!fs.existsSync(saveDirectory)) continue;
-    for (const name of fs.readdirSync(saveDirectory)) {
-      if (/^\d+\.sav$/i.test(name)) saves.push(path.join(saveDirectory, name));
-    }
+    saves.push(...listNumericSaveFiles(saveDirectory));
   }
   return uniquePaths(saves);
 }
@@ -2181,10 +2191,16 @@ function writeErrorLog(error, context = {}) {
   }
 }
 
+function saveBackupKey(savePath) {
+  const name = path.basename(savePath);
+  const account = path.basename(path.dirname(savePath));
+  return /^brggame\.sav$/i.test(name) && /^\d+$/.test(account) ? `${account}.${name}` : name;
+}
+
 function createBackup(savePath, packed) {
   const directory = backupDirectory();
   fs.mkdirSync(directory, { recursive: true });
-  const name = `${path.basename(savePath)}.${timestamp()}.${sha256(packed).slice(0, 12)}.bak`;
+  const name = `${saveBackupKey(savePath)}.${timestamp()}.${sha256(packed).slice(0, 12)}.bak`;
   const destination = path.join(directory, name);
   fs.writeFileSync(destination, packed, { flag: 'wx' });
   return destination;
@@ -2192,7 +2208,11 @@ function createBackup(savePath, packed) {
 
 function findMasterDatabasePath(savePath) {
   if (masterDatabaseOverridePath) return masterDatabaseOverridePath;
-  const adjacentInstallDirectory = typeof savePath === 'string' && savePath ? path.dirname(path.dirname(savePath)) : null;
+  let adjacentInstallDirectory = typeof savePath === 'string' && savePath ? path.dirname(path.dirname(savePath)) : null;
+  if (adjacentInstallDirectory && /^brggame\.sav$/i.test(path.basename(savePath)) &&
+      /^\d+$/.test(path.basename(path.dirname(savePath))) && path.basename(adjacentInstallDirectory).toLowerCase() === 'savedata') {
+    adjacentInstallDirectory = path.dirname(adjacentInstallDirectory);
+  }
   const candidates = uniquePaths([
     ...(adjacentInstallDirectory ? [path.join(adjacentInstallDirectory, 'BrgGame', 'Content', 'masters.db')] : []),
     ...findGameInstallDirectories().map((installDirectory) =>
@@ -3952,7 +3972,7 @@ function writeKamasResearchMaximum(savePath, save) {
 function listBackups(savePath) {
   const directory = backupDirectory();
   if (!fs.existsSync(directory)) return [];
-  const prefix = `${path.basename(savePath)}.`;
+  const prefix = `${saveBackupKey(savePath)}.`;
   return fs.readdirSync(directory)
     .filter((name) => name.startsWith(prefix) && name.endsWith('.bak'))
     .map((name) => path.join(directory, name))
@@ -4088,7 +4108,7 @@ async function chooseSave(rl, explicitPath) {
       return explicitPath;
     }
     saves = resolveManualSaveInput(explicitPath);
-    if (!saves.length) fail('지정한 폴더에서 숫자 이름의 .sav 세이브 파일을 찾지 못했습니다.');
+    if (!saves.length) fail('지정한 폴더에서 숫자 이름의 .sav 또는 스팀ID 폴더의 brggame.sav를 찾지 못했습니다.');
     if (saves.length > 1 && !rl) fail('폴더에 세이브가 여러 개 있습니다. --save로 파일 하나를 지정하세요.');
   } else {
     saves = discoverSaves();
@@ -4098,12 +4118,12 @@ async function chooseSave(rl, explicitPath) {
       fail('Steam LET IT DIE 세이브를 자동으로 찾지 못했습니다. --save 경로를 지정하세요.');
     }
     console.log('\nSteam LET IT DIE 세이브를 자동으로 찾지 못했습니다.');
-    console.log('숫자 이름의 .sav 파일 또는 Savedata/LET IT DIE/SteamLibrary 폴더를 창에 끌어놓아도 됩니다.');
+    console.log('숫자 이름의 .sav 또는 brggame.sav 파일, 스팀ID/Savedata/LET IT DIE/SteamLibrary 폴더를 창에 끌어놓아도 됩니다.');
     const manualInput = await rl.question('세이브 파일 또는 폴더 경로 (Enter=종료): ');
     if (!manualInput.trim()) fail('사용자가 경로 입력을 취소했습니다.');
     saves = resolveManualSaveInput(manualInput);
     if (saves.length === 0) {
-      fail('입력한 위치에서 숫자 이름의 .sav 세이브 파일을 찾지 못했습니다.');
+      fail('입력한 위치에서 숫자 이름의 .sav 또는 brggame.sav 세이브 파일을 찾지 못했습니다.');
     }
   }
   if (saves.length === 1 || !rl) return saves[0];
