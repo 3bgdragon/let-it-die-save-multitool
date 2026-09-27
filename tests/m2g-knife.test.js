@@ -53,7 +53,7 @@ test('SQL failure after first row rolls back whole patch',t=>{
 });
 test('M2G menu routes apply/restore and cancellation without offering knife-only mode',async()=>{
   const source=fs.readFileSync(path.join(__dirname,'../lid-kc.js'),'utf8'),calls=[];
-  const context=vm.createContext({console:{log(){}},require:()=>({status:()=>({applied:true,rows:[{id:m2g.IDS[0],scale:100}]}),change:(...args)=>{calls.push(args);return {changed:false};}}),getMasterDatabasePath:()=>'/db',isGameRunning:()=>false,createMasterDatabaseBackup:()=>'/backup',confirm:async()=>true});
+const context=vm.createContext({tr:require('../language').message,console:{log(){}},require:()=>({status:()=>({applied:true,rows:[{id:m2g.IDS[0],scale:100}]}),change:(...args)=>{calls.push(args);return {changed:false};}}),getMasterDatabasePath:()=>'/db',isGameRunning:()=>false,createMasterDatabaseBackup:()=>'/backup',confirm:async()=>true});
   vm.runInContext(source.slice(source.indexOf('async function manageM2gKnife('),source.indexOf('function setCollisionMushroomThirtyMinutes(')),context);
   await context.manageM2gKnife({},null,false,true);await context.manageM2gKnife({},null,true,true);
   context.confirm=async()=>false;await context.manageM2gKnife({},null);

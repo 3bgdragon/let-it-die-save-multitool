@@ -1,0 +1,3538 @@
+[
+  [
+    "오류: 이 도구는 Node.js 22.5 이상이 필요합니다.",
+    "Error: This tool requires Node.js 22.5 or newer."
+  ],
+  [
+    "킬코인",
+    "Kill Coins"
+  ],
+  [
+    "스피리튬",
+    "SPLithium"
+  ],
+  [
+    "블러드늄",
+    "Bloodnium"
+  ],
+  [
+    "자원은 killcoins(kc), splithium(sp), bloodnium 중 하나여야 합니다.",
+    "Resource must be killcoins (kc), splithium (sp), or bloodnium."
+  ],
+  [
+    "알 수 없는 자원 키: {0}",
+    "Unknown resource key: {0}"
+  ],
+  [
+    "지원하지 않는 세이브입니다: BRG 헤더가 없습니다.",
+    "Unsupported save: BRG header is missing."
+  ],
+  [
+    "지원하지 않는 세이브 버전입니다: {0} (지원 버전: {1})",
+    "Unsupported save version: {0} (supported: {1})"
+  ],
+  [
+    "지원하지 않는 압축 형식입니다: ZLIB 세이브가 아닙니다.",
+    "Unsupported compression: not a ZLIB save."
+  ],
+  [
+    "세이브 블록 헤더가 잘려 있습니다.",
+    "Truncated save block header."
+  ],
+  [
+    "세이브 압축 블록 크기가 올바르지 않습니다.",
+    "Invalid compressed save block size."
+  ],
+  [
+    "세이브 압축을 풀 수 없습니다: {0}",
+    "Cannot decompress save: {0}"
+  ],
+  [
+    "세이브 압축 블록의 크기 검증에 실패했습니다.",
+    "Save compression block size verification failed."
+  ],
+  [
+    "세이브 전체 크기 검증에 실패했습니다.",
+    "Total save size verification failed."
+  ],
+  [
+    "알 수 없는 세이브 꼬리 데이터가 있어 안전하게 중단했습니다.",
+    "Unknown trailing save data; stopped safely."
+  ],
+  [
+    "세이브 JSON이 올바른 UTF-8 데이터가 아닙니다.",
+    "Save JSON is not valid UTF-8."
+  ],
+  [
+    "세이브 JSON을 읽을 수 없습니다: {0}",
+    "Cannot read save JSON: {0}"
+  ],
+  [
+    "자원 데이터(soul)를 찾지 못했습니다.",
+    "Resource data (soul) not found."
+  ],
+  [
+    "{0} 필드(soul.{1})를 찾지 못했습니다.",
+    "Field {0} (soul.{1}) not found."
+  ],
+  [
+    "세이브 JSON 문자열 구조가 올바르지 않습니다.",
+    "Invalid save JSON string structure."
+  ],
+  [
+    "세이브 JSON 문자열이 닫히지 않았습니다.",
+    "Unterminated save JSON string."
+  ],
+  [
+    "세이브 JSON 괄호 구조가 올바르지 않습니다.",
+    "Invalid save JSON bracket structure."
+  ],
+  [
+    "세이브 JSON 값이 닫히지 않았습니다.",
+    "Unterminated save JSON value."
+  ],
+  [
+    "세이브 JSON 객체 구조가 올바르지 않습니다.",
+    "Invalid save JSON object structure."
+  ],
+  [
+    "세이브 JSON 속성 이름을 읽을 수 없습니다.",
+    "Cannot read save JSON property name."
+  ],
+  [
+    "세이브 JSON 속성 구분자가 없습니다.",
+    "Missing save JSON property separator."
+  ],
+  [
+    "세이브 JSON 객체 구분자가 올바르지 않습니다.",
+    "Invalid save JSON object separator."
+  ],
+  [
+    "세이브 JSON에서 {0} 속성을 찾지 못했습니다.",
+    "Property {0} not found in save JSON."
+  ],
+  [
+    "{0} 원문 값이 정수가 아닙니다.",
+    "Raw value of {0} is not an integer."
+  ],
+  [
+    "{0} 값 교차 검증에 실패했습니다.",
+    "Value cross-check failed for {0}."
+  ],
+  [
+    "수정된 세이브 JSON 검증에 실패했습니다: {0}",
+    "Modified save JSON verification failed: {0}"
+  ],
+  [
+    "수정된 {0} 값 검증에 실패했습니다.",
+    "Modified value verification failed for {0}."
+  ],
+  [
+    "세이브의 {0} 값이 문자열이 아닙니다.",
+    "Save field {0} is not a string."
+  ],
+  [
+    "세이브의 {0} 상품 ID 형식이 올바르지 않습니다.",
+    "Invalid goods ID format in save field {0}."
+  ],
+  [
+    "세이브에서 상점 데이터(user)를 찾지 못했습니다.",
+    "Shop data (user) not found in save."
+  ],
+  [
+    "세이브의 {0} 문자열을 읽지 못했습니다.",
+    "Cannot read save string {0}."
+  ],
+  [
+    "세이브의 {0} 값 교차 검증에 실패했습니다.",
+    "Save value cross-check failed for {0}."
+  ],
+  [
+    "수정된 블러드늄 상점 목록 검증에 실패했습니다.",
+    "Modified Bloodnium shop list verification failed."
+  ],
+  [
+    "세이브에서 데칼 뽑기 이력을 찾지 못했습니다.",
+    "Decal draw history not found in save."
+  ],
+  [
+    "세이브에서 데칼 소유 목록을 찾지 못했습니다.",
+    "Owned decal list not found in save."
+  ],
+  [
+    "데칼 소유 목록의 항목 형식이 올바르지 않습니다.",
+    "Invalid entry format in owned decal list."
+  ],
+  [
+    "데칼 소유 목록에 {0}가 중복되어 있습니다.",
+    "Duplicate {0} in owned decal list."
+  ],
+  [
+    "Steam용 전체 데칼 목록 검증에 실패했습니다.",
+    "Steam full decal list verification failed."
+  ],
+  [
+    "이전 ★5 데칼 지급 이력 정리 목록 검증에 실패했습니다.",
+    "Legacy five-star decal history cleanup list verification failed."
+  ],
+  [
+    "세이브의 데칼 소유 목록을 읽지 못했습니다.",
+    "Cannot read owned decal list from save."
+  ],
+  [
+    "데칼 소유 목록 교차 검증에 실패했습니다.",
+    "Owned decal list cross-check failed."
+  ],
+  [
+    "수정된 전체 데칼 데이터 검증에 실패했습니다.",
+    "Modified full decal data verification failed."
+  ],
+  [
+    "수정된 데칼 {0} 수량 검증에 실패했습니다.",
+    "Modified quantity verification failed for decal {0}."
+  ],
+  [
+    "세이브에서 동물 소유 목록을 찾지 못했습니다.",
+    "Owned animal list not found in save."
+  ],
+  [
+    "동물 소유 목록의 항목 형식이 올바르지 않습니다.",
+    "Invalid entry format in owned animal list."
+  ],
+  [
+    "세이브에서 버섯 소유 목록을 찾지 못했습니다.",
+    "Owned mushroom list not found in save."
+  ],
+  [
+    "버섯 소유 목록의 항목 형식이 올바르지 않습니다.",
+    "Invalid entry format in owned mushroom list."
+  ],
+  [
+    "세이브에서 코인 보관함 슬롯 목록을 찾지 못했습니다.",
+    "Storage slot list not found in save."
+  ],
+  [
+    "코인 보관함 슬롯 항목의 형식이 올바르지 않습니다.",
+    "Invalid storage slot entry format."
+  ],
+  [
+    "코인 보관함 슬롯 {0}이 중복되어 있습니다.",
+    "Duplicate storage slot {0}."
+  ],
+  [
+    "{0} 목록 검증에 실패했습니다.",
+    "List verification failed for {0}."
+  ],
+  [
+    "세이브에서 장비 연구 목록을 찾지 못했습니다.",
+    "Equipment research list not found in save."
+  ],
+  [
+    "{0} {1} 연구 레벨의 형식이 예상과 다릅니다.",
+    "Unexpected research level format for {0} {1}."
+  ],
+  [
+    "{0} {1}의 연구 레벨 {2}이 중복돼 있습니다.",
+    "Duplicate research level {2} for {0} {1}."
+  ],
+  [
+    "내장된 기간 한정 레시피 수가 예상과 다릅니다.",
+    "Unexpected number of bundled limited-time blueprints."
+  ],
+  [
+    "기간 한정 레시피",
+    "Limited-time blueprints"
+  ],
+  [
+    "{0} 마스터 정의가 예상과 다릅니다.",
+    "Unexpected master definition for {0}."
+  ],
+  [
+    "{0} 마스터 정의 ID가 예상과 다릅니다.",
+    "Unexpected master definition ID for {0}."
+  ],
+  [
+    "세이브의 장비 연구 목록을 읽지 못했습니다.",
+    "Cannot read equipment research list from save."
+  ],
+  [
+    "장비 연구 목록 교차 검증에 실패했습니다.",
+    "Equipment research list cross-check failed."
+  ],
+  [
+    "수정된 {0} 데이터를 읽을 수 없습니다: {1}",
+    "Cannot read modified {0} data: {1}"
+  ],
+  [
+    "수정된 {0} 데이터 검증에 실패했습니다.",
+    "Modified {0} data verification failed."
+  ],
+  [
+    "수정된 {0} {1} 검증에 실패했습니다.",
+    "Modified {0} {1} verification failed."
+  ],
+  [
+    "기간 한정 레시피 마스터 정의 순서가 예상과 다릅니다.",
+    "Unexpected limited-time blueprint master definition order."
+  ],
+  [
+    "Steam용 전체 레시피 마스터 정의가 예상과 다릅니다.",
+    "Unexpected Steam full blueprint master definitions."
+  ],
+  [
+    "Steam용 전체 레시피",
+    "All Steam blueprints"
+  ],
+  [
+    "황금동물 지급 수량은 1 이상의 정수여야 합니다.",
+    "Golden animal quantity must be a positive integer."
+  ],
+  [
+    "내장된 황금동물 목록 검증에 실패했습니다.",
+    "Bundled golden animal list verification failed."
+  ],
+  [
+    "황금동물 마스터 정의가 예상과 다릅니다.",
+    "Unexpected golden animal master definition."
+  ],
+  [
+    "황금동물 {0}의 보상 버섯 정의가 올바르지 않습니다.",
+    "Invalid reward mushroom definition for golden animal {0}."
+  ],
+  [
+    "코인 보관함의 빈칸이 {0}개뿐입니다. 황금동물 11종 x {1}마리(총 {2}마리) 지급에는 {3}칸이 필요합니다.",
+    "Only {0} storage slots are free. Adding 11 golden animal types x {1} each ({2} total) requires {3} slots."
+  ],
+  [
+    "수정된 황금동물 {0} 데이터 검증에 실패했습니다.",
+    "Modified golden animal {0} data verification failed."
+  ],
+  [
+    "KAMAS-A1 어설트 라이플 RE 최종 티어(4티어) 연구 데이터가 없습니다. 인게임에서 KAMAS-A1 RE 설계도를 구매하고 4티어 연구를 시작한 세이브에서만 강화할 수 있습니다.",
+    "Final-tier (tier 4) KAMAS-A1 Assault Rifle RE research data is missing. Buy its blueprint and start tier 4 research in game before using this feature."
+  ],
+  [
+    "KAMAS RE 연구 항목의 형식이 예상과 달라 중단했습니다.",
+    "Unexpected KAMAS RE research entry format; stopped."
+  ],
+  [
+    "KAMAS RE 내부 연구 레벨 {0}이 중복됩니다.",
+    "Duplicate KAMAS RE internal research level {0}."
+  ],
+  [
+    "KAMAS RE 내부 연구 레벨 {0}이 누락돼 있습니다.",
+    "Missing KAMAS RE internal research level {0}."
+  ],
+  [
+    "KAMAS RE 연구 목록 교차 검증에 실패했습니다.",
+    "KAMAS RE research list cross-check failed."
+  ],
+  [
+    "수정된 KAMAS RE 연구 데이터를 읽을 수 없습니다: {0}",
+    "Cannot read modified KAMAS RE research data: {0}"
+  ],
+  [
+    "수정된 KAMAS RE 최대 강화 검증에 실패했습니다.",
+    "Modified KAMAS RE maximum upgrade verification failed."
+  ],
+  [
+    "세이브에서 시설 데이터(soul)를 찾지 못했습니다.",
+    "Facility data (soul) not found in save."
+  ],
+  [
+    "세이브 시설 레벨 형식이 올바르지 않습니다.",
+    "Invalid facility level format in save."
+  ],
+  [
+    "수정된 시설 레벨 JSON 검증에 실패했습니다: {0}",
+    "Modified facility level JSON verification failed: {0}"
+  ],
+  [
+    "수정된 시설 레벨 검증에 실패했습니다.",
+    "Modified facility level verification failed."
+  ],
+  [
+    "LET IT DIE가 실행 중입니다. 게임을 완전히 종료한 뒤 다시 실행하세요.",
+    "LET IT DIE is running. Close the game completely and try again."
+  ],
+  [
+    "세이브를 읽은 뒤 파일이 변경됐습니다. 게임을 종료하고 다시 시도하세요.",
+    "Save file changed after reading. Close the game and retry."
+  ],
+  [
+    "이전 시설 업그레이드 수정 작업의 임시 파일이 남아 있습니다.",
+    "Temporary file from a previous facility upgrade operation remains."
+  ],
+  [
+    "임시 세이브의 시설 레벨 검증에 실패했습니다.",
+    "Temporary save facility level verification failed."
+  ],
+  [
+    "임시 세이브에서 예상하지 않은 데이터 변경이 발견됐습니다.",
+    "Unexpected data changes found in temporary save."
+  ],
+  [
+    "수정 준비 중 원본 세이브가 변경됐습니다. 안전하게 중단했습니다.",
+    "Original save changed during preparation. Stopped safely."
+  ],
+  [
+    "마스터 DB에서 무기 숙련도 정의를 찾지 못했습니다.",
+    "Weapon mastery definitions not found in master DB."
+  ],
+  [
+    "세이브에서 무기 숙련도 목록(expert)을 찾지 못했습니다.",
+    "Weapon mastery list (expert) not found in save."
+  ],
+  [
+    "무기 숙련도 항목의 형식이 올바르지 않습니다.",
+    "Invalid weapon mastery entry format."
+  ],
+  [
+    "수정된 무기 숙련도 JSON 검증에 실패했습니다: {0}",
+    "Modified weapon mastery JSON verification failed: {0}"
+  ],
+  [
+    "수정된 무기 숙련도 최대 레벨 검증에 실패했습니다.",
+    "Modified maximum weapon mastery level verification failed."
+  ],
+  [
+    "이전 무기 숙련도 수정 작업의 임시 파일이 남아 있습니다.",
+    "Temporary file from a previous weapon mastery operation remains."
+  ],
+  [
+    "임시 세이브의 무기 숙련도 최대 레벨 검증에 실패했습니다.",
+    "Temporary save maximum weapon mastery level verification failed."
+  ],
+  [
+    "세이브에서 장비 연구 목록(partresearch.user)을 찾지 못했습니다.",
+    "Equipment research list (partresearch.user) not found in save."
+  ],
+  [
+    "수정된 장비 연구 JSON 검증에 실패했습니다: {0}",
+    "Modified equipment research JSON verification failed: {0}"
+  ],
+  [
+    "수정된 장비 연구 최대치 검증에 실패했습니다.",
+    "Modified maximum equipment research verification failed."
+  ],
+  [
+    "이전 장비 연구 최대화 수정 작업의 임시 파일이 남아 있습니다.",
+    "Temporary file from a previous equipment maximization operation remains."
+  ],
+  [
+    "임시 세이브의 장비 연구 최대치 검증에 실패했습니다.",
+    "Temporary save maximum equipment research verification failed."
+  ],
+  [
+    "올라운더",
+    "All-rounder"
+  ],
+  [
+    "스트라이커",
+    "Striker"
+  ],
+  [
+    "디펜더",
+    "Defender"
+  ],
+  [
+    "어태커",
+    "Attacker"
+  ],
+  [
+    "슈터",
+    "Shooter"
+  ],
+  [
+    "콜렉터",
+    "Collector"
+  ],
+  [
+    "스킬 마스터",
+    "Skill Master"
+  ],
+  [
+    "럭키 스타",
+    "Lucky Star"
+  ],
+  [
+    " [안내] 파이터 상한 해제(Uncap) 및 확장 수치 적용",
+    " [Notice] Fighter uncapping and expanded values"
+  ],
+  [
+    "순정 공식 한도를 초과하는 상한 해제 및 확장 설정이 감지되었습니다:",
+    "Uncapped or expanded settings exceeding stock limits were detected:"
+  ],
+  [
+    "--yes 옵션으로 인해 확인을 통과하고 진행합니다.",
+    "Proceeding without confirmation because --yes was specified."
+  ],
+  [
+    "위 상한 해제 수치를 캐릭터에 적용하시겠습니까?",
+    "Apply these uncapped values to the fighter?"
+  ],
+  [
+    "HP (체력)",
+    "HP (Health)"
+  ],
+  [
+    "STR (공격력)",
+    "STR (Strength)"
+  ],
+  [
+    "DEX (기교)",
+    "DEX (Dexterity)"
+  ],
+  [
+    "VIT (체력/방어)",
+    "VIT (Vitality/Defense)"
+  ],
+  [
+    "STM (스태미나)",
+    "STM (Stamina)"
+  ],
+  [
+    "LUK (행운)",
+    "LUK (Luck)"
+  ],
+  [
+    "데칼 슬롯",
+    "Decal slots"
+  ],
+  [
+    "+{0} (총 {1}칸 / 기본 {2}칸)",
+    "+{0} ({1} total / {2} base)"
+  ],
+  [
+    "가방 용량",
+    "Bag capacity"
+  ],
+  [
+    "+{0}칸",
+    "+{0} slots"
+  ],
+  [
+    "분노 게이지",
+    "Rage gauge"
+  ],
+  [
+    "HP 보너스",
+    "HP bonus"
+  ],
+  [
+    "STR 보너스",
+    "STR bonus"
+  ],
+  [
+    "DEX 보너스",
+    "DEX bonus"
+  ],
+  [
+    "VIT 보너스",
+    "VIT bonus"
+  ],
+  [
+    "STM 보너스",
+    "STM bonus"
+  ],
+  [
+    "LUK 보너스",
+    "LUK bonus"
+  ],
+  [
+    " [성공] 파이터 '{0}' ({1}) 능력치 변경 및 세이브 저장이 완료되었습니다!",
+    " [Success] Fighter '{0}' ({1}) stats updated and save written!"
+  ],
+  [
+    "• 설정 모드  : [{0}]",
+    "• Mode: [{0}]"
+  ],
+  [
+    "• 총 파이터 렙: Lv.{0}  →  Lv.{1} ({2}{3})",
+    "• Total fighter level: Lv.{0} → Lv.{1} ({2}{3})"
+  ],
+  [
+    "• 변경된 스탯: {0}개 항목",
+    "• Changed stats: {0} fields"
+  ],
+  [
+    "• 변경된 스탯: 수치 변동 없음 (동일 수치 유지)",
+    "• Changed stats: none (values unchanged)"
+  ],
+  [
+    "{0} {1} {2} 상태",
+    "{0} {1} {2} Status"
+  ],
+  [
+    "능력치 항목",
+    "Stat"
+  ],
+  [
+    "변경 전",
+    "Before"
+  ],
+  [
+    "변경 후",
+    "After"
+  ],
+  [
+    "★ 변경됨 {0}",
+    "★ Changed {0}"
+  ],
+  [
+    "유지",
+    "Unchanged"
+  ],
+  [
+    "※ 안내: {0}성 {1}은 기본 {2}칸 + 추가 {3}칸 = 총 {4}칸 데칼 슬롯이 적용됩니다.",
+    "Note: Grade {0} {1}: {2} base + {3} additional = {4} total decal slots."
+  ],
+  [
+    "        인게임 3×3 데칼 UI의 나머지 {0}칸은 미해금(X 표시) 상태로 표시되는 것이 정상입니다.",
+    "      The remaining {0} slots in the in-game 3×3 decal UI should appear locked (X)."
+  ],
+  [
+    "• 세이브 백업: {0}",
+    "• Save backup: {0}"
+  ],
+  [
+    "세이브에서 파이터 목록(soul.chr.chrs)을 찾지 못했습니다.",
+    "Fighter list (soul.chr.chrs) not found in save."
+  ],
+  [
+    "세이브에서 파이터 능력치 데이터(bodyuser.{0})를 찾지 못했습니다.",
+    "Fighter stat data (bodyuser.{0}) not found in save."
+  ],
+  [
+    "파이터 '{0}'의 능력치 정보(bodyuser)를 찾지 못했습니다.",
+    "Stat data (bodyuser) not found for fighter '{0}'."
+  ],
+  [
+    "파이터 {0}",
+    "Fighter {0}"
+  ],
+  [
+    "알 수 없음",
+    "Unknown"
+  ],
+  [
+    "사용 중",
+    "Active"
+  ],
+  [
+    "대기실/냉동고",
+    "Waiting Room/Freezer"
+  ],
+  [
+    "보관",
+    "Stored"
+  ],
+  [
+    "파이터 번호({0})가 유효하지 않습니다. (1~{1})",
+    "Invalid fighter number ({0}). (1–{1})"
+  ],
+  [
+    "수정된 파이터 능력치 JSON 검증에 실패했습니다: {0}",
+    "Modified fighter stat JSON verification failed: {0}"
+  ],
+  [
+    "파이터 능력치 {0} 검증에 실패했습니다.",
+    "Fighter stat {0} verification failed."
+  ],
+  [
+    "파이터 총 레벨 재계산 검증에 실패했습니다.",
+    "Recalculated total fighter level verification failed."
+  ],
+  [
+    "유효하지 않은 파이터 번호입니다.",
+    "Invalid fighter number."
+  ],
+  [
+    "이전 파이터 능력치 수정 작업의 임시 파일이 남아 있습니다.",
+    "Temporary file from a previous fighter stat operation remains."
+  ],
+  [
+    "임시 세이브의 파이터 {0} 검증에 실패했습니다.",
+    "Temporary save fighter {0} verification failed."
+  ],
+  [
+    "임시 세이브의 파이터 총 레벨 검증에 실패했습니다.",
+    "Temporary save total fighter level verification failed."
+  ],
+  [
+    "입력한 위치에서 masters.db를 찾지 못했습니다. LET IT DIE 설치 폴더 또는 masters.db 파일을 지정하세요.",
+    "masters.db not found at the specified location. Specify the LET IT DIE installation folder or masters.db file."
+  ],
+  [
+    "LET IT DIE 멀티툴 오류 로그",
+    "LET IT DIE Multitool Error Log"
+  ],
+  [
+    "일시: {0} ({1})",
+    "Time: {0} ({1})"
+  ],
+  [
+    "플랫폼: {0} {1}",
+    "Platform: {0} {1}"
+  ],
+  [
+    "실행 파일: {0}",
+    "Executable: {0}"
+  ],
+  [
+    "실행 모드: {0}",
+    "Mode: {0}"
+  ],
+  [
+    "명령어: {0}",
+    "Command: {0}"
+  ],
+  [
+    "대화형 메뉴 선택 번호: {0}",
+    "Interactive menu selection: {0}"
+  ],
+  [
+    "세이브 파일: {0}",
+    "Save file: {0}"
+  ],
+  [
+    "마스터 DB: {0}",
+    "Master DB: {0}"
+  ],
+  [
+    "오류 메시지: {0}",
+    "Error message: {0}"
+  ],
+  [
+    "스택 트레이스:",
+    "Stack trace:"
+  ],
+  [
+    "(스택 정보 없음)",
+    "(No stack information)"
+  ],
+  [
+    "원인(cause): {0}",
+    "Cause: {0}"
+  ],
+  [
+    "로그 파일 작성 실패: {0}",
+    "Failed to write log file: {0}"
+  ],
+  [
+    "마스터 DB를 찾지 못했습니다. LET IT DIE 설치 폴더 또는 masters.db 경로를 입력하거나 --game/--master 옵션으로 지정하세요.",
+    "Master DB not found. Enter the LET IT DIE installation folder or masters.db path, or specify --game/--master."
+  ],
+  [
+    "마스터 DB의 Steam용 전체 데칼 {0}종 정의가 예상과 달라 안전하게 중단했습니다.",
+    "Unexpected master DB definitions for all {0} Steam decals; stopped safely."
+  ],
+  [
+    "마스터 DB의 Steam 데칼 {0}번 정의가 예상과 달라 안전하게 중단했습니다.",
+    "Unexpected master DB definition for Steam decal #{0}; stopped safely."
+  ],
+  [
+    "마스터 DB의 황금동물 11종 정의가 예상과 달라 안전하게 중단했습니다.",
+    "Unexpected master DB definitions for the 11 golden animals; stopped safely."
+  ],
+  [
+    "마스터 DB의 황금동물 {0} 정의가 예상과 달라 안전하게 중단했습니다.",
+    "Unexpected master DB definition for golden animal {0}; stopped safely."
+  ],
+  [
+    "마스터 DB의 Steam용 기간 한정 레시피 {0}종 정의가 예상과 달라 안전하게 중단했습니다.",
+    "Unexpected master DB definitions for {0} Steam limited-time blueprints; stopped safely."
+  ],
+  [
+    "마스터 DB의 기간 한정 레시피 {0} 정의가 예상과 달라 안전하게 중단했습니다.",
+    "Unexpected master DB definition for limited-time blueprint {0}; stopped safely."
+  ],
+  [
+    "(없음)",
+    "(None)"
+  ],
+  [
+    "마스터 DB의 Steam용 전체 레시피 {0}종 정의가 예상과 달라 안전하게 중단했습니다.",
+    "Unexpected master DB definitions for all {0} Steam blueprints; stopped safely."
+  ],
+  [
+    "마스터 DB의 전체 레시피 {0} 정의가 예상과 달라 안전하게 중단했습니다.",
+    "Unexpected master DB definition for blueprint {0}; stopped safely."
+  ],
+  [
+    "KAMAS RE 최종 티어 정의가 예상과 달라 안전하게 중단했습니다.",
+    "Unexpected final-tier KAMAS RE definition; stopped safely."
+  ],
+  [
+    "충돌버섯 효과 정의가 예상과 달라 안전하게 중단했습니다.",
+    "Unexpected Crushroom effect definition; stopped safely."
+  ],
+  [
+    "마스터 DB 백업 이름이 올바르지 않습니다.",
+    "Invalid master DB backup name."
+  ],
+  [
+    "장비 연구 DB 구조가 예상과 다릅니다. 없는 열: {0}",
+    "Unexpected equipment research DB structure. Missing columns: {0}"
+  ],
+  [
+    "장비 연구 정의가 비어 있어 안전하게 중단했습니다.",
+    "Equipment research definitions are empty; stopped safely."
+  ],
+  [
+    "마스터 DB를 읽은 뒤 파일이 변경됐습니다. 안전하게 중단했습니다.",
+    "Master DB changed after reading; stopped safely."
+  ],
+  [
+    "재료 비용 수정 행 수가 예상과 다릅니다: {0} / {1}",
+    "Unexpected material-cost update row count: {0} / {1}"
+  ],
+  [
+    "마스터 DB 무결성 검사에 실패했습니다.",
+    "Master DB integrity check failed."
+  ],
+  [
+    "수정 결과 검증에 실패해 원본 DB를 복구했습니다.",
+    "Result verification failed; original DB restored."
+  ],
+  [
+    "복원할 장비 재료 비용 백업이 없습니다.",
+    "No equipment material-cost backup to restore."
+  ],
+  [
+    "장비 재료 비용 백업이 비어 있습니다.",
+    "Equipment material-cost backup is empty."
+  ],
+  [
+    "현재 DB와 백업의 장비 연구 목록이 달라 안전하게 중단했습니다.",
+    "Equipment research lists differ between current DB and backup; stopped safely."
+  ],
+  [
+    "장비 재료 비용 복원에 실패했습니다: {0}",
+    "Equipment material-cost restoration failed: {0}"
+  ],
+  [
+    "복원 결과 검증에 실패해 복원 직전 DB로 되돌렸습니다.",
+    "Restore verification failed; reverted to pre-restore DB."
+  ],
+  [
+    "복원할 장비 스피리튬 전용 백업이 없습니다.",
+    "No dedicated equipment SPLithium backup to restore."
+  ],
+  [
+    "\n마스터 DB: {0}",
+    "\nMaster DB: {0}"
+  ],
+  [
+    "스피리튬 비용이 있는 장비 정의: {0} / {1}종",
+    "Equipment definitions with SPLithium costs: {0} / {1}"
+  ],
+  [
+    "재료 수량·킬코인·연구 시간·강화 단계는 변경하지 않습니다. 기존 재료 무료화와 독립적으로 적용·복원됩니다.",
+    "Material quantities, Kill Coins, research time and upgrade stages are unchanged. Apply/restore is independent of the material-free option."
+  ],
+  [
+    "복원 대상: {0}",
+    "Restore target: {0}"
+  ],
+  [
+    "이 백업의 장비 개발·강화 스피리튬 비용만 복원할까요?",
+    "Restore only equipment development/upgrade SPLithium costs from this backup?"
+  ],
+  [
+    "장비 개발·강화 스피리튬 비용만 0으로 변경할까요?",
+    "Set only equipment development/upgrade SPLithium costs to zero?"
+  ],
+  [
+    "스피리튬 비용 {0} 완료. 백업: {1}",
+    "SPLithium cost {0} completed. Backup: {1}"
+  ],
+  [
+    "복원",
+    "restore"
+  ],
+  [
+    "무료화",
+    "removal"
+  ],
+  [
+    "이미 요청한 스피리튬 비용 상태입니다. 변경하지 않았습니다.",
+    "Already in the requested SPLithium-cost state. No changes made."
+  ],
+  [
+    "\n마스터 DB: {0}\n자칼 {1}: {2}",
+    "\nMaster DB: {0}\nJackal {1}: {2}"
+  ],
+  [
+    "빠른 등장",
+    "early spawn"
+  ],
+  [
+    "청사진 비중",
+    "blueprint weight"
+  ],
+  [
+    "적용됨",
+    "Applied"
+  ],
+  [
+    "전용 패치 기록 없음",
+    "No dedicated patch record"
+  ],
+  [
+    "최초 대기시간만 단축하고 첫 확률 검사를 100%로 설정합니다. 적 처치·층 조건·스폰 위치가 충족돼야 등장합니다.",
+    "Shortens only the initial wait and sets the first probability check to 100%. Enemy-clear, floor and spawn-location conditions must still be met."
+  ],
+  [
+    "두 번째·세 번째 자칼의 간격과 확률은 유지합니다.",
+    "Intervals and probabilities for the second and third Jackals are unchanged."
+  ],
+  [
+    "  {0}: {1}초",
+    "  {0}: {1} seconds"
+  ],
+  [
+    "원래 청사진이 있는 자칼 6종만 변경합니다. 다른 종류의 재료 드랍은 유지합니다.",
+    "Changes only the six Jackals that originally have blueprints. Other types of material drops remain available."
+  ],
+  [
+    "청사진 비중을 높이면 해당 6종의 코인·장비·재료 비중은 줄어듭니다. 미보유 청사진을 보장하지 않습니다.",
+    "Increasing blueprint weight reduces coin/equipment/material weights for those six Jackals. It does not guarantee an unowned blueprint."
+  ],
+  [
+    "  {0}: 청사진 추첨 비중 {1}%",
+    "  {0}: Blueprint draw weight {1}%"
+  ],
+  [
+    "복원할 전용 패치 기록이 없습니다. 변경하지 않았습니다.",
+    "No dedicated patch record to restore. No changes made."
+  ],
+  [
+    "첫 자칼 대기시간 (1~300초, Enter=10): ",
+    "First Jackal wait (1–300 seconds, Enter=10): "
+  ],
+  [
+    "청사진 추첨 비중 (50/80/100%, Enter=80): ",
+    "Blueprint draw weight (50/80/100%, Enter=80): "
+  ],
+  [
+    "숫자로 입력하세요.",
+    "Enter a number."
+  ],
+  [
+    "허용된 범위의 값을 입력하세요.",
+    "Enter a value within the allowed range."
+  ],
+  [
+    "이 자칼 옵션만 최초 적용 전 값으로 복원할까요?",
+    "Restore only this Jackal option to its original pre-patch values?"
+  ],
+  [
+    "게임을 종료했습니까? {0}로 적용할까요?",
+    "Is the game closed? Apply {0}?"
+  ],
+  [
+    "초 / 첫 검사 100%",
+    " seconds / first check 100%"
+  ],
+  [
+    "% 청사진 비중",
+    "% blueprint weight"
+  ],
+  [
+    "자칼 옵션 {0} 완료. 백업: {1}",
+    "Jackal option {0} completed. Backup: {1}"
+  ],
+  [
+    "적용",
+    "apply"
+  ],
+  [
+    "이미 요청한 상태입니다. 변경하지 않았습니다.",
+    "Already in the requested state. No changes made."
+  ],
+  [
+    "게임을 다시 실행하고 새로 층에 진입하세요. 기존 층에서 생성된 보상에는 반영되지 않을 수 있습니다.",
+    "Restart the game and enter a new floor. Rewards already generated on the current floor may be unaffected."
+  ],
+  [
+    "\n마스터 DB: {0}\nM2G 나이프 피해 보정: {1}",
+    "\nMaster DB: {0}\nM2G knife damage compensation: {1}"
+  ],
+  [
+    "  {0} 나이프 배율: {1}",
+    "  {0} knife multiplier: {1}"
+  ],
+  [
+    "일반 M2G",
+    "Regular M2G"
+  ],
+  [
+    "나이프 배율만 100 → 200으로 보정합니다. 다른 공격·탄약 소비·내구도 소비는 그대로입니다.",
+    "Changes only the knife multiplier from 100 to 200. Other attacks, ammo use and durability use are unchanged."
+  ],
+  [
+    "공유 DB 설정이므로 같은 공격 정의를 사용하는 적에게도 영향을 줄 수 있습니다.",
+    "This shared DB setting may also affect enemies using the same attack definition."
+  ],
+  [
+    "나이프 전용 발사는 지원하지 않습니다. DB에서 다른 탄종을 없애면 연속 발사가 막힐 수 있습니다.",
+    "Knife-only firing is not supported here. Removing other ammo types in the DB may prevent continuous firing."
+  ],
+  [
+    "복원할 M2G 전용 기록이 없습니다. 변경하지 않았습니다.",
+    "No dedicated M2G record to restore. No changes made."
+  ],
+  [
+    "M2G 나이프 배율만 최초 적용 전 값으로 복원할까요?",
+    "Restore only the M2G knife multiplier to its original pre-patch value?"
+  ],
+  [
+    "게임을 종료했습니까? M2G 나이프 배율을 200으로 보정할까요?",
+    "Is the game closed? Set the M2G knife multiplier to 200?"
+  ],
+  [
+    "M2G 나이프 {0} 완료. 백업: {1}",
+    "M2G knife {0} completed. Backup: {1}"
+  ],
+  [
+    "보정",
+    "compensation"
+  ],
+  [
+    "이미 요청한 배율입니다. 변경하지 않았습니다.",
+    "Already using the requested multiplier. No changes made."
+  ],
+  [
+    "게임을 다시 실행해서 확인하세요. 실제 피해량은 방어력·데칼 등에도 영향을 받습니다.",
+    "Restart the game to check. Actual damage also depends on defense, decals and other factors."
+  ],
+  [
+    "충돌버섯 효과 {0} 수정 건수가 올바르지 않습니다.",
+    "Incorrect update count for Crushroom effect {0}."
+  ],
+  [
+    "충돌버섯 효과 {0} 복원 건수가 올바르지 않습니다.",
+    "Incorrect restore count for Crushroom effect {0}."
+  ],
+  [
+    "복원 결과 검증에 실패해 직전 DB를 복구했습니다.",
+    "Restore verification failed; previous DB restored."
+  ],
+  [
+    "궁극 파이터의 귀환 데칼 정의가 예상과 달라 안전하게 중단했습니다.",
+    "Unexpected Ultimate Fighter Returns decal definition; stopped safely."
+  ],
+  [
+    "궁극 파이터의 귀환에 예상하지 못한 추가 효과 수치가 있어 중단했습니다.",
+    "Unexpected additional Ultimate Fighter Returns effect values; stopped."
+  ],
+  [
+    "얼티메이트 파이터 리턴 효과 수치는 1 ~ 1,000,000 사이의 정수여야 합니다.",
+    "Ultimate Fighter Returns effect must be an integer from 1 to 1,000,000."
+  ],
+  [
+    "궁극 파이터의 귀환 효과 수정 건수가 올바르지 않습니다.",
+    "Incorrect update count for Ultimate Fighter Returns effect."
+  ],
+  [
+    "스페이드 여왕 데칼 정의가 예상과 달라 안전하게 중단했습니다.",
+    "Unexpected Queen of Spades decal definition; stopped safely."
+  ],
+  [
+    "스페이드 여왕 효과는 +1% ~ +2,147,483,647%의 정수로 저장해야 합니다. 배율은 기본 효과(+30%)에 곱한 결과를 반올림합니다.",
+    "Queen of Spades effect must be stored as an integer from +1% to +2,147,483,647%. A multiplier is multiplied by the base effect (+30%) and rounded."
+  ],
+  [
+    "스페이드 여왕 공격력 효과 수정 건수가 올바르지 않습니다.",
+    "Incorrect update count for Queen of Spades attack effect."
+  ],
+  [
+    "마스터 DB에서 울프 계열 데칼(슈퍼 울프/매드 울프) 정의를 찾지 못했습니다.",
+    "Wolf decal definitions (Super Wolf/Mad Wolf) not found in master DB."
+  ],
+  [
+    "레이지 축적 속도 수치는 1 ~ 50,000 사이의 정수여야 합니다.",
+    "Rage accumulation speed must be an integer from 1 to 50,000."
+  ],
+  [
+    "울프 계열 데칼 레이지 축적 속도 수정 건수가 올바르지 않습니다.",
+    "Incorrect update count for Wolf decal rage accumulation speed."
+  ],
+  [
+    "부유한 가족 데칼 정의가 예상과 달라 안전하게 중단했습니다.",
+    "Unexpected Rich Family decal definition; stopped safely."
+  ],
+  [
+    "자원 수집 증가율은 0 ~ 50,000% 사이의 정수여야 합니다.",
+    "Resource collection increase must be an integer from 0 to 50,000%."
+  ],
+  [
+    "내구도 감소 방지율은 0 ~ 100% 사이의 정수여야 합니다. (100% 설정 시 무한 내구도)",
+    "Durability loss protection must be an integer from 0 to 100%. (100% means infinite durability)"
+  ],
+  [
+    "부유한 가족 데칼 수치 수정 건수가 올바르지 않습니다.",
+    "Incorrect update count for Rich Family decal values."
+  ],
+  [
+    "나오미 디톡스 데칼 정의가 예상과 달라 안전하게 중단했습니다.",
+    "Unexpected Naomi Detox decal definition; stopped safely."
+  ],
+  [
+    "킬코인·스피리튬 획득 증가율은 0 ~ 50,000% 사이의 정수여야 합니다.",
+    "Kill Coin/SPLithium gain increase must be an integer from 0 to 50,000%."
+  ],
+  [
+    "나오미 디톡스 데칼 수치 수정 건수가 올바르지 않습니다.",
+    "Incorrect update count for Naomi Detox decal values."
+  ],
+  [
+    "가방 +50칸은 6성 파이터용입니다.",
+    "The +50 bag slots feature is for grade 6 fighters."
+  ],
+  [
+    "\n{0} 6성 가방: {1} / 최대 {2}칸",
+    "\n{0} grade 6 bag: {1} / maximum {2} slots"
+  ],
+  [
+    "+50칸 적용 중",
+    "+50 slots applied"
+  ],
+  [
+    "미적용",
+    "Not applied"
+  ],
+  [
+    "이름이 같은 파이터 한 명만이 아니라 같은 6성 클래스 전체(적 포함)에 공통 적용됩니다.",
+    "Applies to the entire grade 6 class (including enemies), not just one fighter with the same name."
+  ],
+  [
+    "현재 확장 단계는 유지하고 실제 칸 수만 +50합니다. 능력치·총 레벨·슬롯·보너스는 변경하지 않습니다.",
+    "Preserves the current expansion stage and adds 50 actual slots. Stats, total level, decal slots and bonuses are unchanged."
+  ],
+  [
+    "복원 전에 해당 클래스의 모든 파이터 가방을 기존 용량(최대 {0}칸) 이내로 비우세요. 아이템은 자동으로 옮기지 않습니다.",
+    "Before restoring, empty every fighter bag of this class to its original capacity (maximum {0} slots). Items are not moved automatically."
+  ],
+  [
+    "가방을 비웠으며 +50칸을 복원할까요?",
+    "Have you emptied the bags? Restore the +50-slot change?"
+  ],
+  [
+    "현재 용량을 +50칸 늘릴까요? (최대 {0} → {1}칸)",
+    "Add 50 slots to current capacity? (Maximum {0} → {1})"
+  ],
+  [
+    "가방 DB {0} 완료. 최대 {1}칸 / 백업: {2}",
+    "Bag DB {0} completed. Maximum {1} slots / backup: {2}"
+  ],
+  [
+    "확장",
+    "expansion"
+  ],
+  [
+    "게임에서 표시·아이템 수납을 확인하세요. 실제 플레이 검증은 별도입니다.",
+    "Check display and item storage in game. In-game verification is separate."
+  ],
+  [
+    "파이터 클래스 '{0}'의 41~45레벨 데이터를 찾을 수 없어 확장을 중단했습니다.",
+    "Level 41–45 data for fighter class '{0}' not found; expansion stopped."
+  ],
+  [
+    "복원할 마스터 DB 파이터 상한 해제 백업 파일을 찾지 못했습니다.",
+    "Master DB fighter-uncap backup file to restore was not found."
+  ],
+  [
+    "복원된 DB 파일의 무결성 검사에 실패했습니다.",
+    "Restored DB integrity check failed."
+  ],
+  [
+    "킬코인은 0~{0} 사이의 정수여야 합니다.",
+    "Kill Coins must be an integer from 0 to {0}."
+  ],
+  [
+    "킬코인은 숫자로 입력해야 합니다.",
+    "Enter Kill Coins as a number."
+  ],
+  [
+    "이전 수정 작업의 임시 파일이 남아 있습니다. 수동 확인이 필요합니다.",
+    "Temporary file from a previous edit remains. Manual inspection required."
+  ],
+  [
+    "임시 세이브의 {0} 검증에 실패했습니다.",
+    "Temporary save {0} verification failed."
+  ],
+  [
+    "블러드늄 상점에서 복구할 구매 완료 재고가 없습니다.",
+    "No purchased Bloodnium shop stock to restore."
+  ],
+  [
+    "이전 상점 수정 작업의 임시 파일이 남아 있습니다. 수동 확인이 필요합니다.",
+    "Temporary file from a previous shop edit remains. Manual inspection required."
+  ],
+  [
+    "임시 세이브의 블러드늄 상점 재고 검증에 실패했습니다.",
+    "Temporary save Bloodnium shop stock verification failed."
+  ],
+  [
+    "이전 데칼 수정 작업의 임시 파일이 남아 있습니다. 수동 확인이 필요합니다.",
+    "Temporary file from a previous decal edit remains. Manual inspection required."
+  ],
+  [
+    "임시 세이브의 전체 데칼 검증에 실패했습니다.",
+    "Temporary save full decal verification failed."
+  ],
+  [
+    "임시 세이브의 {0} 수량 검증에 실패했습니다.",
+    "Temporary save {0} quantity verification failed."
+  ],
+  [
+    "이전 황금동물 수정 작업의 임시 파일이 남아 있습니다. 수동 확인이 필요합니다.",
+    "Temporary file from a previous golden animal edit remains. Manual inspection required."
+  ],
+  [
+    "임시 세이브의 황금동물 {0} 검증에 실패했습니다.",
+    "Temporary save golden animal {0} verification failed."
+  ],
+  [
+    "이전 기간 한정 레시피 수정 작업의 임시 파일이 남아 있습니다. 수동 확인이 필요합니다.",
+    "Temporary file from a previous limited-time blueprint edit remains. Manual inspection required."
+  ],
+  [
+    "임시 세이브의 기간 한정 레시피 검증에 실패했습니다.",
+    "Temporary save limited-time blueprint verification failed."
+  ],
+  [
+    "이전 전체 레시피 수정 작업의 임시 파일이 남아 있습니다. 수동 확인이 필요합니다.",
+    "Temporary file from a previous full blueprint edit remains. Manual inspection required."
+  ],
+  [
+    "임시 세이브의 전체 레시피 검증에 실패했습니다.",
+    "Temporary save full blueprint verification failed."
+  ],
+  [
+    "이전 KAMAS RE 수정 작업의 임시 파일이 남아 있습니다.",
+    "Temporary file from a previous KAMAS RE edit remains."
+  ],
+  [
+    "임시 세이브의 KAMAS RE 최대 강화 검증에 실패했습니다.",
+    "Temporary save maximum KAMAS RE upgrade verification failed."
+  ],
+  [
+    "이전 복원 작업의 임시 파일이 남아 있습니다. 수동 확인이 필요합니다.",
+    "Temporary file from a previous restore remains. Manual inspection required."
+  ],
+  [
+    "복원 준비 중 원본 세이브가 변경됐습니다. 안전하게 중단했습니다.",
+    "Original save changed during restore preparation. Stopped safely."
+  ],
+  [
+    "--save 뒤에 세이브 경로가 필요합니다.",
+    "--save requires a save path."
+  ],
+  [
+    "{0} 뒤에 게임 설치 폴더 또는 masters.db 경로가 필요합니다.",
+    "{0} requires a game installation folder or masters.db path."
+  ],
+  [
+    "세이브 파일 또는 폴더는 한 개만 지정하세요. 명령어 사용 시 --save 옵션을 사용하세요.",
+    "Specify only one save file or folder. Use --save when running a command."
+  ],
+  [
+    "마스터 DB를 자동으로 찾지 못했습니다. --game 또는 --master 옵션으로 위치를 지정하세요.",
+    "Master DB not found automatically. Specify its location with --game or --master."
+  ],
+  [
+    "\nLET IT DIE 마스터 DB를 자동으로 찾지 못했습니다.",
+    "\nLET IT DIE master DB was not found automatically."
+  ],
+  [
+    "게임 설치 폴더, BrgGame 폴더, Content 폴더 또는 masters.db 파일을 창에 끌어놓아도 됩니다.",
+    "You may drag the game installation folder, BrgGame folder, Content folder or masters.db file into this window."
+  ],
+  [
+    "게임 설치 폴더 또는 masters.db 경로 (Enter=종료): ",
+    "Game installation folder or masters.db path (Enter=exit): "
+  ],
+  [
+    "사용자가 마스터 DB 경로 입력을 취소했습니다.",
+    "Master DB path entry cancelled by user."
+  ],
+  [
+    "세이브 파일 또는 폴더가 없습니다: {0}",
+    "Save file or folder does not exist: {0}"
+  ],
+  [
+    "세이브는 .sav 파일을 지정하세요.",
+    "Specify a .sav file."
+  ],
+  [
+    "지정한 폴더에서 숫자 이름의 .sav 또는 스팀ID 폴더의 brggame.sav를 찾지 못했습니다.",
+    "No numeric .sav file or brggame.sav inside a Steam ID folder found in the specified folder."
+  ],
+  [
+    "폴더에 세이브가 여러 개 있습니다. --save로 파일 하나를 지정하세요.",
+    "Multiple saves found in folder. Specify one file with --save."
+  ],
+  [
+    "Steam LET IT DIE 세이브를 자동으로 찾지 못했습니다. --save 경로를 지정하세요.",
+    "Steam LET IT DIE save not found automatically. Specify --save path."
+  ],
+  [
+    "\nSteam LET IT DIE 세이브를 자동으로 찾지 못했습니다.",
+    "\nSteam LET IT DIE save was not found automatically."
+  ],
+  [
+    "숫자 이름의 .sav 또는 brggame.sav 파일, 스팀ID/Savedata/LET IT DIE/SteamLibrary 폴더를 창에 끌어놓아도 됩니다.",
+    "You may drag a numeric .sav or brggame.sav file, or a Steam ID/Savedata/LET IT DIE/SteamLibrary folder into this window."
+  ],
+  [
+    "세이브 파일 또는 폴더 경로 (Enter=종료): ",
+    "Save file or folder path (Enter=exit): "
+  ],
+  [
+    "사용자가 경로 입력을 취소했습니다.",
+    "Path entry cancelled by user."
+  ],
+  [
+    "입력한 위치에서 숫자 이름의 .sav 또는 brggame.sav 세이브 파일을 찾지 못했습니다.",
+    "No numeric .sav or brggame.sav save found at the specified location."
+  ],
+  [
+    "\n세이브 선택:",
+    "\nSelect save:"
+  ],
+  [
+    "번호: ",
+    "Number: "
+  ],
+  [
+    "잘못된 선택입니다.",
+    "Invalid selection."
+  ],
+  [
+    "\n세이브: {0}",
+    "\nSave: {0}"
+  ],
+  [
+    " / 시설 레벨 {0}",
+    " / facility level {0}"
+  ],
+  [
+    " / 알려진 한도 {0}",
+    " / known capacity {0}"
+  ],
+  [
+    "블러드늄 상점: 구매 가능 {0}개 / 구매 완료 {1}개",
+    "Bloodnium shop: {0} available / {1} purchased"
+  ],
+  [
+    "상점 기록 중복 {0}건: 조회는 가능하며 16번 재고 복구 시 중복을 정리합니다. 조회만으로 세이브는 변경하지 않습니다.",
+    "Shop records contain {0} duplicates. Viewing is allowed; option 16 removes duplicates while restoring stock. Viewing alone does not modify the save."
+  ],
+  [
+    "데칼 소유 목록: {0} / {1}종",
+    "Owned decals: {0} / {1} types"
+  ],
+  [
+    "황금동물(보관함): {0}마리 / {1}/{2}종 보유",
+    "Golden animals (storage): {0} animals / {1}/{2} types owned"
+  ],
+  [
+    "기간 한정 레시피: {0}/{1}종 해금",
+    "Limited-time blueprints: {0}/{1} unlocked"
+  ],
+  [
+    "원본 SHA-256: {0}",
+    "Original SHA-256: {0}"
+  ],
+  [
+    "\n계속하려면 Enter 키를 누르세요...",
+    "\nPress Enter to continue..."
+  ],
+  [
+    "\n======================= [1. 캐릭터(파이터) 육성 & DB 상한 해제] =======================",
+    "\n======================= [1. Fighter Development & DB Uncapping] ======================="
+  ],
+  [
+    " 1. 캐릭터 강화 / 직접 설정 (세이브에 적용)",
+    " 1. Fighter upgrades / custom settings (save edit)"
+  ],
+  [
+    " 2. Lv.50 강화 준비 / 슬롯 상한 정리 (게임 DB에 적용)",
+    " 2. Prepare Lv.50 upgrades / normalize slot cap (game DB edit)"
+  ],
+  [
+    " 3. 파이터 상한 해제 DB 패치 복원 (순정 DB 복구)",
+    " 3. Restore fighter-uncap DB patch (restore stock DB)"
+  ],
+  [
+    "\n============================ [2. 보유 자원 및 시설 관리] ============================",
+    "\n============================ [2. Resources & Facilities] ============================"
+  ],
+  [
+    " 4. 킬코인을 알려진 한도로 채우기",
+    " 4. Fill Kill Coins to known capacity"
+  ],
+  [
+    " 5. 스피리튬을 알려진 한도로 채우기",
+    " 5. Fill SPLithium to known capacity"
+  ],
+  [
+    " 6. 블러드늄을 알려진 한도로 채우기",
+    " 6. Fill Bloodnium to known capacity"
+  ],
+  [
+    " 7. 자원 수치 직접 입력 (KC / SP / Blood)",
+    " 7. Enter resource values (KC / SP / Blood)"
+  ],
+  [
+    " 8. 시설 레벨(금고·스피리튬 탱크) 최대 99로 업그레이드",
+    " 8. Upgrade facilities (bank/SPLithium tank) to maximum level 99"
+  ],
+  [
+    "\n====================== [3. 장비 R&D, 무기 숙련도 및 레시피 해금] ======================",
+    "\n====================== [3. Equipment R&D, Mastery & Blueprints] ======================"
+  ],
+  [
+    " 9. 모든 장비 연구·개발(R&D 1,262종) 최대치로 업그레이드",
+    " 9. Maximize all equipment R&D (1,262 definitions)"
+  ],
+  [
+    "10. KAMAS-A1 어설트 라이플 RE를 최대 +24로 강화",
+    "10. Upgrade KAMAS-A1 Assault Rifle RE to maximum +24"
+  ],
+  [
+    "11. 모든 무기 숙련도(57종) 최대 Lv.20으로 업그레이드",
+    "11. Maximize all weapon mastery (57 types) to Lv.20"
+  ],
+  [
+    "12. Steam용 기간 한정 레시피 전체 {0}종 해금",
+    "12. Unlock all {0} Steam limited-time blueprints"
+  ],
+  [
+    "13. Steam용 모든 레시피 전체 {0}종 해금",
+    "13. Unlock all {0} Steam blueprints"
+  ],
+  [
+    "\n========================= [4. 데칼, 아이템 및 상점 관리] ==========================",
+    "\n========================= [4. Decals, Items & Shop] =========================="
+  ],
+  [
+    "14. Steam용 전체 데칼 {0}종 지급",
+    "14. Add all {0} Steam decals"
+  ],
+  [
+    "15. 황금동물 전체 11종을 보관함에 지급 (수량 지정 가능)",
+    "15. Add all 11 golden animal types to storage (custom quantity)"
+  ],
+  [
+    "16. 블러드늄 상점 구매 재고 복구",
+    "16. Restore purchased Bloodnium shop stock"
+  ],
+  [
+    "\n=================== [5. 마스터 DB 게임 편의 / 특수 강화 모드] ====================",
+    "\n=================== [5. Master DB Convenience / Special Upgrades] ===================="
+  ],
+  [
+    "17. 충돌버섯·구운 충돌버섯 30분 지속시간 적용 / 기본값 복구 (토글)",
+    "17. Crushroom/Grilled Crushroom: 30-minute duration / restore defaults (toggle)"
+  ],
+  [
+    "18. 궁극 파이터의 귀환 데칼 효과 수치 변경(배율/퍼센트 직접 입력) / 기본값 복구",
+    "18. Ultimate Fighter Returns: custom multiplier/percentage / restore defaults"
+  ],
+  [
+    "19. 스페이드 여왕 공격력 수치 변경(배율/퍼센트 직접 입력) / 기본값 복구",
+    "19. Queen of Spades: custom attack multiplier/percentage / restore defaults"
+  ],
+  [
+    "20. 슈퍼 울프·매드 울프 레이지 축적 속도 +1,000% 적용 (게이지 즉시 충전) / 기본값 복구",
+    "20. Super Wolf/Mad Wolf: +1,000% rage accumulation (instant gauge fill) / restore defaults"
+  ],
+  [
+    "21. 부유한 가족 데칼 수치 설정 (자원 수집 배율 + 장비 무한 내구도) / 기본값 복구",
+    "21. Rich Family: resource gain and infinite equipment durability / restore defaults"
+  ],
+  [
+    "22. 나오미 디톡스(오프라인 특전) 데칼 수치 설정 (킬코인·스피리튬 배율 + 무한 내구도) / 기본값 복구",
+    "22. Naomi Detox (offline bonus): KC/SPLithium gain and infinite durability / restore defaults"
+  ],
+  [
+    "23. 모든 장비 개발·강화 재료 비용을 0으로 변경",
+    "23. Set all equipment development/upgrade material costs to zero"
+  ],
+  [
+    "24. 장비 개발·강화 재료 비용을 전용 백업에서 복원",
+    "24. Restore equipment material costs from dedicated backup"
+  ],
+  [
+    "27. 장비 개발·강화 스피리튬 비용만 0으로 변경 (재료는 유지)",
+    "27. Set only equipment development/upgrade SPLithium costs to zero (keep materials)"
+  ],
+  [
+    "28. 장비 개발·강화 스피리튬 비용만 전용 백업에서 복원",
+    "28. Restore only equipment SPLithium costs from dedicated backup"
+  ],
+  [
+    "29. 자칼 첫 등장 빠르게 (기본 10초 / 후속 간격 유지)",
+    "29. Earlier first Jackal spawn (default 10 seconds / keep later intervals)"
+  ],
+  [
+    "30. 자칼 첫 등장 설정만 복원",
+    "30. Restore only first Jackal spawn settings"
+  ],
+  [
+    "31. 자칼 청사진 추첨 비중 변경 (50 / 80 / 100%)",
+    "31. Change Jackal blueprint draw weight (50 / 80 / 100%)"
+  ],
+  [
+    "32. 자칼 청사진 추첨 비중만 복원",
+    "32. Restore only Jackal blueprint draw weight"
+  ],
+  [
+    "33. M2G 계열 나이프 피해 보정 (배율 100 → 200 / 다른 공격 유지)",
+    "33. M2G knife damage compensation (100 → 200 / keep other attacks)"
+  ],
+  [
+    "34. M2G 나이프 피해 배율만 복원",
+    "34. Restore only M2G knife damage multiplier"
+  ],
+  [
+    "\n=========================== [6. 세이브 백업 및 복원] ===========================",
+    "\n=========================== [6. Save Backup & Restore] ==========================="
+  ],
+  [
+    "25. 현재 세이브 백업하기",
+    "25. Back up current save"
+  ],
+  [
+    "26. 최신 백업 복원",
+    "26. Restore latest backup"
+  ],
+  [
+    "\n 0. 프로그램 종료",
+    "\n 0. Exit"
+  ],
+  [
+    "\n선택: ",
+    "\nSelect: "
+  ],
+  [
+    "\n============================= [캐릭터(파이터) 목록] =============================",
+    "\n============================= [Fighter List] ============================="
+  ],
+  [
+    "  {0}. {1} · {2}성 {3} · Lv.{4} [{5}]",
+    "  {0}. {1} · Grade {2} {3} · Lv.{4} [{5}]"
+  ],
+  [
+    "  0. 이전 메뉴로 돌아가기",
+    "  0. Return to previous menu"
+  ],
+  [
+    "관리할 파이터 번호 선택 (0=취소): ",
+    "Select fighter number (0=cancel): "
+  ],
+  [
+    "\n잘못된 파이터 번호입니다.",
+    "\nInvalid fighter number."
+  ],
+  [
+    "\n{0}: {1} 저장 완료",
+    "\n{0}: {1} saved"
+  ],
+  [
+    "세이브 백업: {0}",
+    "Save backup: {0}"
+  ],
+  [
+    "게임을 다시 실행해 적용 결과를 확인하세요.",
+    "Restart the game to check the result."
+  ],
+  [
+    "\n==================== [파이터 스탯 & 경험치 상한 해제 DB 패치] ====================",
+    "\n==================== [Fighter Stat & EXP Uncap DB Patch] ===================="
+  ],
+  [
+    "현재 DB 주 능력치 한도: Lv.{0} / 총 레벨 경험치 한도: Lv.{1}",
+    "Current DB primary stat cap: Lv.{0} / total-level EXP cap: Lv.{1}"
+  ],
+  [
+    "\n[안내] 파이터 스탯(Lv.50), 경험치(Lv.500), 데칼 슬롯(순정 9칸) 설정이 이미 DB에 적용돼 있습니다.",
+    "\n[Notice] Stats (Lv.50), EXP (Lv.500), and decal slots (stock 9) are already configured in the DB."
+  ],
+  [
+    "[경고] 게임 데이터베이스(masters.db) 변조 알림",
+    "[Warning] Game database (masters.db) modification"
+  ],
+  [
+    "- 본 기능은 게임 클라이언트의 원본 마스터 DB를 직접 패치합니다.",
+    "- This feature directly patches the game client master DB."
+  ],
+  [
+    "- 6성 8개 파이터 클래스의 주 능력치를 Lv.50까지 확장하고,",
+    "- Extends primary stats to Lv.50 for all eight grade 6 fighter classes,"
+  ],
+  [
+    "  경험치 테이블을 Lv.500까지 확장합니다. 슬롯·가방은 유효 DB 용량을 사용합니다.",
+    "  and the EXP table to Lv.500. Slots and bags use valid DB capacities."
+  ],
+  [
+    "- Steam 무결성 검사 시 순정으로 초기화될 수 있습니다.",
+    "- Steam file verification may reset the DB to stock."
+  ],
+  [
+    "- 패치 전 원본 DB는 backups 폴더에 자동 백업됩니다.",
+    "- The original DB is automatically saved in the backups folder before patching."
+  ],
+  [
+    "파이터 스탯 및 경험치 상한 해제 DB 패치를 진행할까요?",
+    "Apply the fighter stat and EXP uncap DB patch?"
+  ],
+  [
+    "\n[안내] 작업이 취소되었습니다.",
+    "\n[Notice] Operation cancelled."
+  ],
+  [
+    "\n[성공] 파이터 상한 해제 DB 패치가 성공적으로 완료되었습니다.",
+    "\n[Success] Fighter-uncap DB patch completed."
+  ],
+  [
+    "- 6성 파이터 주 능력치 상한: Lv.{0} → Lv.{1} (추가 {2}행)",
+    "- Grade 6 primary stat cap: Lv.{0} → Lv.{1} ({2} rows added)"
+  ],
+  [
+    "- 6성 경험치/총 레벨 상한: Lv.{0} → Lv.{1} (추가 {2}행)",
+    "- Grade 6 EXP/total level cap: Lv.{0} → Lv.{1} ({2} rows added)"
+  ],
+  [
+    "- 마스터 DB 백업: {0}",
+    "- Master DB backup: {0}"
+  ],
+  [
+    "\n====================== [파이터 상한 해제 순정 DB 복원] ======================",
+    "\n====================== [Restore Stock Fighter-Cap DB] ======================"
+  ],
+  [
+    "\n[안내] 복원할 파이터 상한 해제 DB 백업이 없습니다.",
+    "\n[Notice] No fighter-uncap DB backup to restore."
+  ],
+  [
+    "복원 대상 백업: {0}",
+    "Backup to restore: {0}"
+  ],
+  [
+    "이 백업을 사용하여 순정 DB로 복원할까요?",
+    "Restore the stock DB using this backup?"
+  ],
+  [
+    "\n[성공] 파이터 상한 순정 DB 복원이 성공적으로 완료되었습니다.",
+    "\n[Success] Stock fighter-cap DB restored."
+  ],
+  [
+    "- 주 능력치 상한: Lv.{0} / 경험치 상한: Lv.{1}",
+    "- Primary stat cap: Lv.{0} / EXP cap: Lv.{1}"
+  ],
+  [
+    "- 복원 전 안전 백업: {0}",
+    "- Pre-restore safety backup: {0}"
+  ],
+  [
+    "\n============================ [{0} 충전] ============================",
+    "\n============================ [Fill {0}] ============================"
+  ],
+  [
+    "현재 {0} 시설 레벨의 한도 정보가 없어 자동 설정할 수 없습니다.",
+    "Cannot fill automatically: capacity is unknown for the current {0} facility level."
+  ],
+  [
+    "현재 보유: {0} / 알려진 한도: {1}",
+    "Current amount: {0} / known capacity: {1}"
+  ],
+  [
+    "{0}을 한도인 {1}(으)로 채울까요?",
+    "Fill {0} to its capacity of {1}?"
+  ],
+  [
+    "\n[성공] {0} 충전이 성공적으로 완료되었습니다.",
+    "\n[Success] {0} filled."
+  ],
+  [
+    "- 설정 값: {0}",
+    "- Value: {0}"
+  ],
+  [
+    "- 세이브 백업: {0}",
+    "- Save backup: {0}"
+  ],
+  [
+    "\n========================= [자원 수치 직접 입력] =========================",
+    "\n========================= [Custom Resource Values] ========================="
+  ],
+  [
+    "1. 킬코인",
+    "1. Kill Coins"
+  ],
+  [
+    "2. 스피리튬",
+    "2. SPLithium"
+  ],
+  [
+    "3. 블러드늄",
+    "3. Bloodnium"
+  ],
+  [
+    "0. 취소",
+    "0. Cancel"
+  ],
+  [
+    "자원 선택: ",
+    "Select resource: "
+  ],
+  [
+    "\n[오류] 잘못된 선택입니다.",
+    "\n[Error] Invalid selection."
+  ],
+  [
+    "현재 {0}: {1} (알려진 한도: {2})",
+    "Current {0}: {1} (known capacity: {2})"
+  ],
+  [
+    "없음",
+    "None"
+  ],
+  [
+    "새 {0} 값: ",
+    "New {0} value: "
+  ],
+  [
+    "주의: 알려진 한도 {0}을 초과합니다.",
+    "Warning: exceeds known capacity {0}."
+  ],
+  [
+    "{0}을 {1}(으)로 변경할까요?",
+    "Change {0} to {1}?"
+  ],
+  [
+    "\n[성공] {0} 변경이 성공적으로 완료되었습니다.",
+    "\n[Success] {0} updated."
+  ],
+  [
+    "\n============================= [시설 레벨 최대 업그레이드] =============================",
+    "\n============================= [Maximize Facility Levels] ============================="
+  ],
+  [
+    "금고 레벨: Lv.{0} / 스피리튬 탱크 레벨: Lv.{1} (최대 99)",
+    "Bank: Lv.{0} / SPLithium tank: Lv.{1} (maximum 99)"
+  ],
+  [
+    "\n[안내] 시설 레벨이 이미 모두 최대치(99)입니다.",
+    "\n[Notice] Both facilities are already at maximum level (99)."
+  ],
+  [
+    "금고와 스피리튬 탱크 레벨을 모두 99로 업그레이드할까요?",
+    "Upgrade bank and SPLithium tank to level 99?"
+  ],
+  [
+    "\n[성공] 시설 레벨 최대 업그레이드가 성공적으로 완료되었습니다.",
+    "\n[Success] Facility levels maximized."
+  ],
+  [
+    "- 금고: Lv.{0} → Lv.{1}, 스피리튬 탱크: Lv.{2} → Lv.{3} (한도 2,560,000)",
+    "- Bank: Lv.{0} → Lv.{1}, SPLithium tank: Lv.{2} → Lv.{3} (capacity 2,560,000)"
+  ],
+  [
+    "\n======================== [모든 장비 연구·개발(R&D) 최대치 완료] ========================",
+    "\n======================== [Maximize All Equipment R&D] ========================"
+  ],
+  [
+    "장비 연구 완료: {0}개 항목 등록됨 (전체 356개 계보 / 1,262종 장비)",
+    "Equipment research: {0} entries registered (356 families / 1,262 equipment definitions)"
+  ],
+  [
+    "\n[안내] 모든 장비 연구·개발(R&D)이 이미 최대치까지 완료돼 있습니다.",
+    "\n[Notice] All equipment R&D is already maximized."
+  ],
+  [
+    "모든 장비(1,262종)의 연구·개발(R&D) 및 최종 한계돌파 강화를 최대치로 완료할까요?",
+    "Complete all equipment R&D (1,262 definitions) and final uncapped upgrades to maximum?"
+  ],
+  [
+    "\n[성공] 모든 장비 연구·개발(R&D) 최대 업그레이드가 성공적으로 완료되었습니다.",
+    "\n[Success] All equipment R&D maximized."
+  ],
+  [
+    "- 대상 장비: 총 {0}종 (356개 계보 전체)",
+    "- Equipment: {0} definitions (all 356 families)"
+  ],
+  [
+    "- 등록된 연구 단계: 총 {0}개 (신규 추가/갱신 {1}개)",
+    "- Registered research stages: {0} ({1} added/updated)"
+  ],
+  [
+    "- 최종 한계돌파(최대 +24강) 및 각 티어 최대 강화 완료",
+    "- Final uncapped upgrades (up to +24) and all tier upgrades completed"
+  ],
+  [
+    "\n===================== [KAMAS-A1 어설트 라이플 RE 최대 강화] =====================",
+    "\n===================== [Maximize KAMAS-A1 Assault Rifle RE] ====================="
+  ],
+  [
+    "현재 완료: +{0} 완료",
+    "Currently completed: +{0}"
+  ],
+  [
+    "현재 연구 중: +{0}",
+    "Currently researching: +{0}"
+  ],
+  [
+    "DB 최대 강화: +{0}",
+    "DB maximum upgrade: +{0}"
+  ],
+  [
+    "\n[안내] 이미 KAMAS RE 연구가 최대 +{0}입니다.",
+    "\n[Notice] KAMAS RE research is already at maximum +{0}."
+  ],
+  [
+    "연구를 최대 +{0} 완료 상태로 변경할까요?",
+    "Mark research as completed up to maximum +{0}?"
+  ],
+  [
+    "\n[성공] KAMAS-A1 어설트 라이플 RE 최대 연구가 성공적으로 완료되었습니다.",
+    "\n[Success] KAMAS-A1 Assault Rifle RE research maximized."
+  ],
+  [
+    "- 연구 완료 등급: +{0}",
+    "- Completed upgrade: +{0}"
+  ],
+  [
+    "\n========================== [모든 무기 숙련도 최대 업그레이드] ==========================",
+    "\n========================== [Maximize All Weapon Mastery] =========================="
+  ],
+  [
+    "무기 숙련도(Lv.20): {0} / {1}종",
+    "Weapon mastery (Lv.20): {0} / {1} types"
+  ],
+  [
+    "\n[안내] 모든 무기 숙련도가 이미 최대(Lv.20)입니다.",
+    "\n[Notice] All weapon mastery is already at maximum (Lv.20)."
+  ],
+  [
+    "모든 무기 숙련도({0}종)를 최대 Lv.20으로 업그레이드할까요?",
+    "Upgrade all {0} weapon mastery types to maximum Lv.20?"
+  ],
+  [
+    "\n[성공] 모든 무기 숙련도 최대 업그레이드가 성공적으로 완료되었습니다.",
+    "\n[Success] All weapon mastery maximized."
+  ],
+  [
+    "- 무기 숙련도 {0}종 Lv.20 최대치 적용 (전체 57종 달성)",
+    "- {0} weapon mastery types set to Lv.20 (all 57 achieved)"
+  ],
+  [
+    "\n====================== [Steam용 기간 한정 레시피 해금] ======================",
+    "\n====================== [Unlock Steam Limited-Time Blueprints] ======================"
+  ],
+  [
+    "현재 해금 현황: {0} / {1}종 (미보유: {2}종)",
+    "Currently unlocked: {0} / {1} (missing: {2})"
+  ],
+  [
+    "\n[안내] Steam용 기간 한정 레시피 25종이 이미 모두 해금되어 있습니다.",
+    "\n[Notice] All 25 Steam limited-time blueprints are already unlocked."
+  ],
+  [
+    "미보유 기간 한정 레시피 {0}종을 설계도 습득 상태로 추가합니다.",
+    "Adds {0} missing limited-time blueprints as acquired."
+  ],
+  [
+    "미보유 레시피 {0}종을 모두 해금할까요?",
+    "Unlock all {0} missing blueprints?"
+  ],
+  [
+    "\n[성공] Steam용 기간 한정 레시피 해금이 성공적으로 완료되었습니다.",
+    "\n[Success] Steam limited-time blueprints unlocked."
+  ],
+  [
+    "- 추가된 레시피: {0}종",
+    "- Blueprints added: {0}"
+  ],
+  [
+    "- 해금 목록: {0} → {1}종 (총 {2}종 완료)",
+    "- Unlocked: {0} → {1} (total {2} completed)"
+  ],
+  [
+    "\n======================== [Steam용 모든 레시피 전체 해금] ========================",
+    "\n======================== [Unlock All Steam Blueprints] ========================"
+  ],
+  [
+    "\n[안내] Steam용 모든 레시피 356종이 이미 모두 해금되어 있습니다.",
+    "\n[Notice] All 356 Steam blueprints are already unlocked."
+  ],
+  [
+    "미보유 전체 레시피 {0}종을 설계도 습득 상태로 추가합니다.",
+    "Adds all {0} missing blueprints as acquired."
+  ],
+  [
+    "\n[성공] Steam용 모든 레시피 해금이 성공적으로 완료되었습니다.",
+    "\n[Success] All Steam blueprints unlocked."
+  ],
+  [
+    "\n============================ [Steam용 전체 데칼 지급] ============================",
+    "\n============================ [Add All Steam Decals] ============================"
+  ],
+  [
+    "현재 보유 데칼: {0} / {1}종",
+    "Owned decals: {0} / {1} types"
+  ],
+  [
+    "Steam용 전체 데칼 {0}종을 각각 한 장씩 추가할까요?",
+    "Add one copy of each of all {0} Steam decals?"
+  ],
+  [
+    "\n[성공] Steam용 전체 데칼 지급이 성공적으로 완료되었습니다.",
+    "\n[Success] All Steam decals added."
+  ],
+  [
+    "- 지급 수량: {0}장 (신규 {1}종 / 기존 수량 증가 {2}종)",
+    "- Added: {0} copies ({1} new types / {2} existing types incremented)"
+  ],
+  [
+    "- 데칼 소유 목록: {0} → {1}종",
+    "- Owned decal types: {0} → {1}"
+  ],
+  [
+    "- 잘못 추가됐던 뽑기 이력 {0}개 정리",
+    "- Removed {0} incorrectly added draw-history entries"
+  ],
+  [
+    "\n======================== [황금동물 전체 11종 보관함 지급] ========================",
+    "\n======================== [Add All 11 Golden Animal Types to Storage] ========================"
+  ],
+  [
+    "코인 보관함: 총 {0}칸 중 빈칸 {1}개",
+    "Storage: {1} free / {0} total slots"
+  ],
+  [
+    "현재 보관 중인 황금동물: {0}마리 ({1}/{2}종)",
+    "Golden animals currently stored: {0} ({1}/{2} types)"
+  ],
+  [
+    "\n[안내] 코인 보관함에 빈칸이 11칸 미만(최소 1세트)이어서 황금동물을 추가할 수 없습니다.",
+    "\n[Notice] Fewer than 11 storage slots are free (one full set); cannot add golden animals."
+  ],
+  [
+    "※ 보관함 빈칸 기준 11종을 최대 {0}마리씩 (총 {1}마리) 지급 가능합니다.",
+    "You can add up to {0} of each of 11 types ({1} total) based on free storage slots."
+  ],
+  [
+    "\n황금동물 11종을 각각 몇 마리씩 지급할까요? (기본값: 1, 최대: {0}, 0=취소): ",
+    "\nHow many of each of the 11 golden animal types? (Default: 1, maximum: {0}, 0=cancel): "
+  ],
+  [
+    "\n[오류] 1 ~ {0} 사이의 정수를 입력해야 합니다.",
+    "\n[Error] Enter an integer from 1 to {0}."
+  ],
+  [
+    "황금동물 11종을 각각 {0}마리씩 (총 {1}마리) 코인 보관함에 추가할까요?",
+    "Add {0} of each of 11 golden animal types ({1} total) to storage?"
+  ],
+  [
+    "\n[성공] 황금동물 보관함 지급이 성공적으로 완료되었습니다!",
+    "\n[Success] Golden animals added to storage!"
+  ],
+  [
+    "- 지급 수량: 황금동물 전체 11종 x 각 {0}마리 (총 {1}마리)",
+    "- Added: 11 golden animal types x {0} each ({1} total)"
+  ],
+  [
+    "- 동물 목록: {0} → {1}마리 (+{2})",
+    "- Animal list: {0} → {1} (+{2})"
+  ],
+  [
+    "- 보관함 빈칸: {0} → {1}개 (-{2})",
+    "- Free storage slots: {0} → {1} (-{2})"
+  ],
+  [
+    "\n=========================== [블러드늄 상점 구매 재고 복구] ===========================",
+    "\n=========================== [Restore Bloodnium Shop Stock] ==========================="
+  ],
+  [
+    "현재 상태: 구매 가능 {0}개 / 구매 완료 {1}개",
+    "Current stock: {0} available / {1} purchased"
+  ],
+  [
+    "\n[안내] 복구할 블러드늄 상점 구매 완료 재고가 없습니다. (모든 상품 구매 가능 상태)",
+    "\n[Notice] No purchased Bloodnium shop stock to restore. (All goods are available)"
+  ],
+  [
+    "구매 완료 {0}종을 복구하고 중복 기록 {1}건을 정리할까요?",
+    "Restore {0} purchased goods types and remove {1} duplicate records?"
+  ],
+  [
+    "\n[성공] 블러드늄 상점 구매 재고 복구가 성공적으로 완료되었습니다.",
+    "\n[Success] Purchased Bloodnium shop stock restored."
+  ],
+  [
+    "- 복구 수량: {0}개",
+    "- Restored: {0}"
+  ],
+  [
+    "- 현재 구매 가능: {0}개",
+    "- Currently available: {0}"
+  ],
+  [
+    "충돌버섯: {0}초",
+    "Crushroom: {0} seconds"
+  ],
+  [
+    "구운 충돌버섯: {0}초",
+    "Grilled Crushroom: {0} seconds"
+  ],
+  [
+    "현재 30분(1,800초) 지속시간이 적용돼 있습니다.",
+    "The 30-minute (1,800-second) duration is currently applied."
+  ],
+  [
+    "기본 상태(일반 30초 / 구운 것 40초)로 복구(토글)할까요?",
+    "Restore defaults (raw 30 seconds / grilled 40 seconds)?"
+  ],
+  [
+    "\n[성공] 충돌버섯·구운 충돌버섯 기본 지속시간 복구가 성공적으로 완료되었습니다.",
+    "\n[Success] Default Crushroom/Grilled Crushroom durations restored."
+  ],
+  [
+    "- 지속시간: 30분 (1,800초) → 일반 30초 / 구운 것 40초 (기본값 복구)",
+    "- Duration: 30 minutes (1,800 seconds) → raw 30 seconds / grilled 40 seconds (defaults)"
+  ],
+  [
+    "두 효과를 모두 1,800초(30분)로 변경할까요?",
+    "Set both effects to 1,800 seconds (30 minutes)?"
+  ],
+  [
+    "\n[성공] 충돌버섯·구운 충돌버섯 지속시간 변경이 성공적으로 완료되었습니다.",
+    "\n[Success] Crushroom/Grilled Crushroom durations updated."
+  ],
+  [
+    "- 지속시간: 일반 {0}초 / 구운 것 {1}초 → 30분 (1,800초)",
+    "- Duration: raw {0}s / grilled {1}s → 30 minutes (1,800 seconds)"
+  ],
+  [
+    "궁극 파이터의 귀환 (Ultimate Fighter Return):",
+    "Ultimate Fighter Returns:"
+  ],
+  [
+    "- 현재 효과: 모든 기본 능력치 +{0}% (기본 20% 대비 {1}배)",
+    "- Current effect: all base stats +{0}% ({1}x the base 20%)"
+  ],
+  [
+    "\n수정 방식을 선택하세요:",
+    "\nChoose an adjustment method:"
+  ],
+  [
+    "1. 퍼센트(%) 직접 입력 (예: 50 입력 시 +50%, 100 입력 시 +100%)",
+    "1. Enter percentage (50 = +50%, 100 = +100%)"
+  ],
+  [
+    "2. 배율(배)로 입력 (기본 20% 기준, 예: 5 입력 시 5배인 +100%, 10 입력 시 10배인 +200%)",
+    "2. Enter multiplier of base 20% (5 = +100%, 10 = +200%)"
+  ],
+  [
+    "3. 5배(+100%) 바로 적용",
+    "3. Apply 5x (+100%)"
+  ],
+  [
+    "4. 기본값(+20%)으로 복구",
+    "4. Restore default (+20%)"
+  ],
+  [
+    "0. 뒤로 가기",
+    "0. Back"
+  ],
+  [
+    "\n선택 (기본값 0): ",
+    "\nSelect (default 0): "
+  ],
+  [
+    "\n설정할 증가 퍼센트(%)를 입력하세요 (현재: +{0}%): ",
+    "\nEnter increase percentage (current: +{0}%): "
+  ],
+  [
+    "오류: 1 ~ 1,000,000 사이의 정수를 입력해야 합니다.",
+    "Error: Enter an integer from 1 to 1,000,000."
+  ],
+  [
+    "이미 +{0}%가 적용되어 있습니다.",
+    "Already set to +{0}%."
+  ],
+  [
+    "궁극 파이터의 귀환 효과를 +{0}% ({1}배)로 변경할까요?",
+    "Change Ultimate Fighter Returns to +{0}% ({1}x)?"
+  ],
+  [
+    "\n[성공] 궁극 파이터의 귀환 효과 변경이 성공적으로 완료되었습니다!",
+    "\n[Success] Ultimate Fighter Returns effect updated!"
+  ],
+  [
+    "- 모든 기본 능력치 증가: +{0}% → +{1}% ({2}배)",
+    "- All base stat increase: +{0}% → +{1}% ({2}x)"
+  ],
+  [
+    "\n설정할 배율을 입력하세요 (기본 20% 기준, 현재: {0}배): ",
+    "\nEnter multiplier of base 20% (current: {0}x): "
+  ],
+  [
+    "오류: 0보다 크고 50,000 이하의 숫자를 입력해야 합니다.",
+    "Error: Enter a number greater than 0 and no greater than 50,000."
+  ],
+  [
+    "이미 +{0}% ({1}배)가 적용되어 있습니다.",
+    "Already set to +{0}% ({1}x)."
+  ],
+  [
+    "궁극 파이터의 귀환 효과를 {0}배인 +{1}%로 변경할까요?",
+    "Change Ultimate Fighter Returns to {0}x (+{1}%)?"
+  ],
+  [
+    "이미 5배(+100%) 효과가 적용되어 있습니다.",
+    "The 5x (+100%) effect is already applied."
+  ],
+  [
+    "효과를 5배인 +100%로 변경할까요?",
+    "Set the effect to 5x (+100%)?"
+  ],
+  [
+    "- 모든 기본 능력치 증가: +{0}% → +100% (5배)",
+    "- All base stat increase: +{0}% → +100% (5x)"
+  ],
+  [
+    "이미 기본 상태(+20%)입니다.",
+    "Already at default (+20%)."
+  ],
+  [
+    "기본 상태(+20%)로 복구할까요?",
+    "Restore default (+20%)?"
+  ],
+  [
+    "\n[성공] 궁극 파이터의 귀환 기본 효과 복구가 성공적으로 완료되었습니다!",
+    "\n[Success] Ultimate Fighter Returns default effect restored!"
+  ],
+  [
+    "- 모든 기본 능력치 증가: +{0}% → +20% (기본값 복구)",
+    "- All base stat increase: +{0}% → +20% (default restored)"
+  ],
+  [
+    "스페이드 여왕 (Queen of Spades) 데칼:",
+    "Queen of Spades decal:"
+  ],
+  [
+    "- 현재 효과: 공격력 +{0}% (기본 30% 대비 {1}배)",
+    "- Current effect: attack +{0}% ({1}x the base 30%)"
+  ],
+  [
+    "- 기타 효과: 치명타 확률 +{0}% / 피해 무효화 {1}% (기본 유지)",
+    "- Other effects: critical chance +{0}% / damage nullification {1}% (defaults preserved)"
+  ],
+  [
+    "기존 +5,000% / 166배 입력 제한 해제. 저장 범위: +1% ~ +2,147,483,647%.",
+    "Previous +5,000% / 166x input cap removed. Storage range: +1% to +2,147,483,647%."
+  ],
+  [
+    "큰 값은 게임의 데미지·레이지 계산에 이상을 일으킬 수 있습니다. 엔진 연산 한계는 그대로입니다.",
+    "Large values may disrupt game damage/rage calculations. Engine arithmetic limits remain unchanged."
+  ],
+  [
+    "1. 공격력 증가 퍼센트(%) 직접 입력",
+    "1. Enter attack increase percentage"
+  ],
+  [
+    "2. 기본 효과(+30%)의 배율 입력",
+    "2. Enter multiplier of base effect (+30%)"
+  ],
+  [
+    "3. 빠른 설정: +{0}%",
+    "3. Quick preset: +{0}%"
+  ],
+  [
+    "4. 기본값(+{0}%)으로 복구",
+    "4. Restore default (+{0}%)"
+  ],
+  [
+    "\n설정할 공격력 증가 퍼센트(%)를 입력하세요 (현재: +{0}%): ",
+    "\nEnter attack increase percentage (current: +{0}%): "
+  ],
+  [
+    "스페이드 여왕 공격력을 +{0}% ({1}배)로 변경할까요?",
+    "Change Queen of Spades attack to +{0}% ({1}x)?"
+  ],
+  [
+    "\n[성공] 스페이드 여왕 공격력 효과 변경이 성공적으로 완료되었습니다!",
+    "\n[Success] Queen of Spades attack effect updated!"
+  ],
+  [
+    "- 공격력 증가: +{0}% → +{1}% ({2}배)",
+    "- Attack increase: +{0}% → +{1}% ({2}x)"
+  ],
+  [
+    "\n설정할 배율을 입력하세요 (기본 30% 기준, 현재: {0}배): ",
+    "\nEnter multiplier of base 30% (current: {0}x): "
+  ],
+  [
+    "스페이드 여왕 공격력을 {0}배인 +{1}%로 변경할까요?",
+    "Change Queen of Spades attack to {0}x (+{1}%)?"
+  ],
+  [
+    "이미 극단 공격력(+{0}%)이 적용되어 있습니다.",
+    "Extreme attack (+{0}%) is already applied."
+  ],
+  [
+    "공격력을 빠른 설정값인 +{0}%로 변경할까요?",
+    "Set attack to the quick preset of +{0}%?"
+  ],
+  [
+    "\n[성공] 스페이드 여왕 공격력 변경이 성공적으로 완료되었습니다!",
+    "\n[Success] Queen of Spades attack updated!"
+  ],
+  [
+    "- 공격력 증가: +{0}% → +{1}%",
+    "- Attack increase: +{0}% → +{1}%"
+  ],
+  [
+    "이미 기본 상태(+{0}%)입니다.",
+    "Already at default (+{0}%)."
+  ],
+  [
+    "기본 상태(+{0}%)로 복구할까요?",
+    "Restore default (+{0}%)?"
+  ],
+  [
+    "\n[성공] 스페이드 여왕 기본 효과 복구가 성공적으로 완료되었습니다!",
+    "\n[Success] Queen of Spades default effect restored!"
+  ],
+  [
+    "- 공격력 증가: +{0}% → +{1}% (기본값 복구)",
+    "- Attack increase: +{0}% → +{1}% (default restored)"
+  ],
+  [
+    "울프 계열 데칼 (분노/레이지 게이지 축적 속도):",
+    "Wolf decals (rage gauge accumulation speed):"
+  ],
+  [
+    "- 슈퍼 울프 (SKL_RGSPDUP_02_P): +{0}% (기본값: +80%)",
+    "- Super Wolf (SKL_RGSPDUP_02_P): +{0}% (default: +80%)"
+  ],
+  [
+    "- 매드 울프 (SKL_RGSPUP_RDURDOWN_01_P): +{0}% (기본값: +120%)",
+    "- Mad Wolf (SKL_RGSPUP_RDURDOWN_01_P): +{0}% (default: +120%)"
+  ],
+  [
+    "※ 단일 타격 대미지가 수십만을 초과할 때 발생하는 32비트 연산 오버플로 시에도",
+    "Note: even when very high single-hit damage causes 32-bit arithmetic overflow,"
+  ],
+  [
+    "   울프 데칼의 레이지 축적 속도를 +1,000%로 설정하면 스치기만 해도 게이지가 1~2칸씩 즉시 충전됩니다.",
+    "   setting Wolf rage accumulation to +1,000% is intended to fill 1–2 gauge segments on contact."
+  ],
+  [
+    "1. 레이지 축적 속도 +{0}% 바로 적용 (적 피격 시 게이지 즉시 충전)",
+    "1. Apply +{0}% rage accumulation (instant gauge fill when hitting an enemy)"
+  ],
+  [
+    "2. 축적 속도 퍼센트(%) 직접 입력 (1 ~ 50,000%)",
+    "2. Enter accumulation percentage (1–50,000%)"
+  ],
+  [
+    "3. 기본값 복구 (슈퍼 울프 +80% / 매드 울프 +120%)",
+    "3. Restore defaults (Super Wolf +80% / Mad Wolf +120%)"
+  ],
+  [
+    "\n이미 두 데칼 모두 +{0}% 이상으로 적용되어 있습니다.",
+    "\nBoth decals are already at +{0}% or higher."
+  ],
+  [
+    "슈퍼 울프와 매드 울프의 레이지 축적 속도를 +{0}%로 변경할까요?",
+    "Set Super Wolf and Mad Wolf rage accumulation to +{0}%?"
+  ],
+  [
+    "\n[성공] 울프 계열 레이지 축적 속도 +1,000% 변경이 성공적으로 완료되었습니다!",
+    "\n[Success] Wolf rage accumulation updated to +1,000%!"
+  ],
+  [
+    "- 슈퍼 울프: +{0}% → +{1}%",
+    "- Super Wolf: +{0}% → +{1}%"
+  ],
+  [
+    "- 매드 울프: +{0}% → +{1}%",
+    "- Mad Wolf: +{0}% → +{1}%"
+  ],
+  [
+    "\n설정할 레이지 축적 속도 퍼센트(%)를 입력하세요 (기본 권장: 1000): ",
+    "\nEnter rage accumulation percentage (recommended: 1000): "
+  ],
+  [
+    "오류: 1 ~ 50,000 사이의 정수를 입력해야 합니다.",
+    "Error: Enter an integer from 1 to 50,000."
+  ],
+  [
+    "\n이미 두 데칼 모두 +{0}%가 적용되어 있습니다.",
+    "\nBoth decals are already at +{0}%."
+  ],
+  [
+    "\n[성공] 울프 계열 레이지 축적 속도 변경이 성공적으로 완료되었습니다!",
+    "\n[Success] Wolf rage accumulation updated!"
+  ],
+  [
+    "\n이미 두 데칼 모두 기본값(80% / 120%) 상태입니다.",
+    "\nBoth decals are already at defaults (80% / 120%)."
+  ],
+  [
+    "울프 계열 데칼의 레이지 축적 속도를 기본값(80% / 120%)으로 복구할까요?",
+    "Restore Wolf rage accumulation defaults (80% / 120%)?"
+  ],
+  [
+    "\n[성공] 울프 계열 레이지 축적 속도 기본값 복구가 성공적으로 완료되었습니다!",
+    "\n[Success] Wolf rage accumulation defaults restored!"
+  ],
+  [
+    "- 슈퍼 울프: +{0}% → +{1}% (기본값: +80%)",
+    "- Super Wolf: +{0}% → +{1}% (default: +80%)"
+  ],
+  [
+    "- 매드 울프: +{0}% → +{1}% (기본값: +120%)",
+    "- Mad Wolf: +{0}% → +{1}% (default: +120%)"
+  ],
+  [
+    "부유한 가족 (Rich Family / SKL_RESUP_DECDOWN_P) 데칼:",
+    "Rich Family (SKL_RESUP_DECDOWN_P) decal:"
+  ],
+  [
+    "- 자원 수집 증가율 : +{0}% (KC / SP / EXP / ABP / 보물상자) (기본값: +20%)",
+    "- Resource gain: +{0}% (KC / SP / EXP / ABP / treasure chests) (default: +20%)"
+  ],
+  [
+    "- 장비 내구도 보호 : {0} (기본값: 20%)",
+    "- Equipment durability protection: {0} (default: 20%)"
+  ],
+  [
+    "★ 무한 내구도 (100% 보호)",
+    "★ Infinite durability (100% protection)"
+  ],
+  [
+    "내구도 손실 {0}% 완화",
+    "Durability loss reduced by {0}%"
+  ],
+  [
+    "※ 장비 내구도 보호율을 100%로 설정하면, 착용한 무기와 머리/상의/하의 방어구의 내구도가",
+    "Note: setting durability protection to 100% prevents equipped weapons and"
+  ],
+  [
+    "   전혀 닳지 않는 무한 내구도 상태가 됩니다.",
+    "   head/body/leg armor from losing durability."
+  ],
+  [
+    "1. [추천] 자원 +500% (5배) + 장비 무한 내구도(100%) 원클릭 적용",
+    "1. [Recommended] Resources +500% (5x bonus) + infinite durability (100%)"
+  ],
+  [
+    "2. [극대] 자원 +1,000% (10배) + 장비 무한 내구도(100%) 원클릭 적용",
+    "2. [Extreme] Resources +1,000% (10x bonus) + infinite durability (100%)"
+  ],
+  [
+    "3. [내구도 전용] 자원 기본(+20%) 유지 + 장비 무한 내구도(100%) 적용",
+    "3. [Durability only] Keep default resources (+20%) + infinite durability (100%)"
+  ],
+  [
+    "4. 수치 직접 입력 (자원 증가율 % 및 내구도 보호율 %)",
+    "4. Custom values (resource increase % and durability protection %)"
+  ],
+  [
+    "5. 기본값 복구 (자원 +20% / 내구도 20%)",
+    "5. Restore defaults (resources +20% / durability protection 20%)"
+  ],
+  [
+    "부유한 가족 효과를 [자원 +500% / 무한 내구도 100%]로 변경할까요?",
+    "Set Rich Family to resources +500% / infinite durability 100%?"
+  ],
+  [
+    "\n[성공] 부유한 가족 데칼 수치 변경이 성공적으로 완료되었습니다!",
+    "\n[Success] Rich Family decal values updated!"
+  ],
+  [
+    "- 자원 획득량: +{0}% → +{1}%",
+    "- Resource gain: +{0}% → +{1}%"
+  ],
+  [
+    "- 내구도 보호: {0}% → {1}% (무한 내구도)",
+    "- Durability protection: {0}% → {1}% (infinite durability)"
+  ],
+  [
+    "부유한 가족 효과를 [자원 +1,000% / 무한 내구도 100%]로 변경할까요?",
+    "Set Rich Family to resources +1,000% / infinite durability 100%?"
+  ],
+  [
+    "부유한 가족 효과를 [자원 +20%(기본) / 무한 내구도 100%]로 변경할까요?",
+    "Set Rich Family to default resources +20% / infinite durability 100%?"
+  ],
+  [
+    "- 자원 획득량: +{0}% (기본 유지)",
+    "- Resource gain: +{0}% (default preserved)"
+  ],
+  [
+    "\n설정할 자원 획득 증가 퍼센트(%) (현재: +{0}%, 추천: 500): ",
+    "\nResource gain increase percentage (current: +{0}%, recommended: 500): "
+  ],
+  [
+    "오류: 자원 증가율은 0 ~ 50,000 사이의 정수를 입력해야 합니다.",
+    "Error: Resource increase must be an integer from 0 to 50,000."
+  ],
+  [
+    "설정할 내구도 감소 방지 퍼센트(%) (현재: {0}%, 무한 내구도: 100, 범위: 0~100): ",
+    "Durability loss protection percentage (current: {0}%, infinite: 100, range: 0–100): "
+  ],
+  [
+    "오류: 내구도 방지율은 0 ~ 100 사이의 정수를 입력해야 합니다.",
+    "Error: Durability protection must be an integer from 0 to 100."
+  ],
+  [
+    "부유한 가족 효과를 [자원 +{0}% / 내구도 보호 {1}%]로 변경할까요?",
+    "Set Rich Family to resources +{0}% / durability protection {1}%?"
+  ],
+  [
+    "- 내구도 보호: {0}% → {1}%{2}",
+    "- Durability protection: {0}% → {1}%{2}"
+  ],
+  [
+    " (무한 내구도)",
+    " (infinite durability)"
+  ],
+  [
+    "\n이미 기본값(자원 +20% / 내구도 20%) 상태입니다.",
+    "\nAlready at defaults (resources +20% / durability protection 20%)."
+  ],
+  [
+    "부유한 가족 데칼을 기본값(자원 +20% / 내구도 20%)으로 복구할까요?",
+    "Restore Rich Family defaults (resources +20% / durability protection 20%)?"
+  ],
+  [
+    "\n[성공] 부유한 가족 데칼 기본값 복구가 성공적으로 완료되었습니다!",
+    "\n[Success] Rich Family defaults restored!"
+  ],
+  [
+    "- 자원 획득량: +{0}% → +20% (기본값)",
+    "- Resource gain: +{0}% → +20% (default)"
+  ],
+  [
+    "- 내구도 보호: {0}% → 20% (기본값)",
+    "- Durability protection: {0}% → 20% (default)"
+  ],
+  [
+    "나오미 디톡스 (Naomi Detox / SKL_RESUP_DECDOWN_01_P) [오프라인 특전]:",
+    "Naomi Detox (SKL_RESUP_DECDOWN_01_P) [offline bonus]:"
+  ],
+  [
+    "- 킬코인·스피리튬 증가율 : +{0}% (적 처치 / 보물상자 획득) (기본값: +50%)",
+    "- Kill Coin/SPLithium gain: +{0}% (enemy kills / treasure chests) (default: +50%)"
+  ],
+  [
+    "- 장비 내구도 보호       : {0} (기본값: 0%)",
+    "- Equipment durability protection: {0} (default: 0%)"
+  ],
+  [
+    "없음 (0%)",
+    "None (0%)"
+  ],
+  [
+    "   전혀 닳지 않는 무한 내구도 상태가 함께 적용됩니다.",
+    "   head/body/leg armor from losing durability."
+  ],
+  [
+    "1. [추천] 킬코인·SP +500% (5배) + 장비 무한 내구도(100%) 원클릭 적용",
+    "1. [Recommended] KC/SP +500% (5x bonus) + infinite durability (100%)"
+  ],
+  [
+    "2. [극대] 킬코인·SP +1,000% (10배) + 장비 무한 내구도(100%) 원클릭 적용",
+    "2. [Extreme] KC/SP +1,000% (10x bonus) + infinite durability (100%)"
+  ],
+  [
+    "3. [파밍 특화] 킬코인·SP +5,000% (50배) + 장비 무한 내구도(100%) 원클릭 적용",
+    "3. [Farming] KC/SP +5,000% (50x bonus) + infinite durability (100%)"
+  ],
+  [
+    "4. [킬코인 전용] 킬코인·SP +500% 적용 (내구도 0% 유지)",
+    "4. [Resources only] KC/SP +500% (keep durability protection 0%)"
+  ],
+  [
+    "5. 수치 직접 입력 (획득 증가율 % 및 내구도 보호율 %)",
+    "5. Custom values (gain increase % and durability protection %)"
+  ],
+  [
+    "6. 기본값 복구 (킬코인·SP +50% / 내구도 0%)",
+    "6. Restore defaults (KC/SP +50% / durability protection 0%)"
+  ],
+  [
+    "나오미 디톡스 효과를 [킬코인·SP +500% / 무한 내구도 100%]로 변경할까요?",
+    "Set Naomi Detox to KC/SP +500% / infinite durability 100%?"
+  ],
+  [
+    "\n[성공] 나오미 디톡스 데칼 수치 변경이 성공적으로 완료되었습니다!",
+    "\n[Success] Naomi Detox decal values updated!"
+  ],
+  [
+    "- 킬코인·SP 획득량: +{0}% → +{1}%",
+    "- KC/SP gain: +{0}% → +{1}%"
+  ],
+  [
+    "나오미 디톡스 효과를 [킬코인·SP +1,000% / 무한 내구도 100%]로 변경할까요?",
+    "Set Naomi Detox to KC/SP +1,000% / infinite durability 100%?"
+  ],
+  [
+    "나오미 디톡스 효과를 [킬코인·SP +5,000% / 무한 내구도 100%]로 변경할까요?",
+    "Set Naomi Detox to KC/SP +5,000% / infinite durability 100%?"
+  ],
+  [
+    "나오미 디톡스 효과를 [킬코인·SP +500% / 내구도 0% 유지]로 변경할까요?",
+    "Set Naomi Detox to KC/SP +500% / keep durability protection 0%?"
+  ],
+  [
+    "- 내구도 보호: {0}% (유지)",
+    "- Durability protection: {0}% (unchanged)"
+  ],
+  [
+    "\n설정할 킬코인·스피리튬 획득 증가 퍼센트(%) (현재: +{0}%, 추천: 500): ",
+    "\nKC/SPLithium gain increase percentage (current: +{0}%, recommended: 500): "
+  ],
+  [
+    "오류: 획득 증가율은 0 ~ 50,000 사이의 정수를 입력해야 합니다.",
+    "Error: Gain increase must be an integer from 0 to 50,000."
+  ],
+  [
+    "나오미 디톡스 효과를 [킬코인·SP +{0}% / 내구도 보호 {1}%]로 변경할까요?",
+    "Set Naomi Detox to KC/SP +{0}% / durability protection {1}%?"
+  ],
+  [
+    "\n이미 기본값(킬코인·SP +50% / 내구도 0%) 상태입니다.",
+    "\nAlready at defaults (KC/SP +50% / durability protection 0%)."
+  ],
+  [
+    "나오미 디톡스 데칼을 기본값(킬코인·SP +50% / 내구도 0%)으로 복구할까요?",
+    "Restore Naomi Detox defaults (KC/SP +50% / durability protection 0%)?"
+  ],
+  [
+    "\n[성공] 나오미 디톡스 데칼 기본값 복구가 성공적으로 완료되었습니다!",
+    "\n[Success] Naomi Detox defaults restored!"
+  ],
+  [
+    "- 킬코인·SP 획득량: +{0}% → +50% (기본값)",
+    "- KC/SP gain: +{0}% → +50% (default)"
+  ],
+  [
+    "- 내구도 보호: {0}% → 0% (기본값)",
+    "- Durability protection: {0}% → 0% (default)"
+  ],
+  [
+    "장비 연구 정의: {0}종",
+    "Equipment research definitions: {0}"
+  ],
+  [
+    "재료가 필요한 정의: {0}종 / 수량 항목 {1}개",
+    "Definitions requiring materials: {0} / quantity fields: {1}"
+  ],
+  [
+    "모든 장비의 개발·강화 재료 수량을 0으로 변경할까요?",
+    "Set all equipment development/upgrade material quantities to zero?"
+  ],
+  [
+    "\n이미 모든 장비 개발·강화 재료 수량이 0입니다.",
+    "\nAll equipment development/upgrade material quantities are already zero."
+  ],
+  [
+    "\n[성공] 장비 개발·강화 재료 무료화가 성공적으로 완료되었습니다.",
+    "\n[Success] Equipment development/upgrade material costs removed."
+  ],
+  [
+    "- 장비 {0}종의 개발·강화 재료 비용 제거",
+    "- Removed material costs from {0} equipment definitions"
+  ],
+  [
+    "- 킬코인·스피리튬 비용과 연구 시간은 유지됩니다.",
+    "- Kill Coin/SPLithium costs and research time are preserved."
+  ],
+  [
+    "\n복원할 장비 재료 비용 전용 백업이 없습니다.",
+    "\nNo dedicated equipment material-cost backup to restore."
+  ],
+  [
+    "\n복원 대상: {0}",
+    "\nRestore target: {0}"
+  ],
+  [
+    "백업의 재료 필요 정의: {0}종 / 수량 항목 {1}개",
+    "Backup definitions requiring materials: {0} / quantity fields: {1}"
+  ],
+  [
+    "이 백업의 장비 재료 수량만 복원할까요?",
+    "Restore only equipment material quantities from this backup?"
+  ],
+  [
+    "\n[성공] 장비 재료 비용 복원이 성공적으로 완료되었습니다.",
+    "\n[Success] Equipment material costs restored."
+  ],
+  [
+    "- 복원 완료: 장비 재료 비용 {0}종",
+    "- Restored material costs: {0} equipment definitions"
+  ],
+  [
+    "\nLET IT DIE를 완전히 종료한 뒤 백업하세요.",
+    "\nClose LET IT DIE completely before backing up."
+  ],
+  [
+    "\n[성공] 현재 세이브 백업이 성공적으로 완료되었습니다.",
+    "\n[Success] Current save backed up."
+  ],
+  [
+    "- 백업 파일: {0}",
+    "- Backup file: {0}"
+  ],
+  [
+    "\n복원할 백업이 없습니다.",
+    "\nNo backup available to restore."
+  ],
+  [
+    "\n최신 백업: {0}",
+    "\nLatest backup: {0}"
+  ],
+  [
+    "백업 ",
+    "Backup "
+  ],
+  [
+    "이 백업으로 복원할까요?",
+    "Restore this backup?"
+  ],
+  [
+    "\n[성공] 백업 복원이 성공적으로 완료되었습니다.",
+    "\n[Success] Backup restored."
+  ],
+  [
+    "\n잘못된 선택입니다.",
+    "\nInvalid selection."
+  ],
+  [
+    "\n오류: {0}",
+    "\nError: {0}"
+  ],
+  [
+    "오류 로그 저장됨: {0}",
+    "Error log saved: {0}"
+  ],
+  [
+    "주의: {0}의 알려진 한도 {1}을 초과합니다.",
+    "Warning: exceeds the known {0} capacity of {1}."
+  ],
+  [
+    "{0}의 알려진 한도 정보가 없습니다.",
+    "No known capacity information for {0}."
+  ],
+  [
+    "\n[성공] {0} 최대 한도 충전이 성공적으로 완료되었습니다.",
+    "\n[Success] {0} filled to maximum capacity."
+  ],
+  [
+    "LET IT DIE를 완전히 종료한 뒤 백업하세요.",
+    "Close LET IT DIE completely before backing up."
+  ],
+  [
+    "\n[성공] 세이브 백업이 성공적으로 완료되었습니다.",
+    "\n[Success] Save backed up."
+  ],
+  [
+    "복구할 블러드늄 상점 구매 완료 재고가 없습니다.",
+    "No purchased Bloodnium shop stock to restore."
+  ],
+  [
+    "오류: 황금동물 지급 수량은 1 이상의 정수여야 합니다.",
+    "Error: Golden animal quantity must be a positive integer."
+  ],
+  [
+    "오류: 코인 보관함의 빈칸이 부족합니다 (최소 11칸 필요).",
+    "Error: Not enough free storage slots (at least 11 required)."
+  ],
+  [
+    "오류: 보관함 빈칸({0}칸)이 부족합니다. 최대 {1}마리(총 {2}마리)까지 지급 가능합니다.",
+    "Error: Not enough free storage slots ({0}). You may add at most {1} of each ({2} total)."
+  ],
+  [
+    "\n황금동물 지급 설정: 전체 11종 x 각 {0}마리 (총 {1}마리)",
+    "\nGolden animal settings: 11 types x {0} each ({1} total)"
+  ],
+  [
+    "Steam용 기간 한정 레시피가 이미 모두 해금돼 있습니다.",
+    "All Steam limited-time blueprints are already unlocked."
+  ],
+  [
+    "없는 기간 한정 레시피 {0}종을 설계도 습득 상태로 추가할까요?",
+    "Add {0} missing limited-time blueprints as acquired?"
+  ],
+  [
+    "- 해금 목록: {0} → {1}종",
+    "- Unlocked: {0} → {1}"
+  ],
+  [
+    "모든 레시피: {0}/{1}종 해금",
+    "All blueprints: {0}/{1} unlocked"
+  ],
+  [
+    "Steam용 모든 레시피가 이미 해금돼 있습니다.",
+    "All Steam blueprints are already unlocked."
+  ],
+  [
+    "없는 전체 레시피 {0}종을 설계도 습득 상태로 추가할까요?",
+    "Add all {0} missing blueprints as acquired?"
+  ],
+  [
+    "현재 지속시간: 일반 {0}초 / 구운 것 {1}초",
+    "Current duration: raw {0}s / grilled {1}s"
+  ],
+  [
+    "이미 기본 상태(일반 30초 / 구운 것 40초)입니다.",
+    "Already at defaults (raw 30s / grilled 40s)."
+  ],
+  [
+    "이미 30분(1,800초) 지속시간이 적용돼 있습니다.",
+    "The 30-minute (1,800-second) duration is already applied."
+  ],
+  [
+    "현재 효과: 모든 기본 능력치 +{0}% (기본 20% 대비 {1}배)",
+    "Current effect: all base stats +{0}% ({1}x the base 20%)"
+  ],
+  [
+    "기본값(+20%) 복구",
+    "Restore default (+20%)"
+  ],
+  [
+    "5배(+100%) 적용",
+    "Apply 5x (+100%)"
+  ],
+  [
+    "사용법: node lid-kc.js ultimate-fighter <퍼센트(%) | 배율(예: 5x, 10배) | restore>",
+    "Usage: node lid-kc.js ultimate-fighter <percentage | multiplier (e.g. 5x, 10x) | restore>"
+  ],
+  [
+    "오류: 배율은 0보다 크고 50,000 이하의 숫자여야 합니다 (예: 5x, 10배).",
+    "Error: Multiplier must be greater than 0 and no greater than 50,000 (e.g. 5x, 10x)."
+  ],
+  [
+    "{0}배(+{1}%) 설정",
+    "Set {0}x (+{1}%)"
+  ],
+  [
+    "오류: 퍼센트는 1 ~ 1,000,000 사이의 정수여야 합니다 (예: 50, 100%, 500).",
+    "Error: Percentage must be an integer from 1 to 1,000,000 (e.g. 50, 100%, 500)."
+  ],
+  [
+    "+{0}% ({1}배) 설정",
+    "Set +{0}% ({1}x)"
+  ],
+  [
+    "이미 요청하신 수치(+{0}%)가 적용되어 있습니다.",
+    "The requested value (+{0}%) is already applied."
+  ],
+  [
+    "- 설정 모드: [{0}]",
+    "- Mode: [{0}]"
+  ],
+  [
+    "KAMAS-A1 어설트 라이플 RE: +{0} 완료",
+    "KAMAS-A1 Assault Rifle RE: +{0} completed"
+  ],
+  [
+    "이미 KAMAS RE 연구가 최대 +{0}입니다.",
+    "KAMAS RE research is already at maximum +{0}."
+  ],
+  [
+    "현재 효과: 공격력 +{0}% (기본 30% 대비 {1}배) / 치명타 +{2}% / 피해 무효화 {3}%",
+    "Current effect: attack +{0}% ({1}x the base 30%) / critical +{2}% / damage nullification {3}%"
+  ],
+  [
+    "기본값(+{0}%) 복구",
+    "Restore default (+{0}%)"
+  ],
+  [
+    "극단화(+{0}%) 적용",
+    "Apply extreme (+{0}%)"
+  ],
+  [
+    "사용법: node lid-kc.js queen-spades <퍼센트(%) | 배율(예: 5x, 10배) | extreme | restore>",
+    "Usage: node lid-kc.js queen-spades <percentage | multiplier (e.g. 5x, 10x) | extreme | restore>"
+  ],
+  [
+    "현재 효과: 슈퍼 울프 +{0}% (기본값: +80%) / 매드 울프 +{1}% (기본값: +120%)",
+    "Current effect: Super Wolf +{0}% (default +80%) / Mad Wolf +{1}% (default +120%)"
+  ],
+  [
+    "이미 울프 계열 데칼의 레이지 축적 속도가 기본값(80% / 120%)입니다.",
+    "Wolf rage accumulation is already at defaults (80% / 120%)."
+  ],
+  [
+    "+{0}% 적용 (스치기만 해도 게이지 즉시 충전)",
+    "Apply +{0}% (instant gauge fill on contact)"
+  ],
+  [
+    "오류: 퍼센트는 1 ~ 50,000 사이의 정수여야 합니다 (예: 1000, 1000%).",
+    "Error: Percentage must be an integer from 1 to 50,000 (e.g. 1000, 1000%)."
+  ],
+  [
+    "+{0}% 적용",
+    "Apply +{0}%"
+  ],
+  [
+    "이미 두 울프 데칼 모두 +{0}%가 적용되어 있습니다.",
+    "Both Wolf decals are already at +{0}%."
+  ],
+  [
+    "현재 효과: 자원 수집 +{0}% (KC/SP/EXP/ABP/상자) / 내구도 보호 {1}",
+    "Current effect: resource gain +{0}% (KC/SP/EXP/ABP/chests) / durability protection {1}"
+  ],
+  [
+    "이미 부유한 가족 데칼이 기본값(자원 +20% / 내구도 20%)입니다.",
+    "Rich Family is already at defaults (resources +20% / durability protection 20%)."
+  ],
+  [
+    "자원 +500% + 무한 내구도(100%)",
+    "Resources +500% + infinite durability (100%)"
+  ],
+  [
+    "자원 +1,000% + 무한 내구도(100%)",
+    "Resources +1,000% + infinite durability (100%)"
+  ],
+  [
+    "자원 기본(+20%) + 무한 내구도(100%)",
+    "Default resources (+20%) + infinite durability (100%)"
+  ],
+  [
+    "오류: 자원 증가율은 0 ~ 50,000 사이의 정수여야 합니다 (예: 500, 1000).",
+    "Error: Resource increase must be an integer from 0 to 50,000 (e.g. 500, 1000)."
+  ],
+  [
+    "오류: 내구도 방지율은 0 ~ 100 사이의 정수여야 합니다 (100 입력 시 무한 내구도).",
+    "Error: Durability protection must be an integer from 0 to 100 (100 = infinite durability)."
+  ],
+  [
+    "자원 +{0}% / 내구도 보호 {1}%{2}",
+    "Resources +{0}% / durability protection {1}%{2}"
+  ],
+  [
+    "이미 부유한 가족 데칼에 동일한 수치(자원 +{0}% / 내구도 {1}%)가 적용되어 있습니다.",
+    "Rich Family already has these values (resources +{0}% / durability protection {1}%)."
+  ],
+  [
+    "부유한 가족 효과를 [{0}]로 변경할까요?",
+    "Change Rich Family to [{0}]?"
+  ],
+  [
+    "현재 효과: 킬코인·스피리튬 +{0}% / 내구도 보호 {1}",
+    "Current effect: KC/SPLithium +{0}% / durability protection {1}"
+  ],
+  [
+    "이미 나오미 디톡스 데칼이 기본값(킬코인·SP +50% / 내구도 0%)입니다.",
+    "Naomi Detox is already at defaults (KC/SP +50% / durability protection 0%)."
+  ],
+  [
+    "킬코인·SP +500% + 무한 내구도(100%)",
+    "KC/SP +500% + infinite durability (100%)"
+  ],
+  [
+    "킬코인·SP +1,000% + 무한 내구도(100%)",
+    "KC/SP +1,000% + infinite durability (100%)"
+  ],
+  [
+    "킬코인·SP +5,000% + 무한 내구도(100%)",
+    "KC/SP +5,000% + infinite durability (100%)"
+  ],
+  [
+    "오류: 킬코인·스피리튬 증가율은 0 ~ 50,000 사이의 정수여야 합니다.",
+    "Error: KC/SPLithium increase must be an integer from 0 to 50,000."
+  ],
+  [
+    "킬코인·SP +{0}% (내구도 0% 유지)",
+    "KC/SP +{0}% (keep durability protection 0%)"
+  ],
+  [
+    "오류: 킬코인·스피리튬 증가율은 0 ~ 50,000 사이의 정수여야 합니다 (예: 500, 1000).",
+    "Error: KC/SPLithium increase must be an integer from 0 to 50,000 (e.g. 500, 1000)."
+  ],
+  [
+    "킬코인·SP +{0}% / 내구도 보호 {1}%{2}",
+    "KC/SP +{0}% / durability protection {1}%{2}"
+  ],
+  [
+    "이미 나오미 디톡스 데칼에 동일한 수치(킬코인·SP +{0}% / 내구도 {1}%)가 적용되어 있습니다.",
+    "Naomi Detox already has these values (KC/SP +{0}% / durability protection {1}%)."
+  ],
+  [
+    "나오미 디톡스 효과를 [{0}]로 변경할까요?",
+    "Change Naomi Detox to [{0}]?"
+  ],
+  [
+    "재료가 필요한 장비 정의: {0}종 / 수량 항목 {1}개",
+    "Equipment definitions requiring materials: {0} / quantity fields: {1}"
+  ],
+  [
+    "이미 모든 장비 개발·강화 재료 수량이 0입니다.",
+    "All equipment development/upgrade material quantities are already zero."
+  ],
+  [
+    "복원할 장비 재료 비용 전용 백업이 없습니다.",
+    "No dedicated equipment material-cost backup to restore."
+  ],
+  [
+    "시설 레벨이 이미 모두 최대치(99)입니다.",
+    "Both facility levels are already maximized (99)."
+  ],
+  [
+    "모든 무기 숙련도가 이미 최대(Lv.20)입니다.",
+    "All weapon mastery is already maximized (Lv.20)."
+  ],
+  [
+    "모든 장비 연구·개발(R&D)이 이미 최대치까지 완료돼 있습니다.",
+    "All equipment R&D is already maximized."
+  ],
+  [
+    "복원할 백업이 없습니다.",
+    "No backup available to restore."
+  ],
+  [
+    "\n[성공] 세이브 복원이 성공적으로 완료되었습니다.",
+    "\n[Success] Save restored."
+  ],
+  [
+    "\n[캐릭터(파이터) 목록] 총 {0}명 (DB 최대치는 클래스·등급·한계돌파별 실제 데이터로 결정)",
+    "\n[Fighter List] {0} fighters (DB maxima depend on actual class, grade and limit-break data)"
+  ],
+  [
+    "\n[#{0}] {1} ({2}) | {3}성 LB{4} | {5}",
+    "\n[#{0}] {1} ({2}) | Grade {3} LB{4} | {5}"
+  ],
+  [
+    "  총 레벨: Lv.{0}",
+    "  Total level: Lv.{0}"
+  ],
+  [
+    "  HP: {0}/45(순정) [50(DB)](+{1}) | STR: {2}/45[50](+{3}) | DEX: {4}/45[50](+{5})",
+    "  HP: {0}/45(stock) [50(DB)](+{1}) | STR: {2}/45[50](+{3}) | DEX: {4}/45[50](+{5})"
+  ],
+  [
+    "  VIT: {0}/45(순정) [50(DB)](+{1}) | STM: {2}/45[50](+{3}) | LUK: {4}/45[50](+{5})",
+    "  VIT: {0}/45(stock) [50(DB)](+{1}) | STM: {2}/45[50](+{3}) | LUK: {4}/45[50](+{5})"
+  ],
+  [
+    "  데칼 슬롯: +{0} (총 {1}칸 / 기본 {2}칸, 최대 {3}칸) | 가방: {4} | 분노 게이지: {5}/5",
+    "  Decal slots: +{0} ({1} total / {2} base, maximum {3}) | Bag: {4} | Rage gauge: {5}/5"
+  ],
+  [
+    "사용법: node lid-kc.js set-fighter-stat <파이터번호또는이름> <max-legit | max-db | all 수치 | hp|str|dex|vit|stm|luk|skill|bag|rage 수치>",
+    "Usage: node lid-kc.js set-fighter-stat <fighter-number-or-name> <max-legit | max-db | all value | hp|str|dex|vit|stm|luk|skill|bag|rage value>"
+  ],
+  [
+    "대상 파이터 '{0}'을(를) 찾지 못했습니다. 1~{1} 범위의 번호나 정확한 이름을 입력하세요.",
+    "Fighter '{0}' not found. Enter a number from 1 to {1} or an exact name."
+  ],
+  [
+    "순정 최대 설정 ({0})",
+    "Stock maximum ({0})"
+  ],
+  [
+    "DB 유효 최대치 ({0})",
+    "Valid DB maximum ({0})"
+  ],
+  [
+    "보너스 순정 최대치(+{0})",
+    "Stock maximum bonus (+{0})"
+  ],
+  [
+    "bonus 허용값: {0}",
+    "Allowed bonus values: {0}"
+  ],
+  [
+    "보너스 확장 일괄 +{0}",
+    "Set all bonuses to +{0}"
+  ],
+  [
+    "슬롯·가방 순정 최대(+{0} [총 {1}칸] / +12)",
+    "Stock maximum slots/bag (+{0} [{1} total] / +12)"
+  ],
+  [
+    "슬롯 {0}칸 / 가방 +{1} (DB 최대)",
+    "{0} decal slots / bag +{1} (DB maximum)"
+  ],
+  [
+    "all 옵션 뒤에 설정할 수치(1~50)를 입력해야 합니다.",
+    "Enter a value (1–50) after all."
+  ],
+  [
+    "6대 주 능력치(all) 입력 범위는 1~50입니다. 실제 저장 가능 레벨은 선택한 파이터의 현재 DB 데이터로 검사합니다.",
+    "The six primary stats (all) accept 1–50. Actual permitted levels are checked against the selected fighter's current DB data."
+  ],
+  [
+    "일괄 {0}",
+    "Set all to {0}"
+  ],
+  [
+    "{0} 뒤에 설정할 수치를 입력해야 합니다.",
+    "Enter a value after {0}."
+  ],
+  [
+    "수치는 0 이상의 정수여야 합니다.",
+    "Value must be a non-negative integer."
+  ],
+  [
+    "지원하지 않는 능력치 키 '{0}'입니다. (가능한 키: max-legit, max-db, all, hp, str, dex, vit, stm, luk, skill, bag, rage)",
+    "Unsupported stat key '{0}'. (Valid keys: max-legit, max-db, all, hp, str, dex, vit, stm, luk, skill, bag, rage)"
+  ],
+  [
+    "{0} 수치는 {1}~{2}(순정최대:{3}) 범위여야 합니다.",
+    "{0} must be within {1}–{2} (stock maximum: {3})."
+  ],
+  [
+    "대상 파이터: [#{0}] {1} ({2}) [{3}]",
+    "Target fighter: [#{0}] {1} ({2}) [{3}]"
+  ],
+  [
+    "설정할 변경 사항:",
+    "Changes to apply:"
+  ],
+  [
+    "이 파이터 능력치를 변경할까요?",
+    "Change this fighter's stats?"
+  ],
+  [
+    "파이터 스탯(Lv.50), 경험치(Lv.500), 데칼 슬롯(순정 9칸) 설정이 이미 DB에 적용돼 있습니다.",
+    "Stats (Lv.50), EXP (Lv.500), and decal slots (stock 9) are already configured in the DB."
+  ],
+  [
+    "복원할 파이터 상한 해제 DB 백업이 없습니다.",
+    "No fighter-uncap DB backup to restore."
+  ],
+  [
+    "사용법: node lid-kc.js [status | backup | reset-shop | grant-all-decals | grant-golden-beasts [마리수] | grant-limited-recipes | grant-all-recipes | max-facility | max-mastery | max-equipment | fighters | set-fighter-stat <번호/이름> <max-legit | max-db | max-bonus | bonus 수치 | max-slots | expand-slots | all 수치 | stat 수치> | expand-fighter-limits | restore-fighter-limits | collision-30m | collision-restore | ultimate-fighter <수치|배율|restore> | ultimate-fighter-5x | ultimate-fighter-restore | kamas-re-max | queen-spades <수치|배율|extreme|restore> | queen-spades-extreme | queen-spades-restore | wolf-rage [수치|restore] | wolf-rage-restore | rich-family [수치|max|dur-only|restore] [내구도] | rich-family-restore | naomi-detox [수치|max|farm|kc-only|restore] [내구도] | naomi-detox-restore | equipment-materials-free | equipment-materials-restore [백업] | equipment-spirit-free | equipment-spirit-restore [백업] | jackal-spawn-fast [초] | jackal-spawn-restore | jackal-blueprints [50|80|100] | jackal-blueprints-restore | m2g-knife-compensate | m2g-knife-restore | set [kc|sp|blood] 숫자 | max [kc|sp|blood] | restore] [--save 경로] [--game 설치폴더 | --master DB경로] [--yes]",
+    "Usage: node lid-kc.js [status | backup | reset-shop | grant-all-decals | grant-golden-beasts [quantity] | grant-limited-recipes | grant-all-recipes | max-facility | max-mastery | max-equipment | fighters | set-fighter-stat <number/name> <max-legit | max-db | max-bonus | bonus value | max-slots | expand-slots | all value | stat value> | expand-fighter-limits | restore-fighter-limits | collision-30m | collision-restore | ultimate-fighter <value|multiplier|restore> | ultimate-fighter-5x | ultimate-fighter-restore | kamas-re-max | queen-spades <value|multiplier|extreme|restore> | queen-spades-extreme | queen-spades-restore | wolf-rage [value|restore] | wolf-rage-restore | rich-family [value|max|dur-only|restore] [durability] | rich-family-restore | naomi-detox [value|max|farm|kc-only|restore] [durability] | naomi-detox-restore | equipment-materials-free | equipment-materials-restore [backup] | equipment-spirit-free | equipment-spirit-restore [backup] | jackal-spawn-fast [seconds] | jackal-spawn-restore | jackal-blueprints [50|80|100] | jackal-blueprints-restore | m2g-knife-compensate | m2g-knife-restore | set [kc|sp|blood] number | max [kc|sp|blood] | restore] [--save path] [--game installation-folder | --master DB-path] [--yes]"
+  ],
+  [
+    "HP 체력",
+    "HP Health"
+  ],
+  [
+    "STR 공격력",
+    "STR Strength"
+  ],
+  [
+    "DEX 기교",
+    "DEX Dexterity"
+  ],
+  [
+    "VIT 방어",
+    "VIT Defense"
+  ],
+  [
+    "STM 스태미나",
+    "STM Stamina"
+  ],
+  [
+    "LUK 행운",
+    "LUK Luck"
+  ],
+  [
+    "확인 불가",
+    "Unknown"
+  ],
+  [
+    "\n── {0} · {1}성 {2} · {3} ──",
+    "\n── {0} · Grade {1} {2} · {3} ──"
+  ],
+  [
+    "파이터",
+    "Fighter"
+  ],
+  [
+    "현재 총 레벨: Lv.{0}",
+    "Current total level: Lv.{0}"
+  ],
+  [
+    "능력치 레벨: {0}",
+    "Stat levels: {0}"
+  ],
+  [
+    "생성 보너스: {0}",
+    "Creation bonuses: {0}"
+  ],
+  [
+    "데칼 {0}칸 · 가방 {1}칸 · 분노 {2}칸",
+    "Decals {0} slots · Bag {1} slots · Rage {2} segments"
+  ],
+  [
+    "DB 최대 강화: {0} · 데칼 {1}칸 · 가방 {2}칸",
+    "DB maximum upgrade: {0} · Decals {1} slots · Bag {2} slots"
+  ],
+  [
+    "능력치 각각 Lv.{0}",
+    "Each stat Lv.{0}"
+  ],
+  [
+    "능력치 레벨은 성장 단계입니다. 실제 HP·공격력 수치와는 다릅니다.",
+    "Stat levels are growth stages, not actual HP or attack values."
+  ],
+  [
+    "생성 보너스 순정 생성값: {0} (엔진 절대 상한이 아님). 변경: 3. 직접 설정 → 5. 생성 보너스",
+    "Stock creation bonus values: {0} (not absolute engine limits). Change: 3. Custom settings → 5. Creation bonuses"
+  ],
+  [
+    "Lv.50까지 강화하려면 메인 메뉴의 «Lv.50 강화 준비»를 먼저 적용하세요.",
+    "To upgrade to Lv.50, first apply 'Prepare Lv.50 upgrades' from the main menu."
+  ],
+  [
+    "게임에 슬롯 15칸 등 이전 설정이 남아 있습니다. 메인 메뉴 «Lv.50 강화 준비 / 슬롯 상한 정리»로 정리하세요.",
+    "Legacy settings such as 15 slots remain in the game. Use 'Prepare Lv.50 upgrades / normalize slot cap' in the main menu."
+  ],
+  [
+    "현재 설정에 확인할 수 없는 값이 있습니다. «DB 최대 강화»에서 정리 내용을 확인하세요.",
+    "Some current values cannot be verified. Review normalization details under 'DB maximum upgrade'."
+  ],
+  [
+    "\n── 적용 미리보기: {0} / {1} ──",
+    "\n── Preview: {0} / {1} ──"
+  ],
+  [
+    "항목: 현재 → 적용 후",
+    "Field: current → after"
+  ],
+  [
+    "{0} 레벨: {1} → {2}",
+    "{0} level: {1} → {2}"
+  ],
+  [
+    "데칼",
+    "Decals"
+  ],
+  [
+    "가방",
+    "Bag"
+  ],
+  [
+    "분노",
+    "Rage"
+  ],
+  [
+    "{0}: {1}칸 → {2}칸",
+    "{0}: {1} slots → {2} slots"
+  ],
+  [
+    "총 레벨: {0} → {1}",
+    "Total level: {0} → {1}"
+  ],
+  [
+    "{0} 생성 보너스: +{1} → +{2}",
+    "{0} creation bonus: +{1} → +{2}"
+  ],
+  [
+    "생성 보너스: 현재 값 유지",
+    "Creation bonuses: preserve current values"
+  ],
+  [
+    "적용하면 세이브를 자동 백업한 뒤 이 파이터를 저장합니다.",
+    "Applying automatically backs up the save before saving this fighter."
+  ],
+  [
+    "{0} ({1} / 빈칸=취소): ",
+    "{0} ({1} / blank=cancel): "
+  ],
+  [
+    "표시된 값 중 하나를 입력하세요.",
+    "Enter one of the displayed values."
+  ],
+  [
+    "1. DB 최대 강화 (가장 강하게)",
+    "1. DB maximum upgrade (strongest)"
+  ],
+  [
+    "2. 순정 최대 설정 (6성 능력치는 최대 45)",
+    "2. Stock maximum (grade 6 stats up to 45)"
+  ],
+  [
+    "3. 직접 설정",
+    "3. Custom settings"
+  ],
+  [
+    "4. 상세 정보 보기",
+    "4. Detailed information"
+  ],
+  [
+    "5. 가방 실제 용량 +50칸 / 복원 (같은 6성 클래스 DB)",
+    "5. Add/restore 50 actual bag slots (same grade 6 class DB)"
+  ],
+  [
+    "0. 파이터 설정 나가기",
+    "0. Exit fighter settings"
+  ],
+  [
+    "선택: ",
+    "Select: "
+  ],
+  [
+    "DB 최대 강화",
+    "DB maximum upgrade"
+  ],
+  [
+    "순정 최대 설정",
+    "Stock maximum"
+  ],
+  [
+    "능력치·데칼·가방·분노를 함께 맞춥니다. 잘못된 생성 보너스가 있으면 정리합니다.",
+    "Adjusts stats, decals, bag and rage together. Invalid creation bonuses are normalized."
+  ],
+  [
+    "현재 DB: {0}",
+    "Current DB: {0}"
+  ],
+  [
+    "한계돌파 계산: {0} / 세이브 기록: {1}",
+    "Calculated limit break: {0} / save record: {1}"
+  ],
+  [
+    "생성 보너스 허용값: {0}",
+    "Allowed creation bonuses: {0}"
+  ],
+  [
+    "{0}: 레벨 {1} / DB 최대 {2} / 생성 보너스 +{3}",
+    "{0}: level {1} / DB maximum {2} / creation bonus +{3}"
+  ],
+  [
+    "{0} 저장값: +{1} / DB 환산 레벨 {2}",
+    "{0} stored value: +{1} / DB-converted level {2}"
+  ],
+  [
+    "Enter를 누르면 파이터 메뉴로 돌아갑니다.",
+    "Press Enter to return to the fighter menu."
+  ],
+  [
+    "\n── 직접 설정 ──",
+    "\n── Custom Settings ──"
+  ],
+  [
+    "1. 6개 능력치 레벨을 같은 값으로",
+    "1. Set all six stat levels to the same value"
+  ],
+  [
+    "2. 능력치 하나만 변경",
+    "2. Change one stat"
+  ],
+  [
+    "3. 데칼 칸 수",
+    "3. Decal slot count"
+  ],
+  [
+    "4. 가방 칸 수",
+    "4. Bag slot count"
+  ],
+  [
+    "5. 생성 보너스 (고급)",
+    "5. Creation bonuses (advanced)"
+  ],
+  [
+    "6. 분노 칸 수",
+    "6. Rage segment count"
+  ],
+  [
+    "0. 돌아가기",
+    "0. Back"
+  ],
+  [
+    "능력치 레벨",
+    "Stat level"
+  ],
+  [
+    "6개 능력치 레벨 변경",
+    "Change all six stat levels"
+  ],
+  [
+    "번호 (빈칸 또는 0=취소): ",
+    "Number (blank or 0=cancel): "
+  ],
+  [
+    "능력치 번호를 확인하세요.",
+    "Check the stat number."
+  ],
+  [
+    "{0} 레벨",
+    "{0} level"
+  ],
+  [
+    "{0} 변경",
+    "Change {0}"
+  ],
+  [
+    "{0} 최종 칸 수",
+    "{0} final slot count"
+  ],
+  [
+    "{0} {1}칸 설정",
+    "Set {0} to {1} slots"
+  ],
+  [
+    "생성 보너스는 성장 판정에서 레벨에서 차감되기도 합니다. +5는 6성 순정 생성 최대이며 엔진 절대 상한은 아닙니다.",
+    "Creation bonuses may be subtracted from levels during growth checks. +5 is the stock grade 6 creation maximum, not an absolute engine limit."
+  ],
+  [
+    "레벨 50 / 보너스 +50은 차감 결과가 0입니다. 순정 범위 초과의 전체 경로가 검증되지 않아 현재 도구는 순정 생성값만 허용합니다.",
+    "Level 50 minus bonus +50 equals zero. Since all paths beyond stock ranges are unverified, this tool currently permits only stock creation values."
+  ],
+  [
+    "m. 6개 보너스를 등급별 최대값으로 / a. 6개를 같은 값으로 / 1~6. HP·STR·DEX·VIT·STM·LUK 중 하나",
+    "m. Grade maximum for all six bonuses / a. Same value for all six / 1–6. One of HP/STR/DEX/VIT/STM/LUK"
+  ],
+  [
+    "선택 (빈칸 또는 0=취소): ",
+    "Select (blank or 0=cancel): "
+  ],
+  [
+    "보너스 항목을 확인하세요.",
+    "Check the bonus selection."
+  ],
+  [
+    "생성 보너스",
+    "Creation bonus"
+  ],
+  [
+    "생성 보너스 설정",
+    "Set creation bonuses"
+  ],
+  [
+    "메뉴 번호를 확인하세요.",
+    "Check the menu number."
+  ],
+  [
+    "위 내용으로 적용할까요?",
+    "Apply the changes above?"
+  ],
+  [
+    "취소했습니다. 파이터 메뉴로 돌아갑니다.",
+    "Cancelled. Returning to the fighter menu."
+  ],
+  [
+    "\n설정할 수 없습니다: {0}",
+    "\nCannot apply settings: {0}"
+  ],
+  [
+    "{0}: 추가 레벨은 0 이상의 정수여야 합니다.",
+    "{0}: Additional level must be a non-negative integer."
+  ],
+  [
+    "{0}: DB 단계별 용량이 감소합니다.",
+    "{0}: DB capacity decreases between stages."
+  ],
+  [
+    "파이터 클래스·등급 정보를 확인할 수 없습니다.",
+    "Cannot determine fighter class/grade."
+  ],
+  [
+    "선택한 파이터의 연속된 DB 상한 정보가 없습니다.",
+    "No contiguous DB limit data for the selected fighter."
+  ],
+  [
+    "{0}의 유효한 DB 능력치 데이터가 없습니다.",
+    "No valid DB stat data for {0}."
+  ],
+  [
+    "{0}: DB 용량 정보가 올바르지 않습니다.",
+    "{0}: Invalid DB capacity information."
+  ],
+  [
+    "{0} 값 {1}은(는) 순정 보너스 범위({2})에 없습니다. DB 최대 설정으로 함께 정리하세요.",
+    "{0} value {1} is outside the stock bonus range ({2}). Normalize it with DB maximum settings."
+  ],
+  [
+    "{0} 레벨 {1}의 유효한 데이터가 없습니다 (DB 최대 {2}).",
+    "No valid data for {0} level {1} (DB maximum {2})."
+  ],
+  [
+    "{0} +{1} → 판정 레벨 {2}: 유효한 DB 용량 데이터가 없습니다 (추가 최대 +{3}). DB 최대 설정으로 함께 정리하세요.",
+    "{0} +{1} → evaluated level {2}: no valid DB capacity data (additional maximum +{3}). Normalize it with DB maximum settings."
+  ],
+  [
+    "한계돌파 판정 레벨 {0}의 DB 데이터가 없습니다.",
+    "No DB data for evaluated limit-break level {0}."
+  ],
+  [
+    "변경 후 총 레벨 {0}의 경험치 데이터가 현재 DB에 없습니다.",
+    "Current DB lacks EXP data for the resulting total level {0}."
+  ],
+  [
+    "6성 가방 DB 형식이 예상과 다릅니다. 변경하지 않습니다.",
+    "Unexpected grade 6 bag DB format. No changes made."
+  ],
+  [
+    "가방 +50 적용값이 정수 저장 범위를 초과합니다.",
+    "Adding 50 bag slots exceeds the integer storage range."
+  ],
+  [
+    "가방 확장은 지원되는 6성 클래스에만 적용할 수 있습니다.",
+    "Bag expansion applies only to supported grade 6 classes."
+  ],
+  [
+    "가방 패치 기록과 현재 DB가 다릅니다. 자동 변경을 중단했습니다.",
+    "Bag patch record differs from current DB. Automatic changes stopped."
+  ],
+  [
+    "게임을 완전히 종료한 뒤 가방 DB를 변경하세요.",
+    "Close the game completely before changing the bag DB."
+  ],
+  [
+    "백업 중 DB가 변경됐습니다. 중단했습니다.",
+    "DB changed during backup. Stopped."
+  ],
+  [
+    "가방 패치 상태가 변경됐습니다.",
+    "Bag patch state changed."
+  ],
+  [
+    "가방 단계 수정 건수가 다릅니다.",
+    "Unexpected number of updated bag stages."
+  ],
+  [
+    "가방 용량 수정 건수가 다릅니다.",
+    "Unexpected number of updated bag capacities."
+  ],
+  [
+    "가방 결과 검증 실패",
+    "Bag result verification failed"
+  ],
+  [
+    "DB 무결성 검증 실패",
+    "DB integrity verification failed"
+  ],
+  [
+    "장비 스피리튬 DB 구조가 예상과 다릅니다.",
+    "Unexpected equipment SPLithium DB structure."
+  ],
+  [
+    "장비 스피리튬 비용 정의가 비었거나 유효하지 않습니다.",
+    "Equipment SPLithium cost definitions are empty or invalid."
+  ],
+  [
+    "게임을 완전히 종료한 뒤 장비 스피리튬 비용을 변경하세요.",
+    "Close the game completely before changing equipment SPLithium costs."
+  ],
+  [
+    "현재 DB와 백업의 장비 목록이 달라 복원을 중단했습니다.",
+    "Equipment lists differ between current DB and backup; restore stopped."
+  ],
+  [
+    "스피리튬 비용을 읽은 뒤 DB가 변경됐습니다.",
+    "DB changed after SPLithium costs were read."
+  ],
+  [
+    "스피리튬 비용 수정 건수가 다릅니다: {0}",
+    "Unexpected SPLithium cost update count: {0}"
+  ],
+  [
+    "스피리튬 비용 결과 검증 실패",
+    "SPLithium cost result verification failed"
+  ],
+  [
+    "복원할 스피리튬 전용 백업을 지정하세요.",
+    "Specify a dedicated SPLithium backup to restore."
+  ],
+  [
+    "자칼 옵션은 spawn 또는 blueprints여야 합니다.",
+    "Jackal option must be spawn or blueprints."
+  ],
+  [
+    "자칼 DB 또는 패치 기록의 대상 목록이 다릅니다.",
+    "Jackal DB or patch record target list mismatch."
+  ],
+  [
+    "자칼 설정에 유효하지 않은 값이 있습니다.",
+    "Invalid values in Jackal settings."
+  ],
+  [
+    "자칼 등장 시간/확률 범위가 예상과 다릅니다.",
+    "Unexpected Jackal spawn time/probability range."
+  ],
+  [
+    "자칼 드랍 가중치 합계 또는 청사진 정의가 예상과 다릅니다.",
+    "Unexpected Jackal drop weight total or blueprint definitions."
+  ],
+  [
+    "자칼 패치 기록과 현재 DB가 다릅니다. 덮어쓰지 않고 중단했습니다.",
+    "Jackal patch record differs from current DB. Stopped without overwriting."
+  ],
+  [
+    "드랍 비중을 배분할 원본 항목이 없습니다.",
+    "No original entries available for drop-weight allocation."
+  ],
+  [
+    "첫 자칼 대기는 1~300초로 입력하세요.",
+    "First Jackal wait must be 1–300 seconds."
+  ],
+  [
+    "청사진 비중은 50, 80, 100 중 선택하세요.",
+    "Select blueprint weight 50, 80 or 100."
+  ],
+  [
+    "게임을 완전히 종료한 뒤 자칼 옵션을 변경하세요.",
+    "Close the game completely before changing Jackal options."
+  ],
+  [
+    "백업 중 DB가 변경됐습니다.",
+    "DB changed during backup."
+  ],
+  [
+    "자칼 설정이 작업 중 변경됐습니다.",
+    "Jackal settings changed during the operation."
+  ],
+  [
+    "자칼 수정 건수가 다릅니다.",
+    "Unexpected Jackal update count."
+  ],
+  [
+    "자칼 결과 검증 실패",
+    "Jackal result verification failed"
+  ],
+  [
+    "M2G 나이프 DB 형식 또는 배율이 예상(100/200)과 다릅니다. 덮어쓰지 않고 중단했습니다.",
+    "Unexpected M2G knife DB format or multiplier (expected 100/200). Stopped without overwriting."
+  ],
+  [
+    "M2G 복원 기록이 중복됐습니다.",
+    "Duplicate M2G restore records."
+  ],
+  [
+    "M2G 패치 기록과 현재 배율이 다릅니다. 덮어쓰지 않고 중단했습니다.",
+    "M2G patch record differs from current multiplier. Stopped without overwriting."
+  ],
+  [
+    "M2G 적용/복원 모드가 올바르지 않습니다.",
+    "Invalid M2G apply/restore mode."
+  ],
+  [
+    "게임을 완전히 종료한 뒤 변경하세요.",
+    "Close the game completely before making changes."
+  ],
+  [
+    "백업 중 게임이 실행됐습니다. 게임을 종료하세요.",
+    "Game started during backup. Close the game."
+  ],
+  [
+    "작업 중 M2G DB가 변경됐습니다.",
+    "M2G DB changed during the operation."
+  ],
+  [
+    "M2G 수정 건수가 다릅니다.",
+    "Unexpected M2G update count."
+  ],
+  [
+    "M2G 결과 검증 실패",
+    "M2G result verification failed"
+  ]
+]

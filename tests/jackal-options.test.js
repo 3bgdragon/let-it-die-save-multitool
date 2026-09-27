@@ -87,7 +87,7 @@ test('missing rows and invalid weight totals are rejected, trigger errors roll b
 
 test('menu defaults, manual values and independent restoration route correctly',async()=>{
   const source=fs.readFileSync(path.join(__dirname,'../lid-kc.js'),'utf8'),calls=[];
-  const context=vm.createContext({console:{log(){}},require:()=>({status:()=>({applied:true,rows:[]}),change:(...args)=>{calls.push(args);return {changed:false};}}),getMasterDatabasePath:()=>'/test.db',isGameRunning:()=>false,createMasterDatabaseBackup:()=>'/backup',confirm:async()=>true,fail:message=>{throw Error(message);}});
+const context=vm.createContext({tr:require('../language').message,console:{log(){}},require:()=>({status:()=>({applied:true,rows:[]}),change:(...args)=>{calls.push(args);return {changed:false};}}),getMasterDatabasePath:()=>'/test.db',isGameRunning:()=>false,createMasterDatabaseBackup:()=>'/backup',confirm:async()=>true,fail:message=>{throw Error(message);}});
   vm.runInContext(source.slice(source.indexOf('async function manageJackalOption('),source.indexOf('function setCollisionMushroomThirtyMinutes(')),context);
   const rl={question:async()=>''};
   await context.manageJackalOption(rl,null,'spawn');await context.manageJackalOption(rl,null,'blueprints');

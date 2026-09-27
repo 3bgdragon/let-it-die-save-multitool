@@ -17,6 +17,6 @@ exit /b 1
 "%NODE_EXE%" --no-warnings "%~dp0lid-kc.js" %*
 set "TOOL_EXIT_CODE=%ERRORLEVEL%"
 echo.
-if not "%TOOL_EXIT_CODE%"=="0" echo 오류가 발생했습니다. 위 안내를 확인한 뒤 다시 실행하세요.
+if not "%TOOL_EXIT_CODE%"=="0" echo Error / 오류: Review the message above before retrying. 위 안내를 확인한 뒤 다시 실행하세요.
 pause
 exit /b %TOOL_EXIT_CODE%

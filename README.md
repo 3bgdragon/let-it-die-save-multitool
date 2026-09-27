@@ -1,314 +1,45 @@
-# LET IT DIE 세이브 멀티툴
+# LET IT DIE Save Multitool
 
-## v5.9.1 — 새 세이브 폴더 구조 대응
+[English](README.md) | [한국어](README.ko.md)
 
-- `Savedata/스팀ID/brggame.sav` 자동 탐색 및 파일·계정 폴더 직접 지정 지원.
-- 기존 `Savedata/스팀ID.sav`도 지원하며, 여러 세이브가 있으면 선택합니다.
-- 새 구조에서 게임 DB 위치를 찾고, 계정별 백업을 구분합니다.
-- 기존 블러드늄 상점 구매 재고 복구(16번)는 유지합니다.
+Offline save and master-database editor: resources, fighter configuration, decals, recipes, research costs, Jackal options and M2G knife damage compensation.
 
-## v5.9.0 — M2G 계열 나이프 피해 보정
+## Requirements
 
-- **33번: M2G 나이프 피해 보정** — 일반 M2G와 FireFly 나이프 전용 `master_atk_scale.scale` 두 항목을 **100 → 200**으로 설정합니다. 이는 50% 하락을 상쇄하는 2배 배율 보정이며, 온라인판 원본 DB와 대조한 완전 복원은 아닙니다. 방어력·데칼에 따라 화면에 표시되는 최종 피해량은 정확히 2배가 아닐 수 있습니다.
-- **34번: 나이프 배율만 복원** — 최초 적용 전 두 값을 복원하며 다른 DB 패치를 유지합니다. 매 변경 전 전체 DB도 백업합니다. 반복 적용해도 400·800으로 누적되지 않습니다.
-- 다른 탄종·레이지 공격, 무기 기본 공격력, 탄약 소비·내구도 소비는 변경하지 않습니다. 공통 공격 정의를 쓰는 적의 나이프에도 영향을 줄 수 있으며, 플레이어 전용 보정이 아닙니다. 세이브·실행 파일·UPK는 건드리지 않습니다.
-- **나이프만 발사하는 옵션은 추가하지 않았습니다.** DB의 다른 탄종 구간을 0으로 만들면 동일 탄종 연속 발사 제한을 해제할 수 없어 조준 중 첫 발 이후 막힐 수 있습니다. 숙련도 1·6 단계의 나이프 구간도 스크립트에서 0으로 지정됩니다. 온전한 전용 발사는 DB 외의 수정이 필요합니다.
+- Steam offline edition of LET IT DIE on Windows.
+- Node.js 22.5 or newer. No npm install is needed for normal use.
+- Support is determined by file/schema checks, not just the displayed game version. Never bypass an unsupported-file error.
 
-게임 종료 후 적용하고 다시 실행하세요. 자동 테스트·설치 DB 복사본 검증 대상이며, 실게임 피해량은 별도 확인이 필요합니다. CLI: `node lid-kc.js m2g-knife-compensate` / `node lid-kc.js m2g-knife-restore` (`--game`, `--master`, `--save`, `--yes` 지원).
+## Installation
 
-분석 근거와 DB 전용 구현 범위: [M2G 분석 기록](docs/m2g-knife-analysis.md).
+1. Use **Code → Download ZIP**, then extract the archive.
+2. Back up your save separately and close the game completely.
+3. Run `run-en.bat` for English, or use `run.bat --lang ko` for Korean. If Windows denies Steam-folder write access, run the launcher as administrator.
+4. Read confirmations carefully and keep every backup created by the tool.
 
-## v5.8.0 — 자칼 첫 등장 단축 / 청사진 추첨 비중
+Command-line entry: `node --no-warnings lid-kc.js --lang en`. Use `--lang ko` for Korean. Language options do not change save fields or DB values.
 
-- **29번: 자칼 첫 등장 단축** — 기본 10초, 1~300초 선택. 일반·각성·리본의 첫 등장 대기와 첫 확률 검사(100%)만 변경합니다. 적 처치, 등장 가능 층, 게임 진행 조건, 유효한 스폰 위치가 여전히 필요하므로 정확히 10초에 무조건 등장하는 기능은 아닙니다. 후속 자칼 간격과 확률은 그대로입니다.
-- **30번: 첫 등장 설정만 복원** — 최초 적용 전 6개 설정을 복원합니다.
-- **31번: 청사진 추첨 비중** — 50/80/100%, 기본 80%. 원래 청사진 드랍이 있는 X/Y/Z 및 XXX/YYY/ZZZ 6종만 대상으로 합니다. 원본 무기/방어구 청사진 비율을 유지하며 해당 자칼의 다른 보상 비중을 줄입니다. 나머지 자칼 종류는 변경하지 않습니다.
-- **32번: 청사진 비중만 복원** — 최초 적용 전 가중치를 복원합니다.
+## Important behavior
 
-두 옵션은 독립적으로 적용·복원됩니다. 매 변경 전에 전체 DB 안전 백업을 생성하지만, 메뉴 복원은 해당 옵션의 열만 되돌려 다른 패치를 보존합니다. 패치 기록과 현재 값이 다르면 덮어쓰지 않고 중단합니다. 세이브, 실행 파일, UPK는 변경하지 않습니다.
+Edits saves and selected masters.db settings. Fighter DB limits depend on class, grade and limit break; stat levels are not direct HP/attack values. Material-free and Splithium-free research are separate options. This tool does not implement M2G knife-only firing.
 
-청사진 100%는 DB의 보상 추첨 가중치를 모두 기존 청사진 항목에 배분한다는 뜻입니다. **미보유 청사진 보장이나 실게임에서 측정한 드랍률이 아닙니다.** 적용 후 게임을 다시 실행하고 새로 층에 진입하세요. 보상은 층 진입 시 생성될 수 있습니다. 자동 테스트와 설치 DB 복사본 검증 대상이며, 실제 등장 시간·보상은 게임에서 확인해야 합니다.
+## Backups and compatibility
 
-CLI: `jackal-spawn-fast [초]`, `jackal-spawn-restore`, `jackal-blueprints [50|80|100]`, `jackal-blueprints-restore`. 예: `node lid-kc.js jackal-spawn-fast 10 --game "설치 폴더" --yes`. 기존 `--save`, `--master`도 지원합니다.
+Do not delete an older tool folder until its backups have been preserved. Backups are local files, not stored on GitHub. Restoring game files does not undo purchased items, spent currency or subsequent save changes. Compatibility with every other mod or installation order is not guaranteed.
 
-## v5.7.0 — 스피리튬 비용만 무료화하는 별도 옵션
+## Translation status
 
-기존 **23번 재료 필요량 0**은 변경하지 않았습니다. 스피리튬을 소비하며 강화하고 싶다면 23번만 사용하세요.
+All 34 main-menu options, fighter submenus, confirmations and tool-generated runtime errors support English and Korean (884 translated messages). Paths, item IDs and player-entered names are preserved. The tool does not translate the game itself. Historical release notes remain in the [Korean guide](README.ko.md). Translation does not add support for new game builds.
 
-- **27번: 장비 개발·강화 스피리튬 비용만 0** — 재료 수량·킬코인·연구 시간·강화 단계는 유지합니다.
-- **28번: 스피리튬 비용만 복원** — 스피리튬 전용 백업에서 비용만 복원합니다. 재료 무료화나 다른 DB 패치는 유지됩니다.
-- 재료와 스피리튬을 모두 무료로 하려면 **23번과 27번을 각각 적용**하세요. 이미 재료 무료화를 적용했다면 27번만 추가로 실행하면 됩니다.
+For support, include tool version, game build, exact error and relevant logs. Avoid publishing your entire save or unnecessary account identifiers.
 
-CLI: `node lid-kc.js equipment-spirit-free` / `node lid-kc.js equipment-spirit-restore [백업 경로]`. 기존 `--game`, `--master`, `--save`, `--yes` 옵션도 사용할 수 있습니다. 변경 전 DB를 자동 백업하고 스피리튬 백업과 재료 백업을 구분합니다. 복원은 선택한 백업 시점의 스피리튬 비용으로 돌아갑니다.
+## Menu groups
 
-수정 열은 `master_part_research.craft_spirit`, `lvup_spirit` 두 개뿐입니다. NULL은 보존하고 강화 증가 계수·간격(`lvup_spirit_c`, `lvup_spirit_add_lv`)은 건드리지 않습니다. +5부터 시작하도록 연구 단계를 건너뛰는 기능은 아닙니다. 실제 게임의 비용 표시·소비는 별도 확인이 필요합니다.
+- **1–3:** fighter settings, valid DB maximum upgrades, level-50 preparation and DB restoration. The preview shows actual decal/bag capacities and creation bonuses; bonuses are not the same as stat levels.
+- **4–8:** Kill Coins, SPLithium, Bloodnium and facility levels.
+- **9–13:** equipment R&D, KAMAS RE, weapon mastery and blueprint unlocks.
+- **14–16:** decals, golden animals and purchased Bloodnium shop stock restoration.
+- **17–24, 27–34:** mushroom/decal effects, independently removable material/SPLithium costs, Jackal timing/blueprint weights and M2G knife damage compensation.
+- **25–26:** save backup and restoration. **0:** exit.
 
-## v5.6.0 — 가방 실제 용량 +50칸 및 보너스 설명 수정
-
-`1. 캐릭터 강화 / 직접 설정` → 6성 파이터 선택 → `5. 가방 실제 용량 +50칸 / 복원`을 추가했습니다. 같은 6성 클래스 전체(적 포함)의 DB 가방 용량에 공통 적용됩니다. 예를 들어 올라운더 최대 가방은 36→86칸이 됩니다. 세이브의 가방 확장 단계 +12를 +50으로 바꾸지 않습니다. DB의 단계별 용량과 유효한 가방 수치에 각각 50을 더해 단계 간 차이와 DB 환산 레벨을 유지합니다. 0인 미사용 행은 그대로 두며 능력치·데칼·분노·경험치는 변경하지 않습니다.
-
-재적용해도 +50이 중복되지 않습니다. 변경 전 DB 전체 백업을 만들고, 별도 패치 기록을 이용해 가방 열만 복원하므로 다른 데칼·능력치 패치는 유지됩니다. 패치 기록과 DB가 다르면 자동 변경을 중단합니다. 복원 전에는 해당 클래스 파이터들의 가방을 기존 용량 이내로 비우세요. DB 상한 전체 백업 복원은 이 가방 패치도 되돌릴 수 있습니다. Steam 업데이트 후에는 적용 상태를 다시 확인하세요. 실제 게임의 표시 및 수납 동작은 별도 실게임 검증이 필요합니다.
-
-**보너스 +5는 6성 순정 생성 최대값이지 엔진 절대 상한이 아닙니다.** 현재 실행 파일의 능력치 조회는 레벨별 DB 행을 읽으며, 보너스는 일부 성장 판정에서 레벨에서 차감됩니다. 레벨 50 / 보너스 +50이면 차감값이 0이므로 +50을 별도의 공격력 증가로 간주할 수 없습니다. +5 초과값의 모든 사용 경로는 검증되지 않아 이 버전에서는 순정 생성값 검증을 유지하고, UI에 그 이유를 명확히 표시합니다.
-
-확인 근거: 현재 실행 파일의 `GetBodyStatus` 구현(`0x140fa1570`)은 여섯 능력치 레벨로 DB를 조회합니다. `BrgDatabase._GetBodyLvlWithoutBonusInner`는 여섯 보너스를 각각 레벨에서 차감하며, `_GetLimitBreakByBodyLvl`은 조건에 따라 이 값을 사용합니다. 여기서 +5 초과를 즉시 차단하는 것은 확인되지 않았지만, 이것만으로 +50의 모든 경로가 정상이라고 결론내릴 수는 없습니다. 자동 테스트 18개와 실제 DB 복사본의 적용·복원 비교를 통과했습니다.
-
-## v5.5.5 — 파이터 기본 화면에 보너스 표시
-
-파이터를 선택하면 능력치 레벨 바로 아래에 HP·STR·DEX·VIT·STM·LUK의 현재 생성 보너스를 각각 표시합니다. 등급별 허용값과 `3. 직접 설정 → 5. 생성 보너스` 변경 경로도 함께 안내합니다. 표시만 개선하며 보너스 저장값이나 허용 범위는 변경하지 않습니다.
-
-## v5.5.4 — 스페이드 여왕 입력 제한 해제
-
-스페이드 여왕의 기존 `+5,000%` / `166배` 입력 제한을 제거했습니다. 메뉴와 CLI 모두 더 큰 값을 입력할 수 있습니다. 정수 저장 범위인 `+1% ~ +2,147,483,647%` 검증은 유지합니다. 이는 게임에서 안전하게 계산되는 데미지 범위를 뜻하지 않습니다. 큰 값은 데미지·레이지 계산 이상을 일으킬 수 있으며 게임 엔진의 연산 한계는 변경하지 않습니다.
-
-`queen-spades 100000%`는 공격력 증가 효과를 +100,000%로, `queen-spades 1000x`는 기본 효과 +30%의 1,000배인 +30,000%로 설정합니다. 최종 데미지의 배율과는 다릅니다. 기존 `extreme` 빠른 설정은 +1,000%, `restore`는 +30%로 유지합니다. 수정 전 DB 백업과 다른 효과 보존도 그대로입니다.
-
-## v5.5.3 — 캐릭터 메뉴 간소화
-
-메인 메뉴 **1. 캐릭터 강화 / 직접 설정**에서 대상을 고르면 다음 메뉴가 나옵니다.
-
-1. **DB 최대 강화**: 현재 DB에서 가장 강한 설정. 능력치·데칼·가방·분노를 함께 설정하고 잘못된 생성 보너스를 정리합니다.
-2. **순정 최대 설정**: 6성 능력치는 45 이하로 설정합니다. 슬롯·가방도 함께 맞춥니다.
-3. **직접 설정**: 능력치 전체 또는 하나, 데칼·가방·분노 칸 수, 생성 보너스를 선택합니다.
-4. **상세 정보**: DB 경로, 한계돌파 판정, 저장된 추가 레벨 등 자세한 내용을 확인합니다.
-
-데칼은 `9칸`, 가방은 `36칸`처럼 **최종 칸 수**를 입력합니다. 적용 전에 현재 → 적용 후를 보여주고 한 번 확인합니다. 취소하면 캐릭터 메뉴로 돌아갑니다. DB 최대 강화의 계산과 저장 검증은 v5.5.2와 동일합니다.
-
-메인 메뉴 **2. Lv.50 강화 준비 / 슬롯 상한 정리**는 게임 DB를 수정하는 별도 기능입니다. 이후 메인 메뉴 1에서 캐릭터에 DB 최대 강화를 적용하세요. 실제 캐릭터 총 레벨이 500으로 설정된다는 뜻은 아닙니다.
-
-## v5.5.2 — 업데이트 후 파이터 DB 최대 강화 수정
-
-다운로드본 552ff91을 기준으로 수정했습니다. 게임은 주 능력치뿐 아니라 슬롯·가방·분노의 추가 레벨을 DB 레벨로 환산하여 한계돌파 단계를 판정합니다. 기존 가방 `+50`은 현재 확장 DB에서 레벨 `88`로 환산되지만 해당 행이 없어 정상 판정할 수 없습니다. 경험치 표만 500까지 늘려도 이 문제는 해결되지 않습니다.
-
-- **DB 최대 강화는 유지합니다.** 저장된 과거 한계돌파 단계에 제한하지 않고, 클래스·등급의 실제 최고 단계 DB 행을 사용합니다. 유효한 46~50 행이 있는 확장 DB에서는 주 능력치 50을 적용합니다.
-- DB 최대 메뉴는 슬롯·가방·분노도 유효한 최대값으로 함께 설정합니다. 6성 올라운더의 현재 확장 DB 기준 주 능력치 50, 슬롯 +4(9칸), 가방 +12(36칸), 분노 +0입니다. 잘못된 보너스 값은 생성 가능한 최대값으로 정리하며 모든 변경은 확인 화면에 표시합니다.
-- 게임의 단계 판정은 능력치에서 계산합니다. 세이브의 과거 `limit_break` 기록을 임의로 덮어쓰지 않습니다. 상세 화면에 계산 결과와 저장 기록을 구분합니다.
-- 보너스만 또는 가방만 변경해도 저장 전에 전체 조합을 검증합니다. 보너스 +50을 다시 허용하지는 않습니다. 순정 상한 초과가 0 스탯의 직접 원인으로 입증된 것은 아니며, 이번에 확인한 실패 경로는 가방의 DB 환산입니다.
-- 500레벨 DB 패치는 데칼 슬롯을 15칸으로 늘리지 않고 9칸으로 설정합니다. DB 패치를 다시 실행하면 이전 15칸 설정도 정리합니다.
-
-게임을 종료하고 `run.bat` → **캐릭터 강화 / 직접 설정** → 대상 선택 → **1. DB 최대 강화**를 실행하세요. DB 최대 메뉴는 세이브만 수정합니다. Steam 업데이트로 46~50 행이 사라진 경우에는 먼저 별도 **Lv.50 강화 준비** 메뉴를 적용해야 50이 선택됩니다. 저장 전에 백업이 생성됩니다.
-
-회귀 테스트와 설치된 DB를 이용한 읽기 전용 검증을 통과했습니다. 실제 게임 표시와 동작은 적용 후 재확인이 필요합니다. 아래 과거 변경 기록의 가방 +50, 슬롯 15칸 관련 설명은 이 버전부터 적용되지 않습니다.
-
-Steam판 LET IT DIE 오프라인 세이브와 로컬 마스터 DB를 안전하게 백업·수정·복원하는 Windows용 멀티툴입니다. 자원 조정, 시설 업그레이드 최대화, 무기 숙련도 최대화, 모든 장비 R&D 연구 최대화(1,262종 한계돌파 완료), 블러드늄 상점 재고 복구, 전체 데칼·황금동물 지급, 기간 한정 또는 모든 장비 레시피 해금, 버섯·데칼 효과 변경, KAMAS RE 연구 완료, 장비 개발·강화 재료 제거 및 캐릭터(파이터) 능력치 레벨 조회·세부 설정을 제공합니다.
-
-> Windows 전용 · LET IT DIE 오프라인판 5.0.1.0 전용 · Node.js 22.5 이상 필요
-
-## 안전 장치
-
-- 게임 실행 중에는 수정을 거부합니다.
-- 수정 전에 원본 세이브를 `backups` 폴더에 자동 보관합니다.
-- 값을 변경하지 않고 현재 세이브만 즉시 백업할 수 있습니다.
-- BRG/ZLIB 구조, 블록 크기, JSON, 수정 결과를 모두 검증합니다.
-- JSON 전체를 다시 직렬화하지 않고 선택한 자원의 숫자 토큰 하나만 교체합니다.
-- 시설 레벨(금고·스피리튬 탱크)을 마스터 DB 최대치인 99로 올리고 한도(2,560,000)를 즉시 활성화합니다.
-- 무기 숙련도 전체(57종 카테고리)를 최대 Lv.20으로 올리고 요구치에 맞게 ABP를 갱신합니다.
-- 모든 장비 연구·개발(R&D 1,262종) 최대치 업그레이드: Steam판 356개 계보의 1,262종 전체 장비에 대해 각 티어별 최대 강화 및 최종 한계돌파(최대 +24강)까지 총 10,600개 연구 단계를 즉시 완료 상태로 적용합니다.
-- 캐릭터(파이터) 능력치 레벨 현황 조회 및 세부 설정: 모든 파이터의 6대 주 능력치(HP, STR, DEX, VIT, STM, LUK), 스킬 슬롯, 데스백 가방 용량, 분노 게이지, 언캡 보너스 현황을 조회하고 인게임 순정 최대치(Lv.45) 일괄 적용, DB 엔진 최대치(Lv.50) 일괄 적용, 직접 지정(1~50), 개별 능력치 세부 설정을 지원하며, 변경 시 총 레벨(`lvl`)을 공식에 맞춰 자동 재계산하여 세이브 무결성을 유지합니다.
-- 블러드늄 상점 재고 복구 시 구매 가능/구매 완료 목록 두 필드만 변경합니다.
-- 전체 데칼 지급 시 마스터 DB에서 검증한 Steam용 데칼 329종을 소유 목록에 각각 한 장씩 추가합니다. 콘솔 전용 중복 데이터 39종은 제외합니다.
-- 황금동물 지급 시 마스터 DB에 정의된 11종을 각각 한 마리씩 코인 보관함에 추가하고, 동물별 보상 버섯 연결까지 함께 생성합니다.
-- 황금동물 11종을 넣을 빈 보관함 칸이 부족하면 세이브를 수정하지 않고 중단합니다.
-- 과거 이벤트·콜라보·시즌 보상으로 배포된 Steam용 기간 한정 레시피 25종을 설계도 습득 상태로 해금합니다. 이미 가진 레시피는 중복 추가하지 않습니다.
-- 기간 한정 레시피는 설치된 `masters.db`에서 Steam 호환 여부와 R&D 정의를 다시 검증합니다. 콘솔 전용 데이터와 R&D 정의가 없는 장비는 제외합니다.
-- 별도 옵션으로 `masters.db`의 Steam용 R&D 계보 시작점 356종을 모두 설계도 습득 상태로 해금할 수 있습니다. 후속 강화 단계는 레시피로 잘못 추가하지 않습니다.
-- 모든 레시피 해금도 기존 보유 항목은 유지하고 없는 항목만 추가하며, 콘솔 전용·비활성 정의는 제외합니다.
-- 충돌버섯과 구운 충돌버섯의 지속시간을 30분(1,800초)으로 변경하거나 기본값(일반 30초 / 구운 것 40초)으로 토글 복구할 수 있습니다.
-- 버섯 효과 변경 전 `masters.db`를 자동 백업하고 SQLite 무결성을 검사합니다.
-- 궁극 파이터의 귀환 데칼의 모든 기본 능력치 증가를 +100%(5배)로 변경하거나 기본값(+20%)으로 토글 복구할 수 있습니다.
-- KAMAS-A1 어설트 라이플 RE 연구를 DB상 최대 강화인 +24로 완료할 수 있습니다.
-- 스페이드 여왕 공격력 증가 효과를 직접 입력하거나 +1,000% 빠른 설정, 기본값 +30% 복원을 사용할 수 있습니다. v5.5.4부터 기존 5,000%/166배 입력 제한을 제거했습니다. 큰 값의 게임 내 연산 안전성을 보장하지 않습니다.
-- 슈퍼 울프(SKL_RGSPDUP_02_P) 및 매드 울프(SKL_RGSPUP_RDURDOWN_01_P) 데칼의 레이지 축적 속도를 +1,000%로 변경하여, 적을 스치기만 해도 분노 게이지가 1~2칸 즉시 충전되도록 강화하거나 기본값(80% / 120%)으로 복구할 수 있습니다.
-- 모든 장비의 개발·제작·강화 기본 재료와 단계별 추가 수량을 0으로 만들 수 있습니다. 재료 ID, 킬코인·스피리튬 비용과 연구 시간은 유지합니다.
-- 장비 재료 변경 전 전용 `masters.db` 백업을 만들며, 복원 시 다른 DB 변경은 유지하고 재료 수량 열만 되돌립니다.
-- 쓰기 실패 시 기존 세이브를 원래 위치로 되돌립니다.
-- 최신 백업을 복원하는 메뉴를 제공합니다.
-- 모든 옵션 실행(대화형 메뉴 및 CLI 명령어) 중 오류 발생 시 `logs/` 폴더에 타임스탬프, 실행 환경, 원인, 상세 스택 트레이스를 포함한 오류 로그 파일(`error-*.log`)을 자동으로 저장합니다.
-
-## 사용법
-
-1. LET IT DIE를 완전히 종료합니다.
-2. [`run.bat`](./run.bat)을 더블클릭합니다.
-3. 원하는 작업 번호를 선택합니다:
-   - **[1. 캐릭터(파이터) 육성 & DB 상한 해제]**: 1 (스탯/슬롯/가방 현황 및 변경), 2 (상한 해제 DB 패치), 3 (순정 DB 복구)
-   - **[2. 보유 자원 및 시설 관리]**: 4 (KC 충전), 5 (SP 충전), 6 (Blood 충전), 7 (자원 직접 입력), 8 (시설 Lv.99)
-   - **[3. 장비 R&D, 무기 숙련도 및 레시피 해금]**: 9 (모든 장비 R&D 최대), 10 (KAMAS RE +24), 11 (무기 숙련도 57종 Lv.20), 12 (기간 한정 레시피 25종), 13 (모든 레시피 356종)
-   - **[4. 데칼, 아이템 및 상점 관리]**: 14 (전체 데칼 329종 지급), 15 (황금동물 11종 수량 지정 지급), 16 (블러드늄 상점 재고 복구)
-   - **[5. 마스터 DB 게임 편의 / 특수 강화 모드]**: 17 (충돌버섯 30분 토글), 18 (궁극 파이터 배율 직접 입력), 19 (스페이드 여왕 안전 배율 직접 입력), 20 (슈퍼·매드 울프 레이지 속도 +1,000% 모드), 21 (장비 재료비 0), 22 (장비 재료비 복원)
-   - **[6. 세이브 백업 및 복원]**: 23 (현재 세이브 백업), 24 (최신 백업 복원), 0 (종료)
-
-도구는 Windows 레지스트리, Steam의 `libraryfolders.vdf`, C~Z 드라이브의 일반적인 Steam 설치 위치를 확인하여 다음 위치의 숫자 이름 `.sav` 파일을 자동 탐색합니다. Steam 본체와 게임 라이브러리가 서로 다른 드라이브에 있어도 찾을 수 있습니다.
-
-```text
-<SteamLibrary>\steamapps\common\LET IT DIE\Savedata\<SteamID64>.sav
-```
-
-자동 탐색이 실패해도 창이 바로 종료되지 않습니다. 표시되는 입력란에 `.sav` 파일을 끌어놓거나 세이브 파일, `Savedata`, `LET IT DIE`, Steam 라이브러리 폴더 중 하나의 경로를 붙여넣으면 됩니다.
-
-세이브 파일을 바탕 화면, 문서, 사진 폴더처럼 게임 밖의 임의 위치로 복사해 사용해도 됩니다. 이 경우 세이브는 입력한 위치에서 읽고 쓰며, 효과·장비 재료 기능에 필요한 `masters.db`는 실제 Steam 게임 설치 경로에서 별도로 찾습니다. 게임 설치 경로까지 자동으로 찾지 못하면 게임 설치 폴더나 `masters.db` 위치를 입력하는 안내가 표시됩니다.
-
-현재 금고와 스피리튬 탱크 레벨이 1~99이면 게임의 `masters.db`에 정의된 정상 보관 한도를 표시합니다. 블러드늄의 알려진 한도는 999,999입니다. 알려진 한도를 넘는 사용자 지정 값은 게임이 잘라내거나 거부할 수 있습니다.
-
-명령줄에서도 사용할 수 있습니다.
-
-```powershell
-node .\lid-kc.js status
-node .\lid-kc.js backup
-node .\lid-kc.js reset-shop
-node .\lid-kc.js grant-all-decals
-node .\lid-kc.js grant-golden-beasts
-node .\lid-kc.js grant-golden-beasts 5
-node .\lid-kc.js grant-limited-recipes
-node .\lid-kc.js grant-all-recipes
-node .\lid-kc.js max-facility
-node .\lid-kc.js max-mastery
-node .\lid-kc.js max-equipment
-node .\lid-kc.js fighters
-node .\lid-kc.js set-fighter-stat 1 max-legit
-node .\lid-kc.js set-fighter-stat 1 max-db
-node .\lid-kc.js set-fighter-stat 1 max-bonus
-node .\lid-kc.js set-fighter-stat 1 bonus 10
-node .\lid-kc.js set-fighter-stat 1 max-slots
-node .\lid-kc.js set-fighter-stat 1 expand-slots
-node .\lid-kc.js set-fighter-stat 1 all 45
-node .\lid-kc.js set-fighter-stat Jamie hp 50
-node .\lid-kc.js collision-30m
-node .\lid-kc.js collision-restore
-node .\lid-kc.js ultimate-fighter 10x
-node .\lid-kc.js ultimate-fighter 100%
-node .\lid-kc.js ultimate-fighter 5x
-node .\lid-kc.js ultimate-fighter restore
-node .\lid-kc.js kamas-re-max
-node .\lid-kc.js queen-spades 10x
-node .\lid-kc.js queen-spades 500%
-node .\lid-kc.js queen-spades extreme
-node .\lid-kc.js queen-spades restore
-node .\lid-kc.js wolf-rage
-node .\lid-kc.js wolf-rage 1000%
-node .\lid-kc.js wolf-rage restore
-node .\lid-kc.js rich-family
-node .\lid-kc.js rich-family max
-node .\lid-kc.js rich-family dur-only
-node .\lid-kc.js rich-family 500 100
-node .\lid-kc.js rich-family restore
-node .\lid-kc.js naomi-detox
-node .\lid-kc.js naomi-detox max
-node .\lid-kc.js naomi-detox 5000%
-node .\lid-kc.js naomi-detox kc-only
-node .\lid-kc.js naomi-detox restore
-node .\lid-kc.js equipment-materials-free
-node .\lid-kc.js equipment-materials-restore
-node .\lid-kc.js max kc
-node .\lid-kc.js max sp
-node .\lid-kc.js max blood
-node .\lid-kc.js set kc 1280000
-node .\lid-kc.js set sp 1280000
-node .\lid-kc.js set blood 999999
-node .\lid-kc.js restore
-```
-
-자동 탐색이 실패하면 `--save`로 경로를 지정합니다.
-
-```powershell
-node .\lid-kc.js status --save "D:\SteamLibrary\steamapps\common\LET IT DIE\Savedata\123456789.sav"
-```
-
-게임 설치 폴더도 Steam이 인식하지 못하는 임의 위치에 있다면 `--game`으로 `LET IT DIE` 폴더를, 또는 `--master`로 DB 파일을 직접 지정할 수 있습니다.
-
-```powershell
-node .\lid-kc.js collision-30m --save "C:\My Saves\123456789.sav" --game "E:\My Games\LET IT DIE"
-node .\lid-kc.js equipment-materials-free --save "C:\My Saves\123456789.sav" --master "E:\My Games\LET IT DIE\BrgGame\Content\masters.db"
-```
-
-## 업데이트 이력 및 공지
-
-### v5.5.1 — 캐릭터 DB 최대 설정 안전성 수정
-
-- `max-db`와 대화형 DB 최대 설정은 더 이상 50을 고정 저장하지 않습니다. 선택한 파이터의 클래스·등급·한계돌파와 현재 DB의 실제 양수 능력치 행을 함께 조회합니다. 현재 순정 DB의 6성 LB4는 최대 45로 계산됩니다.
-- 직접 입력도 저장 전에 검사합니다. 없는 레벨, 0/NULL 더미 능력치, 누락된 총 레벨 경험치 데이터는 백업·저장 전에 차단합니다. DB 파일은 읽기 전용으로 열며 상한 확장 패치를 자동 적용하지 않습니다.
-- 이미 50 또는 0으로 잘못 설정된 주 능력치는 게임 종료 후 해당 파이터의 **DB 최대**를 다시 선택해 유효한 레벨로 맞출 수 있습니다. 확장 가방·슬롯 등으로 총 레벨이 DB 범위를 넘으면 저장하지 않고 안내하므로 해당 설정도 확인하세요. 수정 후 실제 표시 값은 게임에서 재확인해야 합니다.
-- 보너스·다른 자원 편집은 이번 주 능력치 검사 변경의 대상이 아닙니다. 기존 자동 백업·복원은 유지합니다.
-
-### v5.5.0
-- **오프라인 특전 데칼 「나오미 디톡스」(Naomi Detox) 킬코인·스피리튬 획득 배율 조절 및 무한 내구도 지원**:
-  - **배경 및 개요**: 오프라인판 시작 시 기본 제공되는 핵심 파밍 특전 데칼인 ★5 프리미엄 「나오미 디톡스」(`SKL_RESUP_DECDOWN_01_P`, Steam No.324)의 킬코인(KC) 및 스피리튬(SP) 획득 배율을 원하는 수준으로 대폭 증폭할 수 있는 기능을 마스터 DB(`masters.db`) 패치로 신규 지원합니다.
-  - **무한 내구도 동시 지원**: 엔진 내부적으로 「부유한 가족」과 동일한 `SKLTP_RESOURCEUP_DECDURDOWN` 타입을 공유하므로, 장비 내구도 감소 방지율을 100%로 설정하여 **나오미 디톡스 하나만으로 킬코인 대폭 획득 + 무기/방어구 무한 내구도**를 동시에 달성할 수 있습니다. (내구도 손실 없는 순수 킬코인 파밍 모드도 완벽 지원)
-  - **대화형 메뉴(22번) 및 CLI 지원**:
-    - `node .\lid-kc.js naomi-detox` (단축어: `detox`): [추천] 킬코인·SP +500% + 무한 내구도(100%) 원클릭 적용
-    - `node .\lid-kc.js naomi-detox max`: [극대] 킬코인·SP +1,000% + 무한 내구도(100%) 적용
-    - `node .\lid-kc.js naomi-detox 5000%` (또는 `farm`): [파밍 특화] 킬코인·SP +5,000% + 무한 내구도(100%) 적용
-    - `node .\lid-kc.js naomi-detox kc-only [수치]`: 내구도 변경 없이 킬코인·SP 배율만 상향 (내구도 0% 유지)
-    - `node .\lid-kc.js naomi-detox <수치> [내구도]`: 사용자 직접 입력 (예: `naomi-detox 2000 100`)
-    - `node .\lid-kc.js naomi-detox restore` (또는 `detox-restore`): 기본값(킬코인·SP +50% / 내구도 0%) 원상 복구
-  - **대화형 메뉴 26개 옵션 체계화**:
-    - 21번: 부유한 가족 효과 조절 및 무한 내구도
-    - 22번: 나오미 디톡스 (오프라인 특전) 효과 조절 및 무한 내구도
-    - 23번: 모든 장비 R&D 개발·강화 재료 무료화
-    - 24번: 장비 재료 비용 복원
-    - 25번: 현재 세이브 백업
-    - 26번: 최신 세이브 복원
-
-### v5.4.0
-- **「부유한 가족」(Rich Family) 데칼 수치 조절 및 장비 무한 내구도 지원**:
-  - **기능 개요**: ★5 프리미엄 데칼 「부유한 가족」(`SKL_RESUP_DECDOWN_P`, Steam No.296)의 자원 획득량 증가 배율과 장비 내구도 감소 완화율을 마스터 DB(`masters.db`)에서 직접 조절할 수 있는 기능을 추가했습니다.
-  - **무한 내구도 구현**: 게임 엔진 내부 정의에 따라 내구도 손실 완화율(`val3`~`val5`)을 100%로 설정하면, 타격 시 무기 내구도 소모 및 피격 시 머리/상의/하의 방어구 내구도 소모가 100% 방지되어 인게임에서 **완전한 무한 내구도** 상태가 적용됩니다.
-  - **자원 수집량 대폭 상향**: 킬코인(KC), 스피리튬(SP), 경험치(EXP), 무기 숙련도(ABP), 체력 회복량, 보물상자 보상 증가율(`val0`~`val2`)을 기본 +20%에서 사용자가 원하는 수치(추천 +500%, 극대 +1,000%)로 자유롭게 증폭할 수 있습니다.
-  - **대화형 메뉴(21번) 및 CLI 지원**:
-    - `node .\lid-kc.js rich-family`: [추천] 자원 +500% + 무한 내구도(100%) 원클릭 적용
-    - `node .\lid-kc.js rich-family max`: [극대] 자원 +1,000% + 무한 내구도(100%) 적용
-    - `node .\lid-kc.js rich-family dur-only`: 자원 기본(+20%) 유지 + 무한 내구도(100%) 적용
-    - `node .\lid-kc.js rich-family <자원수치> [내구도수치]`: 수치 직접 지정 (예: `rich-family 500 100`)
-    - `node .\lid-kc.js rich-family restore` (또는 `rich-family-restore`): 기본값(자원 +20% / 내구도 20%) 원상 복구
-
-### v5.3.2
-- **대화형 메뉴 데칼 지급(14번) 및 자원 관리(6·7번) ReferenceError 긴급 수정**:
-  - **원인**: 대화형 메뉴 14번(Steam용 전체 데칼 지급) 실행 시 내부 함수명이 `getSteamDecalDefinitions` 및 `getDecalStockSummary`로 잘못 호출되어 `ReferenceError: getSteamDecalDefinitions is not defined` 예외가 발생하던 문제를 수정했습니다.
-  - **조치**: 실제 구현된 정규 함수 `getAllDecalDefinitions(savePath)` 및 `getDecalStock(save)`로 바인딩을 교정하고, 정적 호출 검사를 통해 자원 직접 수정 메뉴에서 잠재적 오류를 유발할 수 있던 `getResourceAmount` 헬퍼 함수를 신규 구현하여 안정성을 확보했습니다.
-
-### v5.3.1
-- **파이터 등급별 데칼 슬롯 동적 계산 및 안내 개선**:
-  - **원인 및 배경**: 파이터의 기본 데칼 슬롯은 등급(1성: 1칸 ~ 5/6성: 5칸, 스킬 마스터: 최대 9칸)에 따라 결정되며, 한계돌파(언캡)로 추가되는 슬롯은 최대 +4칸입니다. 이전 버전에서는 파이터 등급과 무관하게 '총 9칸'으로 고정 표기되어 있어, 1성 파이터(기본 1칸 + 언캡 4칸 = 총 5칸) 적용 시 인게임 3×3 UI의 나머지 4개 슬롯이 미해금(X 표시) 상태로 잠겨 있는 것을 버그로 오인하는 문제가 있었습니다.
-  - **등급별 동적 계산 적용**: 선택한 파이터의 등급(Grade)과 타입(Type)을 자동으로 감지하여 기본 슬롯 수와 최대 확장 슬롯 수를 정확히 계산하도록 전면 개선했습니다.
-    - 일반 파이터: 1성(기본1 + 최대4 = 총5칸), 2성(총6칸), 3성(총7칸), 4성(총8칸), 5/6성(총9칸)
-    - 스킬 마스터: 1성(총6칸), 2성(총7칸), 3성(총8칸), 4~6성(총9칸)
-  - **인게임 X 표시 안내 추가**: 1~4성 파이터의 경우 게임 엔진 한계로 인해 총 슬롯이 9칸 미만이며, 3×3 데칼 UI의 나머지 공간은 인게임에서 정상적으로 X 표시된다는 사전 안내 및 주의 문구를 보강했습니다.
-  - **CLI 및 대화형 UI 일치**: `fighters`, `set-fighter-stat`, 상세 현황 및 변경 완료 요약 화면에서 해당 파이터의 기본 칸수와 총 칸수가 정확히 표시되도록 수정했습니다.
-
-### v5.3.0
-- **레이지 게이지 32비트 연산 오버플로 방지 및 안전 극대치 적용**:
-  - **원인 분석**: 스페이드 여왕 극단화(+10,000%) 등으로 단일 타격 수치가 수십만을 초과할 경우, 언리얼 엔진 내부 게이지 획득 공식 `(Damage * GaugeRate / Factor)` 연산 과정에서 부호 있는 32비트 정수(Int32: 2,147,483,647) 한계를 초과하여 음수 래핑(Wrap-around) 및 엔진 안전 코드에 의한 0 클램핑(Clamp to 0)이 발생해 게이지가 전혀 충전되지 않던 현상을 해결했습니다.
-  - **스페이드 여왕 과거 제한**: 당시 빠른 설정을 `+1,000%`, 직접 입력 상한을 5,000%(166배)로 제한했습니다. v5.5.4에서 입력 제한을 제거했습니다. 이 과거 상한 역시 모든 조합에서 오버플로를 막는다고 검증된 값은 아닙니다.
-  - **슈퍼 울프 / 매드 울프 레이지 축적 속도 +1,000% 특수 모드 추가**:
-    - 마스터 DB(`masters.db`)의 슈퍼 울프(`SKL_RGSPDUP_02_P`, 기본 +80%) 및 매드 울프(`SKL_RGSPUP_RDURDOWN_01_P`, 기본 +120%) 레이지 축적 속도를 `+1,000%`로 상향하여, 적을 스치기만 해도 분노 게이지가 1~2칸씩 즉시 충전되도록 조치했습니다.
-    - 대화형 메뉴 20번 및 CLI(`wolf-rage`, `wolf-rage-restore`)를 통해 원클릭 적용, 직접 수치 입력, 기본값(80% / 120%) 복구를 지원합니다.
-- **레시피 해금(12·13번) 상태 헤더 및 메뉴 일시정지(`pause`) 보강**:
-  - Steam용 기간 한정 레시피 및 전체 레시피 메뉴 진입 시 보유 현황을 상단 헤더 표로 명확히 표시하고, 작업 완료 후 Enter 확인 대기(`pause`) 프롬프트를 전면 적용했습니다.
-- **대화형 메뉴 24개 옵션 재정렬**:
-  - 신규 울프 레이지 옵션(20번) 편입에 따라 재료비 무료화(21번), 재료비 복원(22번), 세이브 백업(23번), 최신 백업 복원(24번)으로 번호를 단정하게 재정렬했습니다.
-
-### v5.2.0
-- **대화형 메뉴 6대 카테고리 체계화**:
-  - 기능 확장으로 인해 흩어져 있던 대화형 옵션들을 [파이터 육성 & 상한 해제], [자원 및 시설 관리], [장비 R&D 및 레시피], [데칼 및 상점], [마스터 DB 특수 모드], [세이브 백업/복원]의 6대 카테고리로 논리적 재정렬했습니다.
-- **작업 완료 확인 대기 (`pause`) 적용**:
-  - 모든 옵션 실행 완료 시 작업 결과 및 백업 경로를 출력한 후, 사용자가 Enter 키를 누를 때까지 화면이 유지되도록 하여 작업 성공 여부와 수치 변동을 명확히 인지할 수 있도록 개선했습니다. (취소 시에는 즉시 메뉴 복귀)
-- **파이터 스탯/경험치 상한 해제 및 실적용 지원**:
-  - 6성 파이터 6대 주 능력치(HP/STR/DEX/VIT/STM/LUK) Lv.50 및 가방 50칸 확장 실적용 지원.
-  - 마스터 DB(masters.db) 주 능력치 테이블(Lv.50) 및 경험치 테이블(Lv.500) 상한 해제 패치 및 순정 DB 복원 기능 추가.
-  - 데칼 슬롯은 파이터 등급별 기본 슬롯(1성: 1칸 ~ 5/6성: 5칸, 스킬마스터는 최대 9칸)에 언캡 최대치(+4)를 더한 총 슬롯 수로 적용 (6성 파이터 기준 총 9칸).
-- **궁극 파이터의 귀환 및 스페이드 여왕 데칼 효과 사용자 입력 지원**:
-  - 대화형 메뉴 및 CLI에서 퍼센트(%) 및 배율(배) 직접 입력, 원클릭 적용, 기본값 복구 지원.
-- **황금동물 전체 11종 보관함 수량 지정 지급**:
-  - 코인 보관함 빈칸 내에서 원하는 마리수를 직접 입력하여 11종을 일괄 지급받을 수 있도록 개선.
-
-## 주의
-
-이 도구는 LET IT DIE 오프라인판 버전 5.0.1.0에서 확인된 세이브 형식만 지원합니다. 게임 업데이트 후 형식이 달라지면 안전하게 중단하도록 만들었습니다. 로컬 싱글플레이 세이브 수정이라도 게임 이용약관상 데이터 변조로 간주될 수 있습니다.
-
-## 공개 배포 및 권리 고지
-
-이 프로젝트는 비공식 팬 제작 도구이며 GungHo Online Entertainment 및 LET IT DIE 제작·배급사와 관련이 없습니다. 게임 파일, 마스터 DB, 세이브 파일 및 사용자 백업은 저장소에 포함하지 않습니다.
-
-소스 코드는 [MIT License](./LICENSE)로 배포됩니다. 게임명, 상표 및 게임 데이터에 대한 권리는 각 권리자에게 있습니다.
-# 변경 사항
-
-- 파이터 보너스 검증을 순정 DB 기준으로 강화했습니다. 보너스는 등급별 기본 상한에 0·5·10·15·20%를 적용한 값만 허용하며, 6성은 `0·1·2·3·5`입니다. `50` 같은 비정상 보너스는 저장 전에 차단합니다.
+If discovery fails, enter or drag in a save file/folder. Both numeric `.sav` files and `Savedata/<SteamID>/brggame.sav` are supported. For a save stored outside the game folder, specify the installation or `masters.db` separately with `--game` or `--master`.
