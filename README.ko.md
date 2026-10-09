@@ -1,10 +1,12 @@
 # LET IT DIE 세이브 멀티툴
 
+> Steam build 25767944 RC: [validation and limitations](BUILD-25767944-VALIDATION.md). File/engine tests completed; new-build live gameplay pending. / 새 빌드 파일·처리 엔진 검증 완료, 실게임 검증 전.
+
 [English](README.md) | [한국어](README.ko.md)
 
 영문 실행: `run-en.bat`. 한국어 지정: `run.bat --lang ko`. 메뉴·확인창·도구 오류 문구의 한·영 번역을 지원합니다. 파일 경로·해시·사용자 이름은 번역하지 않습니다.
 
-## v5.9.1 — 새 세이브 폴더 구조 대응
+## v5.9.2-rc.1 — 새 세이브 폴더 구조 대응
 
 - `Savedata/스팀ID/brggame.sav` 자동 탐색 및 파일·계정 폴더 직접 지정 지원.
 - 기존 `Savedata/스팀ID.sav`도 지원하며, 여러 세이브가 있으면 선택합니다.
