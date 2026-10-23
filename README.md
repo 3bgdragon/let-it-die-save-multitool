@@ -1,5 +1,7 @@
 # LET IT DIE Save Multitool
 
+> v5.9.3-rc.1: Steam build 25923506 [file compatibility validation](BUILD-25923506-VALIDATION.md). Documentation/release update only; save/DB editing behavior is unchanged. Live computed stats and reload persistence remain unverified on this build.
+
 > Steam build 25767944 RC: [validation and limitations](BUILD-25767944-VALIDATION.md). File/engine tests completed; new-build live gameplay pending. / 새 빌드 파일·처리 엔진 검증 완료, 실게임 검증 전.
 
 [English](README.md) | [한국어](README.ko.md)
