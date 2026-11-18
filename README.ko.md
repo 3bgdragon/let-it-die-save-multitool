@@ -1,5 +1,7 @@
 # LET IT DIE 세이브 멀티툴
 
+> 대응 후보 v5.9.4-rc.1: LET IT DIE 5.0.6.0 / Steam 빌드 26639365 [검증 내역](BUILD-26639365-VALIDATION.md). 기존 파이터 최대 강화·가방 등 편집 기능은 유지합니다. 구버전 파이터 DB 전체 복원으로 새 데스로이드 필드·가격 또는 다른 설정이 지워지는 경우는 쓰기 전에 차단합니다. 실게임 능력치·재접속·세이브 전송은 별도 확인이 필요합니다.
+
 > v5.9.3-rc.1: Steam 빌드 25923506 [파일 호환성 검증](BUILD-25923506-VALIDATION.md). 검증 문서·배포 버전만 갱신했으며 세이브/DB 편집 동작은 동일합니다. 새 빌드의 실게임 능력치·재접속 유지는 별도 확인이 필요합니다.
 
 > Steam build 25767944 RC: [validation and limitations](BUILD-25767944-VALIDATION.md). File/engine tests completed; new-build live gameplay pending. / 새 빌드 파일·처리 엔진 검증 완료, 실게임 검증 전.

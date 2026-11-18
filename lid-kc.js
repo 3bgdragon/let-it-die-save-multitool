@@ -3484,10 +3484,20 @@ function restoreFighterLimits(savePath, sourceBackupPath) {
   }
 
   const currentOriginal = fs.readFileSync(databasePath);
+  const sourceOriginal = fs.readFileSync(backupToUse);
+  require('./master-restore-safety').assertCompatible(databasePath, backupToUse);
+  if (!fs.readFileSync(databasePath).equals(currentOriginal) || !fs.readFileSync(backupToUse).equals(sourceOriginal)) {
+    throw new Error('Database or backup changed during fighter restore preflight / 파이터 복원 확인 중 DB 또는 백업이 변경되었습니다');
+  }
+  require('./master-restore-safety').assertIdle(databasePath, backupToUse);
   const safetyBackup = createMasterDatabaseBackup(currentOriginal, 'masters.db.before-fighter-limits-restore');
+  if (isGameRunning() || !fs.readFileSync(databasePath).equals(currentOriginal) || !fs.readFileSync(backupToUse).equals(sourceOriginal)) {
+    throw new Error('Game started or database/backup changed before fighter restore / 게임 실행 또는 DB·백업 변경으로 파이터 복원을 중단했습니다');
+  }
+  require('./master-restore-safety').assertIdle(databasePath, backupToUse);
 
   try {
-    fs.copyFileSync(backupToUse, databasePath);
+    fs.writeFileSync(databasePath, sourceOriginal);
     let database;
     try {
       database = new DatabaseSync(databasePath, { readOnly: true });
@@ -3499,7 +3509,7 @@ function restoreFighterLimits(savePath, sourceBackupPath) {
       if (database) database.close();
     }
   } catch (error) {
-    fs.copyFileSync(safetyBackup, databasePath);
+    fs.writeFileSync(databasePath, currentOriginal);
     throw error;
   }
 

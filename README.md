@@ -1,5 +1,7 @@
 # LET IT DIE Save Multitool
 
+> Candidate v5.9.4-rc.1: LET IT DIE 5.0.6.0 / Steam build 26639365 [validation and limits](BUILD-26639365-VALIDATION.md). Normal save/DB editing is retained. Old whole-DB fighter backups are refused when they would erase the new Deathroid schema/prices or unrelated settings. Live computed-stat and reload/transfer behavior remain unverified.
+
 > v5.9.3-rc.1: Steam build 25923506 [file compatibility validation](BUILD-25923506-VALIDATION.md). Documentation/release update only; save/DB editing behavior is unchanged. Live computed stats and reload persistence remain unverified on this build.
 
 > Steam build 25767944 RC: [validation and limitations](BUILD-25767944-VALIDATION.md). File/engine tests completed; new-build live gameplay pending. / 새 빌드 파일·처리 엔진 검증 완료, 실게임 검증 전.
